@@ -1,0 +1,1612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#003087">
+<title>Rink Report — sample event</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<!-- ============================================================
+     CONFIG — the only part you edit.
+     ============================================================ -->
+<script>
+window.RINK_CONFIG = {
+
+  // Paste the long ID from your Google Sheet's normal URL, the part between
+  // /d/ and /edit :  docs.google.com/spreadsheets/d/THIS_PART_HERE/edit
+  sheetId: "1HE3rTPmDsGSDqUN7p20wW9MIWQrbSTpNcaGHCWXHlmI",
+
+  // Tab names in the sheet. Change only if you renamed the tabs.
+  tabs: { settings: "Settings", teams: "Teams", schedule: "Schedule" },
+
+  // Optional but worth 60 seconds. Click each tab in the sheet and copy the
+  // number after "gid=" in the address bar. With these filled in the page uses
+  // Google's raw export, which never re-types a column and so never throws away
+  // text that shares a column with numbers. Left blank, it reads by tab name.
+  gids: { settings: "1160090892", teams: "239776309", schedule: "1739208952" },
+
+  // Last resort. Only if ?check says both routes above are blocked. Use
+  // File > Share > Publish to web, publish each tab as CSV, paste them here.
+  csvOverride: { settings: "", teams: "", schedule: "" },
+
+  // How often the page re-checks the sheet, in seconds, while it's on screen.
+  refreshSeconds: 120
+};
+</script>
+
+<style>
+/* ------------------------------------------------------------------
+   West Seneca Wings — royal blue #003087 and jersey gold #FCD51E,
+   sampled from the club site.
+   Treatment: a printed game program, not an app. No floating cards,
+   no drop shadows, no rounded panels. Sections are divided by full
+   width rules with their name set into the rule; the numbers are the
+   loudest thing on the page, because that is what anyone came for.
+   ------------------------------------------------------------------ */
+:root{
+  --paper:#FFFFFF; --ground:#FFFFFF; --tint:#F4F6FA;
+  --ink:#0B1220; --ink-2:#55627A; --ink-3:#8A96AB;
+  --rule:#0B1220; --hair:#DFE4EE;
+  --navy:#003087; --navy-ink:#003087; --on-navy:#FFFFFF;
+  --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
+  --us-ink:#003087; --us-bg:rgba(252,213,30,.16);
+  --win:#116B45; --warn:#7A4E00; --warn-bg:#FFF6DC; --warn-rule:#E0B354;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A111C; --ground:#0A111C; --tint:#111A29;
+    --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#697991;
+    --rule:#EDF2F9; --hair:#1F2A3D;
+    --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
+    --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
+    --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+    --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A111C; --ground:#0A111C; --tint:#111A29;
+  --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#697991;
+  --rule:#EDF2F9; --hair:#1F2A3D;
+  --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
+  --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
+  --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+  --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
+}
+*{box-sizing:border-box}
+html{background:var(--ground)}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;}
+/* 640 was a phone column pasted onto a laptop: the standings numbers bunched
+   at the right while 750px of nothing sat either side. 780 gives the table
+   room without stretching a line of prose past comfortable reading length.
+   Below 780 nothing changes at all — a max-width only binds above itself. */
+#app{max-width:780px; margin:0 auto; padding:0 0 56px}
+h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacing:.01em; text-wrap:balance}
+.eyebrow{font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; color:var(--ink-3)}
+.mono,.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+/* ---- masthead: the club's navy bar, with the gold rule under it ---- */
+.masthead{background:var(--navy); padding:19px 18px 16px; display:flex; align-items:center; gap:13px;
+  border-bottom:5px solid var(--gold)}
+.masthead .crest{width:44px; height:44px; flex:0 0 auto; object-fit:contain; display:block}
+.masthead .txt{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto}
+.masthead .eyebrow{color:var(--gold)}
+.masthead h1{font-size:27px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
+.record{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:12px;
+  font-weight:600; white-space:nowrap; color:var(--gold); align-self:center;
+  border:1px solid rgba(252,213,30,.5); padding:5px 8px}
+
+/* ---- next game: the club's navy-on-yellow banner, full width ---- */
+.next{background:var(--gold); color:var(--on-gold)}
+.next .strip{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  padding:13px 18px 0}
+.next .strip .eyebrow{color:var(--on-gold)}
+.countdown{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
+  letter-spacing:.14em; color:var(--on-gold)}
+.next .body{padding:6px 18px 18px}
+.matchup{font-family:Bitter,Georgia,serif; font-weight:800; font-size:30px; line-height:1.02;
+  text-transform:uppercase; letter-spacing:-.005em; color:var(--on-gold); margin:0 0 10px}
+.matchup .vs{font-size:16px; letter-spacing:.08em; opacity:.62; padding-right:3px}
+.when{font-size:13px; display:flex; flex-wrap:wrap; gap:2px 14px; color:var(--on-gold-2);
+  font-family:"IBM Plex Mono",monospace}
+.when b{font-weight:700; color:var(--on-gold)}
+.empty{color:var(--ink-2); font-size:14px; margin:0; padding:2px 0}
+
+/* ---- competition switch: league play vs a showcase weekend ---- */
+/* Two tabs share the width evenly. By February a season can carry four —
+   league, a showcase and a couple of tournaments — and dividing 390px four
+   ways left "PRE-SEAS…" beside "PRESIDEN…", which is not a choice anyone can
+   make. Past a readable minimum the bar scrolls instead of compressing, and
+   the active tab is scrolled into view after every render. */
+.viewbar{display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:none; border-bottom:2px solid var(--rule); background:var(--tint)}
+.viewbar::-webkit-scrollbar{display:none}
+.viewbar button{flex:1 0 auto; min-width:128px; font:inherit; font-size:11px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; padding:11px 8px; background:transparent;
+  color:var(--ink-2); border:0; border-right:1px solid var(--hair); cursor:pointer;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.viewbar button:last-child{border-right:0}
+.viewbar button[aria-pressed="true"]{background:var(--navy); color:#fff;
+  box-shadow:inset 0 -4px 0 var(--gold)}
+
+.evtag{margin-top:9px; display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--on-gold);
+  border:1px solid currentColor; opacity:.85; padding:3px 7px}
+
+/* ---- sections: a rule with its name set into it ---- */
+.card{background:transparent; border:0; border-top:2px solid var(--rule); padding:0 18px 24px}
+.card-h{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 0 14px}
+.card-h h2{font-size:13px; text-transform:uppercase; letter-spacing:.16em; color:var(--ink)}
+.card-h .eyebrow{letter-spacing:.12em}
+.card-b{padding:0}
+
+/* ---- standings ---- */
+.tablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:14px}
+thead th{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  font-weight:700; text-align:right; padding:0 0 8px; white-space:nowrap}
+thead th+th{padding-left:9px}
+thead th:first-child{text-align:left; padding-left:32px}
+tbody td{padding:9px 0; border-top:1px solid var(--hair); text-align:right; white-space:nowrap;
+  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink-2)}
+tbody td+td{padding-left:9px}
+tbody td:first-child{text-align:left; padding-left:32px; text-indent:-24px;
+  font-family:"IBM Plex Sans",sans-serif; color:var(--ink); width:99%;
+  white-space:normal; overflow-wrap:anywhere; font-size:15px}
+tbody td.pts{color:var(--ink); font-weight:600; font-size:15px}
+tr.us td{background:var(--us-bg)}
+tr.us td:first-child{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--gold)}
+tr.us td.pts{color:var(--us-ink); font-weight:700}
+/* text-indent is inherited, and this inline-block would re-apply the cell's
+   negative indent to its own digit and push it out of view. */
+.rank{display:inline-block; width:24px; text-indent:0; color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600}
+.poolname{font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--navy-ink);
+  font-weight:700; padding:20px 0 8px}
+.poolname:first-child{padding-top:0}
+
+/* ---- results ---- */
+.dayhead{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:600; padding:18px 0 7px;
+  border-bottom:1px solid var(--hair)}
+.daygroup:first-child .dayhead{padding-top:0}
+.game{display:grid; grid-template-columns:1fr auto; gap:3px 14px; align-items:start;
+  padding:11px 0; border-bottom:1px solid var(--hair)}
+/* The score is right-aligned against the end of the teams block so the two
+   scores of a game line up vertically, which is the whole point of a
+   scoreboard. Uncapped, that block grew with the page and pushed the score
+   287px away from the name it belongs to. Capping it keeps the pair together
+   and still lets the column shrink on a phone. */
+.game .teams{display:flex; flex-direction:column; gap:3px; min-width:0; max-width:330px}
+.game .side{display:flex; justify-content:space-between; gap:12px; font-size:15px; align-items:baseline}
+.game .side .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.game .side .sc{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-weight:600; font-size:17px}
+.game .side.lost .nm,.game .side.lost .sc{color:var(--ink-3); font-weight:400}
+.game .side.ours .nm{font-weight:700}
+.game .meta{font-size:11px; color:var(--ink-3); text-align:right; white-space:nowrap; line-height:1.6; padding-top:1px}
+.game .meta .tag{margin-bottom:2px}
+.game .meta .tm{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  color:var(--ink-2); font-size:12px}
+.tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
+  letter-spacing:.1em; padding:2px 6px; border:1px solid var(--hair); color:var(--ink-3)}
+.tag.w{background:var(--gold); border-color:var(--gold); color:var(--on-gold)}
+.tag.l{color:var(--ink-3)}
+
+/* ---- controls ---- */
+.seg{display:inline-flex; border:1px solid var(--rule)}
+.seg button{font:inherit; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  padding:5px 10px; background:transparent; color:var(--ink-2); border:0; cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--navy); color:#fff}
+button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+
+.status{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); padding:16px 18px 0; border-top:2px solid var(--rule); margin-top:0}
+.status button{font:inherit; font-size:10px; letter-spacing:.1em; background:transparent;
+  border:1px solid var(--hair); color:var(--ink-2); padding:5px 10px; cursor:pointer}
+.banner{border-left:4px solid var(--warn-rule); background:var(--warn-bg); color:var(--warn);
+  padding:12px 14px; font-size:13px; line-height:1.55; margin:18px 18px 0}
+.banner ul{list-style:none; margin:6px 0 0; padding:0}
+.banner li{font-size:12.5px; line-height:1.5; color:inherit; border:0; padding:5px 0 5px 12px; position:relative}
+.banner li::before{content:""; position:absolute; left:0; top:11px; width:5px; height:5px; background:currentColor}
+.banner li+li{border-top:1px solid rgba(128,100,20,.22)}
+.banner b{font-weight:700}
+.foot{font-size:11px; color:var(--ink-3); text-align:center; line-height:1.8; margin:22px 0 0; padding:0 18px}
+.foot a{color:var(--ink-3)}
+.card .foot{text-align:left; padding:12px 0 0; margin:0; border-top:1px solid var(--hair)}
+.skel{height:14px; background:var(--tint); animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+pre.diag{background:var(--tint); border-left:4px solid var(--navy); padding:14px 16px;
+  font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.65; overflow-x:auto;
+  white-space:pre-wrap; word-break:break-word; color:var(--ink-2); margin:18px}
+pre.diag b{color:var(--ink)}
+pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color:var(--warn)}
+
+/* Room earned on a laptop goes to the numbers, which are what people squint
+   at, and to the team-name column, which takes whatever is left. */
+@media (min-width:700px){
+  tbody td+td,thead th+th{padding-left:15px}
+  table{font-size:15px}
+  tbody td:first-child{font-size:16px}
+  tbody td.pts{font-size:16px}
+}
+
+@media (max-width:420px){
+  .masthead h1{font-size:23px}
+  .matchup{font-size:26px}
+  tbody td+td,thead th+th{padding-left:7px}
+  table{font-size:13px}
+  tbody td:first-child{font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<script>
+/* ---- DEMO BUILD -------------------------------------------------------
+   Self-contained sample event. No spreadsheet, no network. The real build
+   reads a Google Sheet; this one carries its own data so it works anywhere,
+   including a rink with no signal.
+   --------------------------------------------------------------------- */
+window.__DEMO__ = {
+  Settings: ",Settings,,\n,,,\n,Field,Your answer,Notes\n,League or showcase name,Northland Fall Classic,\n,Which view opens first,showcase,\n,Points for a win,2,\n,Points for a tie,1,\n,Points for a loss,0,\n",
+  Teams: ",Teams,,\n,,,\n,,,\n,Team name,Pool / division,Notes\n,Riverside Rangers,,\n,Lakeshore Lightning,,\n,Granite City Wolves,,\n,Harbor Bay Sharks,,\n,Northfield Knights,,\n,Summit Ridge Storm,,\n,Bayside Bandits,,\n,Ironworks Titans,,\n",
+  Schedule: "Schedule,,,,,,,,,\n,,,,,,,,,\n,,,,,,,,,\nDate,Face-off,Away team,Home team,Away goals,Home goals,Rink,Pool / division,Game type,Event\n2026-08-28,5:20 PM,Granite City Wolves,Riverside Rangers,1,4,Northland Ice Complex \u2014 Rink 1,Pool A,Pool,Northland Fall Classic\n2026-08-28,7:00 PM,Ironworks Titans,Lakeshore Lightning,0,6,Northland Ice Complex \u2014 Rink 2,Pool A,Pool,Northland Fall Classic\n2026-08-29,9:40 AM,Lakeshore Lightning,Riverside Rangers,2,3,Northland Ice Complex \u2014 Rink 1,Pool A,Pool,Northland Fall Classic\n2026-08-29,11:20 AM,Ironworks Titans,Granite City Wolves,1,2,Northland Ice Complex \u2014 Rink 2,Pool A,Pool,Northland Fall Classic\n2026-08-29,3:10 PM,Riverside Rangers,Ironworks Titans,2,5,Northland Ice Complex \u2014 Rink 1,Pool A,Pool,Northland Fall Classic\n2026-08-29,4:50 PM,Granite City Wolves,Lakeshore Lightning,1,4,Northland Ice Complex \u2014 Rink 2,Pool A,Pool,Northland Fall Classic\n2026-08-28,6:10 PM,Summit Ridge Storm,Northfield Knights,2,3,Northland Ice Complex \u2014 Rink 2,Pool B,Pool,Northland Fall Classic\n2026-08-28,8:40 PM,Harbor Bay Sharks,Bayside Bandits,4,2,Northland Ice Complex \u2014 Rink 1,Pool B,Pool,Northland Fall Classic\n2026-08-29,10:30 AM,Northfield Knights,Harbor Bay Sharks,1,1,Northland Ice Complex \u2014 Rink 2,Pool B,Pool,Northland Fall Classic\n2026-08-29,1:00 PM,Bayside Bandits,Summit Ridge Storm,3,0,Northland Ice Complex \u2014 Rink 1,Pool B,Pool,Northland Fall Classic\n2026-08-29,6:30 PM,Harbor Bay Sharks,Summit Ridge Storm,,,Northland Ice Complex \u2014 Rink 2,Pool B,Pool,Northland Fall Classic\n2026-08-29,8:10 PM,Northfield Knights,Bayside Bandits,,,Northland Ice Complex \u2014 Rink 1,Pool B,Pool,Northland Fall Classic\n2026-08-30,9:00 AM,,,,,Northland Ice Complex \u2014 Rink 1,,Bracket,Northland Fall Classic\n2026-08-30,11:00 AM,Lakeshore Lightning,Riverside Rangers,,,Northland Ice Complex \u2014 Rink 2,,Bracket,Northland Fall Classic\n2026-08-30,2:30 PM,,,,,Northland Ice Complex \u2014 Rink 1,,Bracket,Northland Fall Classic\n"
+};
+window.fetch = function(u){
+  var gids = (window.RINK_CONFIG||{}).gids||{}, k = "Schedule";
+  if(/sheet=Settings/.test(u) || (gids.settings && u.indexOf("gid="+gids.settings)!==-1)) k="Settings";
+  else if(/sheet=Teams/.test(u) || (gids.teams && u.indexOf("gid="+gids.teams)!==-1)) k="Teams";
+  return Promise.resolve({ ok:true, status:200, text:function(){ return Promise.resolve(window.__DEMO__[k]); } });
+};
+</script>
+<style>
+/* neutral identity: this is the product, not any one club */
+:root{ --navy:#12356E; --navy-ink:#12356E; --gold:#12356E; --on-gold:#FFFFFF;
+       --us-bg:rgba(18,53,110,.07); --us-ink:#12356E; --on-gold-2:rgba(255,255,255,.74); }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --navy:#17408B; --navy-ink:#9DB8ED; --gold:#17408B; --on-gold:#FFFFFF;
+  --us-bg:rgba(157,184,237,.09); --us-ink:#9DB8ED; --on-gold-2:rgba(255,255,255,.74); } }
+:root[data-theme="dark"]{ --navy:#17408B; --navy-ink:#9DB8ED; --gold:#17408B; --on-gold:#FFFFFF;
+  --us-bg:rgba(157,184,237,.09); --us-ink:#9DB8ED; --on-gold-2:rgba(255,255,255,.74); }
+.masthead{border-bottom-color:#D6A419}
+.masthead .eyebrow{color:#F0C64A}
+.next .strip{border-bottom:1px solid rgba(255,255,255,.28)}
+.next .body{padding-top:12px}
+.demoflag{background:#D6A419; color:#1B1400; font-family:"IBM Plex Mono",monospace;
+  font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+  text-align:center; padding:7px 16px}
+</style>
+</head>
+<body>
+<div class="demoflag">Sample event &middot; not a real tournament</div>
+<div id="app"></div>
+
+<script>
+/* ===================================================================
+   Rink Report — how this file is put together
+
+   One file, no build step, no backend. A Google Sheet is the database;
+   this page is a reader. Everything below runs in the browser on a
+   parent's phone, so it is plain ES5 with no dependencies.
+
+   The flow, top to bottom:
+
+     fetch     getCSV / routesFor   three ways to read one tab, tried in
+                                    order, with retries. Google is flaky
+                                    at a rink on wifi.
+     parse     parseCSV / locateHeader / recoverByPosition
+                                    finds the header row wherever it is,
+                                    and rebuilds headers Google blanked.
+     shape     shapeSettings / shapeTeams / shapeGames
+                                    turn cells into objects, and push a
+                                    plain-English warning naming the sheet
+                                    row for anything that looks wrong.
+     views     buildViews           league play and each named event are
+                                    tabs, derived from the Event column.
+     compute   standings / orderTable / RULESETS
+                                    points, then the event's published
+                                    tiebreakers. Never invented ones.
+     draw      render + *Html       one innerHTML write, skipped entirely
+                                    when a poll changed nothing.
+     repeat    schedulePoll         adaptive, jittered, backs off.
+
+   Two rules worth keeping if you edit this:
+
+   1. Anything that came from the sheet goes through esc() before it
+      reaches HTML. The page is public and anyone with edit rights on
+      the sheet can type anything into a team name.
+   2. Anything keyed by a name from the sheet uses bare(), not {}.
+      A team called "__proto__" is a legal team name.
+   =================================================================== */
+(function(){
+"use strict";
+var CFG = window.RINK_CONFIG || {};
+var CACHE_KEY = "rinkreport.v2";   // bump when the stored shape changes
+var DIAG = /[?&]check\b/.test(location.search);
+
+var data = { config:{leagueName:"",teamName:"",mode:"season",ptsWin:2,ptsTie:1,ptsLoss:0}, teams:[], games:[] };
+var problems = [];      // parse warnings shown to a manager
+var fetchedAt = null;
+var loading = true;
+var loadError = "";
+var filterOurs = false;
+var viewKey = null;          // null = pick a sensible view from the data
+var diagLog = [];
+var routeUsed = [];
+var headerMap = [];
+var COLNAME={date:"Date", time:"Face-off", away:"Away team", home:"Home team",
+  as:"Away goals", hs:"Home goals", rink:"Rink", pool:"Pool / division", type:"Game type", event:"Event"};
+var gidHint = "";
+var gidLookupStarted = false;
+var routeTrouble = [];
+function colLetter(n){ var s=""; n=n+1; while(n>0){ var m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
+var logoOk = false;      // only draw the crest once we know the file is really there
+var lastHtml = null;     // skip the DOM write when a poll changed nothing
+
+/* ---------------------------------------------------------------- utils */
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function norm(s){return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]/g,"");}
+function clean(s){return String(s==null?"":s).replace(/\s+/g," ").trim();}
+function log(m){ diagLog.push(m); }
+/* Sheet-derived text becomes object keys in several places. A team literally
+   named "__proto__" or "constructor" would otherwise walk the Object prototype
+   and corrupt every lookup, so every name-keyed map starts with no prototype. */
+function bare(){ return Object.create ? Object.create(null) : {}; }
+
+/* A rename usually leaves two names that differ by a character or two, so when
+   a Schedule name matches nothing, say which Teams-tab name it nearly matched.
+   "not on the Teams tab" sends you hunting; "you have both Southtown Stars and
+   Southtowns Stars" is the actual answer. */
+function editDistance(a,b){
+  if(a===b) return 0;
+  if(Math.abs(a.length-b.length)>3) return 99;
+  var prev=[], cur=[], i, j;
+  for(j=0;j<=b.length;j++) prev[j]=j;
+  for(i=1;i<=a.length;i++){
+    cur[0]=i;
+    for(j=1;j<=b.length;j++){
+      cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));
+    }
+    for(j=0;j<=b.length;j++) prev[j]=cur[j];
+  }
+  return prev[b.length];
+}
+function nearestName(name, list){
+  var n=norm(name), best=null, bestD=3, i, d;
+  for(i=0;i<list.length;i++){
+    d=editDistance(n, norm(list[i]));
+    if(d<bestD){ bestD=d; best=list[i]; }
+  }
+  return best;
+}
+
+/* ------------------------------------------------------------ csv parse */
+function parseCSV(text){
+  var rows=[], row=[], cur="", q=false, i=0, c, n;
+  text = text.replace(/^﻿/,"");
+  for(i=0;i<text.length;i++){
+    c=text[i];
+    if(q){
+      if(c==='"'){ n=text[i+1]; if(n==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    } else {
+      if(c==='"') q=true;
+      else if(c===","){ row.push(cur); cur=""; }
+      else if(c==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else if(c==="\r"){ /* skip */ }
+      else cur+=c;
+    }
+  }
+  if(cur!=="" || row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+
+/* Find the header row anywhere in the sheet (tolerates title rows above it)
+   and return {headerIndex, map:{field->colIndex}} */
+function locateHeader(rows, spec){
+  var best=null;
+  for(var r=0; r<Math.min(rows.length, 25); r++){
+    var map={}, hits=0;
+    for(var c=0;c<rows[r].length;c++){
+      var h=norm(rows[r][c]);
+      if(!h) continue;
+      for(var field in spec){
+        if(map[field]!==undefined) continue;
+        if(spec[field].indexOf(h)!==-1){ map[field]=c; hits++; break; }
+      }
+    }
+    if(hits>(best?best.hits:0)) best={headerIndex:r, map:map, hits:hits};
+  }
+  return best;
+}
+
+/* Google's tab-name reader blanks a header cell whenever it decides that
+   column is numeric — which is exactly what happens to "Away goals" and
+   "Home goals". Rebuild those from position: roles sitting between two
+   columns we DID identify must occupy the unclaimed columns between them,
+   in order, and only when the counts match exactly. */
+function recoverByPosition(map, canonical, width){
+  var claimed={}, k, filled=[];
+  for(k in map) if(Object.prototype.hasOwnProperty.call(map,k)) claimed[map[k]]=k;
+  var found=[];
+  canonical.forEach(function(role,i){ if(map[role]!==undefined) found.push({role:role,i:i,col:map[role]}); });
+  if(!found.length) return filled;
+
+  function fill(missing, from, to){
+    if(!missing.length) return;
+    var gap=[];
+    for(var c=from;c<to;c++) if(claimed[c]===undefined) gap.push(c);
+    if(gap.length!==missing.length) return;
+    missing.forEach(function(role,n){ map[role]=gap[n]; claimed[gap[n]]=role; filled.push(role); });
+  }
+  // columns to the LEFT of the first thing we recognised — this is where the
+  // Date header lands, and Google blanks it because the column is date-typed
+  fill(canonical.slice(0, found[0].i), 0, found[0].col);
+  for(var i=0;i<found.length-1;i++)
+    fill(canonical.slice(found[i].i+1, found[i+1].i), found[i].col+1, found[i+1].col);
+  // and anything past the last one
+  var last=found[found.length-1];
+  fill(canonical.slice(last.i+1), last.col+1, width);
+  return filled;
+}
+
+/* ------------------------------------------------------------ date/time */
+var DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var MONIDX={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+function pad(n){return (n<10?"0":"")+n;}
+function toISO(y,m,d){return y+"-"+pad(m+1)+"-"+pad(d);}
+/* Accepts 2026-11-14, 11/14/2026, 14 Nov 2026, Nov 14 2026, Date(2026,10,14),
+   and Sheets' serial numbers. Returns YYYY-MM-DD or "". */
+function parseDate(v){
+  var s=clean(v); if(!s) return "";
+  var m;
+  if((m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s))) return toISO(+m[1],+m[2]-1,+m[3]);
+  if((m=/^Date\((\d{4}),(\d{1,2}),(\d{1,2})\)/.exec(s))) return toISO(+m[1],+m[2],+m[3]);
+  if((m=/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s))){
+    var y=+m[3]; if(y<100) y+=2000;
+    return toISO(y,+m[1]-1,+m[2]);                 // US order: month first
+  }
+  if((m=/^([A-Za-z]{3,})\s+(\d{1,2}),?\s+(\d{4})/.exec(s))){
+    var mi=MONIDX[m[1].slice(0,3).toLowerCase()];
+    if(mi!==undefined) return toISO(+m[3],mi,+m[2]);
+  }
+  if((m=/^(\d{1,2})\s+([A-Za-z]{3,}),?\s+(\d{4})/.exec(s))){
+    var mj=MONIDX[m[2].slice(0,3).toLowerCase()];
+    if(mj!==undefined) return toISO(+m[3],mj,+m[1]);
+  }
+  if(/^\d{5}$/.test(s)){                            // Sheets serial date
+    var base=Date.UTC(1899,11,30)+(+s)*86400000, d=new Date(base);
+    return toISO(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());
+  }
+  return "";
+}
+function dateObj(iso){ var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||""); return m?new Date(+m[1],+m[2]-1,+m[3]):null; }
+function fmtDate(iso){ var d=dateObj(iso); return d?DOW[d.getDay()]+" "+MON[d.getMonth()]+" "+d.getDate():""; }
+function todayISO(){ var d=new Date(); return toISO(d.getFullYear(),d.getMonth(),d.getDate()); }
+function daysUntil(iso){ var d=dateObj(iso), t=dateObj(todayISO()); return (d&&t)?Math.round((d-t)/86400000):null; }
+function countdownText(iso){
+  var n=daysUntil(iso);
+  if(n===null||n<0) return "";
+  if(n===0) return "TODAY";
+  if(n===1) return "TOMORROW";
+  if(n<7) return "IN "+n+" DAYS";
+  var w=Math.round(n/7); return "IN "+w+" WEEK"+(w===1?"":"S");
+}
+/* "7:10 PM", "19:10", "7:10p" -> minutes since midnight, for sorting */
+function timeKey(t){
+  var s=clean(t).toLowerCase(), m=/^(\d{1,2})[:.](\d{2})\s*(a|p)?/.exec(s);
+  if(!m) m=/^(\d{1,2})()\s*(a|p)/.exec(s);          // "7 PM" with no minutes
+  if(!m) return 9999;
+  var h=+m[1], mi=+(m[2]||0);
+  if(m[3]==="p"&&h<12) h+=12;
+  if(m[3]==="a"&&h===12) h=0;
+  return h*60+mi;
+}
+function ago(ts){
+  if(!ts) return "";
+  var s=Math.max(0,Math.round((Date.now()-ts)/1000));
+  if(s<45) return "just now";
+  if(s<90) return "1 min ago";
+  if(s<3600) return Math.round(s/60)+" min ago";
+  if(s<7200) return "1 hour ago";
+  if(s<86400) return Math.round(s/3600)+" hours ago";
+  var d=Math.round(s/86400); return d+" day"+(d===1?"":"s")+" ago";
+}
+
+/* ------------------------------------------------------------ fetching */
+/* Every way we know of reading one tab, best first. More than one route
+   matters: Google hands back the odd transient 404, and the raw export is
+   the only route that doesn't re-type columns. */
+function routesFor(which){
+  var id = encodeURIComponent(CFG.sheetId||""), out=[];
+  var over=(CFG.csvOverride||{})[which];
+  if(over) out.push({how:"published CSV", url:over});
+  var gid=(CFG.gids||{})[which];
+  if(gid) out.push({how:"raw export", url:"https://docs.google.com/spreadsheets/d/"+id+"/export?format=csv&gid="+encodeURIComponent(gid)});
+  var tab=(CFG.tabs||{})[which]||which;
+  out.push({how:"tab name", url:"https://docs.google.com/spreadsheets/d/"+id+"/gviz/tq?tqx=out:csv&headers=0&sheet="+encodeURIComponent(tab)});
+  return out;
+}
+function once(url){
+  var u = url + (url.indexOf("?")===-1?"?":"&") + "_=" + Date.now();
+  return fetch(u,{cache:"no-store",credentials:"omit"}).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return r.text();
+  }).then(function(t){
+    if(/^\s*</.test(t)) throw new Error("got a web page, not data — the sheet may not be shared publicly");
+    return t;
+  });
+}
+function wait(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
+
+/* Three tries per route with a short backoff, then the next route. A single
+   blip from Google used to leave the page sitting on an error banner. */
+var BACKOFF=[0,500,1500];
+function getCSV(which){
+  var routes=routesFor(which), ri=0, ai=0, lastErr=null;
+  function attempt(){
+    if(ri>=routes.length) throw (lastErr||new Error("no route succeeded"));
+    var route=routes[ri];
+    return wait(BACKOFF[ai]).then(function(){
+      return once(route.url);
+    }).then(function(t){
+      log("  "+which+" ok via "+route.how+(ai?" (try "+(ai+1)+")":"")+", "+t.length+" bytes");
+      routeUsed.push(which+"="+route.how);
+      return parseCSV(t);
+    }).catch(function(e){
+      lastErr=new Error(which+" — "+route.how+": "+(e&&e.message?e.message:e));
+      log("  "+which+" failed via "+route.how+" try "+(ai+1)+": "+(e&&e.message?e.message:e));
+      if(ai===0 && route.how==="raw export") routeTrouble.push(which);
+      ai++;
+      if(ai>=BACKOFF.length){ ai=0; ri++; }
+      return attempt();
+    });
+  }
+  log("fetch "+which+" ("+routes.length+" route"+(routes.length===1?"":"s")+")");
+  return Promise.resolve().then(attempt);
+}
+
+/* ------------------------------------------------------------- shaping */
+var SPEC_SCHEDULE = {
+  date:["date","gamedate"],
+  time:["faceoff","faceofftime","time","start","starttime"],
+  away:["awayteam","away","visitor","visitingteam"],
+  home:["hometeam","home"],
+  as:["awaygoals","awayscore","awaygf","ag","goalsaway"],
+  hs:["homegoals","homescore","homegf","hg","goalshome"],
+  rink:["rink","location","venue","arena","sheet"],
+  pool:["pooldivision","pool","division","group","bracketpool"],
+  type:["gametype","type","round"],
+  event:["event","showcase","tournament","eventname"]
+};
+var SPEC_TEAMS = { team:["teamname","team"], pool:["pooldivision","pool","division","group"],
+  alias:["alsoknownas","aka","alsoknown","othernames","alternatenames","formerlyknownas","oldname","othername"] };
+var SPEC_SETTINGS = { field:["field","setting"], value:["youranswer","answer","value"], notes:["notes","note"] };
+
+function num(v){
+  var s=clean(v);
+  if(s==="") return null;
+  if(!/^-?\d+(\.0+)?$/.test(s)) return null;
+  var n=parseInt(s,10);
+  return (isNaN(n)||n<0)?null:n;
+}
+
+/* Settings labels are matched by PREFIX, and that is not a detail.
+   Matching on "contains" reads the readiness panel below the settings block
+   as more settings: "Your team is filled in" contains "our team", so the
+   team name came out as the word OK. Anchoring at the start of the label
+   kills that whole family of collision.
+
+   The ORDER of this list still disambiguates the rest: "tiebreak rules"
+   starts with "tie" as well, so the tiebreak row has to sit above the points
+   rows. Adding a setting means adding a row here and nothing else, but add
+   it in the right place rather than at the end. */
+var SETTINGS_ROWS = [
+  { match:["tiebreak"], apply:function(c,v){ c.rules = norm(v); } },
+  { match:["ourteam","myteam","teamname"], apply:function(c,v){ c.teamName = v; } },
+  { match:["whichview","viewopens","showcaseweekend","seasonorshowcase"],
+    apply:function(c,v){ c.mode = norm(v).indexOf("showcase")!==-1 ? "showcase" : "season"; } },
+  { match:["league","showcase","eventname","event"], apply:function(c,v){ c.leagueName = v; } },
+  { match:["pointsforawin","win"],   apply:function(c,v){ c.ptsWin  = num(v)===null ? 2 : num(v); } },
+  { match:["pointsforatie","tie"],   apply:function(c,v){ c.ptsTie  = num(v)===null ? 1 : num(v); } },
+  { match:["pointsforaloss","loss"], apply:function(c,v){ c.ptsLoss = num(v)===null ? 0 : num(v); } }
+];
+function applySetting(cfg, label, val){
+  for(var i=0;i<SETTINGS_ROWS.length;i++){
+    var pats=SETTINGS_ROWS[i].match;
+    for(var j=0;j<pats.length;j++){
+      if(label.indexOf(pats[j])===0){ SETTINGS_ROWS[i].apply(cfg,val); return; }
+    }
+  }
+}
+
+/* The settings block is supposed to end at a blank row. It does on the raw
+   export route. The tab-name route drops entirely-empty rows on the floor, so
+   on that route the blank row vanishes and the readiness panel underneath
+   arrives looking like more settings. Stop at the panel's own headings too. */
+var PANEL_HEADINGS = ["beforeyousend","requirement","theseupdatethemselves"];
+function isPanelHeading(label){
+  for(var i=0;i<PANEL_HEADINGS.length;i++) if(label.indexOf(PANEL_HEADINGS[i])===0) return true;
+  return false;
+}
+function shapeSettings(rows){
+  var c={leagueName:"",teamName:"",mode:"season",ptsWin:2,ptsTie:1,ptsLoss:0,rules:""};
+  // Read the "Your answer" column by position. Collapsing non-empty cells
+  // instead would slide the Notes column into an unanswered row.
+  var hdr=locateHeader(rows,SPEC_SETTINGS);
+  // When the answer column gets typed numeric its own header is nulled too,
+  // so fall back to "the column just right of Field" rather than giving up
+  // and collapsing the row, which would slide Notes into the answer slot.
+  var valCol;
+  if(hdr && hdr.map.field!==undefined){
+    valCol = hdr.map.value!==undefined ? hdr.map.value : hdr.map.field+1;
+    if(valCol===hdr.map.notes) valCol = undefined;
+  }
+  var byCol = valCol!==undefined;
+  if(byCol) hdr.map.value = valCol;
+  var blanks=0, blankFields=[];
+  for(var r=(byCol?hdr.headerIndex+1:0); r<rows.length; r++){
+    var label, val;
+    if(byCol){
+      label=norm(rows[r][hdr.map.field]);
+      // The settings block ends at the first empty Field cell. Anything below
+      // that is another section — the readiness panel, for one, whose row
+      // labels ("Your team is filled in") otherwise match these same tests
+      // and hand back the word OK.
+      if(!label || isPanelHeading(label)) break;
+      val=clean(rows[r][valCol]);
+      if(val===""){ blanks++; blankFields.push(label); }
+    } else {
+      var cells=rows[r].map(clean).filter(function(x){return x!=="";});
+      if(cells.length<2) continue;
+      label=norm(cells[0]); val=cells[1];
+    }
+    if(!label || val==="") continue;
+    applySetting(c, label, val);
+  }
+  // Google's sheet reader types each column. When the answer column holds both
+  // words and the points numbers, it decides the column is numeric and returns
+  // the words as blank — silently. Detect that exact shape and name the fix.
+  if(byCol && blanks>=2 && !c.teamName && !c.leagueName &&
+     (c.ptsWin!==2 || c.ptsTie!==1 || c.ptsLoss!==0 || rowsHaveNumbers(rows, hdr))){
+    problems.push("Google dropped the text in the Settings answer column because that column also holds numbers. Clear the 2 / 1 / 0 in the points rows and the names will come through. The page uses 2 / 1 / 0 by default anyway.");
+  } else if(byCol && blankFields.length){
+    // Points and tiebreak rules are meant to be left blank; only nag about the
+    // two that actually change what a parent sees.
+    var needed=[];
+    blankFields.forEach(function(f){
+      if(f.indexOf("ourteam")!==-1) needed.push("Our team");
+      else if(f.indexOf("leaguename")!==-1||f.indexOf("showcaseorleague")!==-1) needed.push("League or showcase name");
+    });
+    if(needed.length) problems.push("Not filled in on the Settings tab: "+needed.join(", ")+".");
+  }
+  return c;
+}
+function rowsHaveNumbers(rows, hdr){
+  for(var r=hdr.headerIndex+1;r<rows.length;r++){
+    if(num(rows[r][hdr.map.value])!==null) return true;
+  }
+  return false;
+}
+
+/* A team name on the Schedule tab is text, not a reference, so renaming a club
+   on the Teams tab leaves every game it has ever played pointing at the old
+   name. The "Also known as" column is the fix: list the old spelling there and
+   both names resolve to the current one. It earns its keep twice a season
+   anyway, because the league and a tournament rarely spell a club the same way
+   ("Jr Terriers" against "Junior Terriers"). Separate several with commas. */
+function shapeTeams(rows){
+  var h=locateHeader(rows,SPEC_TEAMS), out=[], pools=bare(), alias=bare();
+  if(!h||h.map.team===undefined){ problems.push("Couldn't find a “Team name” column on the Teams tab."); return {list:out,pools:pools,alias:alias}; }
+  for(var r=h.headerIndex+1;r<rows.length;r++){
+    var name=clean(rows[r][h.map.team]);
+    if(!name) continue;
+    if(out.indexOf(name)===-1) out.push(name);
+    if(h.map.pool!==undefined){ var p=clean(rows[r][h.map.pool]); if(p) pools[name]=p; }
+    if(h.map.alias!==undefined){
+      var raw=clean(rows[r][h.map.alias]);
+      if(raw) raw.split(/[,;\/]/).forEach(function(a){
+        var k=norm(a);
+        // never let an alias hijack a name that is itself a team
+        if(k && k!==norm(name)) alias[k]=name;
+      });
+    }
+  }
+  var i;
+  for(i=0;i<out.length;i++) if(alias[norm(out[i])]) delete alias[norm(out[i])];
+  log("teams: "+out.length+(Object.keys(alias).length?", "+Object.keys(alias).length+" alias(es)":""));
+  return {list:out,pools:pools,alias:alias};
+}
+
+function shapeGames(rows, teamList, alias){
+  var h=locateHeader(rows,SPEC_SCHEDULE), out=[];
+  if(!h){
+    problems.push("Schedule tab: no header row found. Row 4 should read Date, Face-off, Away team, Home team, Away goals, Home goals, Rink, Pool / division, Game type, Event.");
+    return out;
+  }
+  var width=0;
+  for(var wi=0;wi<rows.length;wi++) if(rows[wi].length>width) width=rows[wi].length;
+  var recovered=recoverByPosition(h.map, ["date","time","away","home","as","hs","rink","pool","type","event"], width);
+  if(recovered.length){
+    log("schedule: headers rebuilt by position -> "+recovered.join(", "));
+    problems.push("Google blanked these Schedule headers because those columns hold dates or numbers: "+
+      recovered.map(function(k){ return COLNAME[k]||k; }).join(", ")+
+      ". The page worked out which is which from their position, so nothing is lost.");
+  }
+
+  var LABEL=COLNAME;
+  var missing=[];
+  ["date","away","home"].forEach(function(k){ if(h.map[k]===undefined) missing.push(LABEL[k]); });
+  if(missing.length){
+    problems.push("Schedule tab: couldn't work out which column"+(missing.length===1?" is":"s are")+" "+
+      missing.join(" and ")+". No games can be read until that header row is right. Row "+(h.headerIndex+1)+
+      " should read Date, Face-off, Away team, Home team, Away goals, Home goals, Rink, Pool / division, Game type, Event.");
+    return out;
+  }
+  headerMap=[];
+  ["date","time","away","home","as","hs","rink","pool","type","event"].forEach(function(k){
+    headerMap.push(LABEL[k]+" = "+(h.map[k]===undefined?"not found":"column "+colLetter(h.map[k])));
+  });
+
+  var known=bare(), i, k;
+  for(i=0;i<teamList.length;i++) known[norm(teamList[i])]=teamList[i];
+  // an old or alternate spelling resolves to the current name
+  alias=alias||bare();
+  for(k in alias) if(Object.prototype.hasOwnProperty.call(alias,k)){ if(!known[k]) known[k]=alias[k]; }
+  var unknown=bare(), seenKey=bare();
+  var noDate=[], selfPlay=[], dupes=[], halfScore=[], eventDays=bare(), blankEvent=[];
+
+  for(var r=h.headerIndex+1;r<rows.length;r++){
+    var row=rows[r];
+    var iso=parseDate(row[h.map.date]);
+    var away=clean(row[h.map.away]), home=clean(row[h.map.home]);
+    if(!iso && !away && !home) continue;                 // blank row
+    if(!iso){ noDate.push(r+1); continue; }              // r+1 = the row number in the sheet
+
+    // snap names onto the Teams list so casing/spacing differences don't split a team
+    var aKey=norm(away), hKey=norm(home);
+    if(away && known[aKey]) away=known[aKey]; else if(away) unknown[away]=1;
+    if(home && known[hKey]) home=known[hKey]; else if(home) unknown[home]=1;
+
+    var g={
+      id:"r"+r, date:iso,
+      time: h.map.time!==undefined?clean(row[h.map.time]):"",
+      away:away, home:home,
+      rink: h.map.rink!==undefined?clean(row[h.map.rink]):"",
+      pool: h.map.pool!==undefined?clean(row[h.map.pool]):"",
+      type: h.map.type!==undefined?clean(row[h.map.type]):"",
+      event: h.map.event!==undefined?clean(row[h.map.event]):""
+    };
+    if(away && home && away===home){ selfPlay.push(r+1); continue; }   // would double-count one team
+    var key=iso+"|"+norm(away)+"|"+norm(home)+"|"+norm(g.time);
+    if(away && home){ if(seenKey[key]!==undefined){ dupes.push((r+1)+" duplicates row "+seenKey[key]); continue; } seenKey[key]=r+1; }
+
+    var a = h.map.as!==undefined?num(row[h.map.as]):null;
+    var b = h.map.hs!==undefined?num(row[h.map.hs]):null;
+    if(a!==null&&b!==null){ g.as=a; g.hs=b; }
+    else if(a!==null||b!==null) halfScore.push(r+1);
+    // A sheet that runs a season AND a showcase always has both kinds of row,
+    // so the mix itself proves nothing. What does prove something: a row with a
+    // blank Event sitting on a day that belongs to an event. That is a forgotten
+    // cell, and it drops the game into League play on its own.
+    if(g.event) eventDays[iso]=g.event; else blankEvent.push({row:r+1, date:iso});
+    out.push(g);
+  }
+  // Every warning names the sheet row and says what to type. "A row is wrong"
+  // is useless when you are standing in a rink with fifteen rows to check.
+  function rowList(a){
+    if(a.length<=6) return a.join(", ");
+    return a.slice(0,6).join(", ")+" and "+(a.length-6)+" more";
+  }
+  // Same shape every time: which rows, what is wrong, what to type instead.
+  function warnRows(nums, one, many){
+    if(!nums.length) return;
+    problems.push("Schedule row"+(nums.length===1?" ":"s ")+rowList(nums)+": "+(nums.length===1?one:many));
+  }
+  var uk=Object.keys(unknown);
+  if(uk.length){
+    // A near-match almost always means a team was renamed on one tab only.
+    var pairs=[];
+    for(i=0;i<uk.length && pairs.length<3;i++){
+      var near=nearestName(uk[i], teamList);
+      if(near) pairs.push("\u201c"+uk[i]+"\u201d on the Schedule against \u201c"+near+"\u201d on the Teams tab");
+    }
+    if(pairs.length){
+      problems.push("Schedule tab: "+pairs.join("; and ")+". Almost certainly the same club renamed on one tab and not the other. "+
+        "Either Find-and-replace the Schedule tab, or put the old spelling in the Also known as column on the Teams tab and both will work.");
+    }
+    var rest=uk.filter(function(u){ return !nearestName(u, teamList); });
+    if(rest.length) problems.push("Schedule tab: "+rest.slice(0,6).join(", ")+(rest.length>6?" and "+(rest.length-6)+" more":"")+
+      " "+(rest.length===1?"is":"are")+" not on the Teams tab, so "+(rest.length===1?"that team is":"those teams are")+
+      " left out of the standings. Add "+(rest.length===1?"it":"them")+" to the Teams tab, spelled the same way.");
+  }
+  warnRows(noDate,
+    "the Date cell in column A is empty, so that game is being skipped. Type the date, like 2026-08-28.",
+    "the Date cell in column A is empty, so those games are being skipped. Type the date, like 2026-08-28.");
+  warnRows(selfPlay,
+    "the same team is in both the Away and Home columns. Fix one of them.",
+    "the same team is in both the Away and Home columns. Fix one of them.");
+  warnRows(halfScore,
+    "only one of the two goal columns is filled in, so that game still shows as not played. Enter both, or clear both.",
+    "only one of the two goal columns is filled in, so those games still show as not played. Enter both, or clear both.");
+  if(dupes.length) problems.push("Schedule: row "+rowList(dupes)+
+    " — same date, time and teams, so only the first is counted. Delete the extra.");
+  var stray=[], strayEvent="";
+  blankEvent.forEach(function(b){
+    if(eventDays[b.date]){ stray.push(b.row); strayEvent = strayEvent || eventDays[b.date]; }
+  });
+  if(stray.length) problems.push("Schedule row"+(stray.length===1?" ":"s ")+rowList(stray)+
+    ": the Event cell is blank, but other games that day belong to "+strayEvent+
+    ". "+(stray.length===1?"That game shows":"Those games show")+" under League play instead of with the event. "+
+    "Type the event name into the Event column on "+(stray.length===1?"that row":"those rows")+".");
+  if(out.length && (h.map.as===undefined || h.map.hs===undefined)){
+    problems.push("Schedule tab: the Away goals / Home goals columns could not be found, so every game shows as not yet played. Check those two headers are spelled that way in row "+(h.headerIndex+1)+".");
+  } else if(out.length>3 && !out.some(played)){
+    // At the start of a season every game is in the future and every score is
+    // legitimately blank. Only a game whose date has passed is evidence of a
+    // reading problem.
+    var today=todayISO(), gone=0;
+    for(var pi=0;pi<out.length;pi++) if(out[pi].date < today) gone++;
+    if(gone) problems.push(gone+" game"+(gone===1?"":"s")+" already played, but no score anywhere on the "+
+      "Schedule tab. If you have entered some, the goal columns are not being read — open Setup check.");
+  }
+  log("games: "+out.length+", "+out.filter(played).length+" with scores"+(noDate.length?", "+noDate.length+" skipped for no date":""));
+  return out;
+}
+
+/* ------------------------------------------------------------- views */
+/* One dataset, several views. A schedule row with a blank Event column is
+   league play; anything else belongs to that named event. Views are derived
+   from the data, so adding a showcase to the sheet makes its tab appear. */
+function buildViews(){
+  var league=[], byEvent=bare(), order=[];
+  data.games.forEach(function(g){
+    if(!g.event){ league.push(g); return; }
+    if(!byEvent[g.event]){ byEvent[g.event]=[]; order.push(g.event); }
+    byEvent[g.event].push(g);
+  });
+  order.sort(function(a,b){
+    var fa=firstDate(byEvent[a]), fb=firstDate(byEvent[b]);
+    return fa<fb?-1:(fa>fb?1:a.localeCompare(b));
+  });
+  var out=[];
+  if(league.length || !order.length) out.push({key:"league", label:"League play", tab:"League", games:league, event:false, hasBracket:false});
+  order.forEach(function(n){
+    var gs=byEvent[n], hasBracket=false;
+    gs.forEach(function(g){ if(isBracket(g)) hasBracket=true; });
+    out.push({key:"ev:"+n, label:n, tab:tabLabel(n), games:gs, event:true, hasBracket:hasBracket});
+  });
+  return out;
+}
+function firstDate(gs){ var d="9999-99-99"; gs.forEach(function(g){ if(g.date<d) d=g.date; }); return d; }
+function tabLabel(n){
+  if(n.length<=18) return n;
+  var cut=n.slice(0,17).replace(/\s+\S*$/,"");
+  return (cut||n.slice(0,17))+"…";
+}
+function currentView(){
+  var vs=buildViews(), i;
+  if(viewKey) for(i=0;i<vs.length;i++) if(vs[i].key===viewKey) return vs[i];
+  // with nothing chosen, open on whatever is happening this weekend
+  for(i=0;i<vs.length;i++){
+    if(!vs[i].event) continue;
+    var live=false;
+    vs[i].games.forEach(function(g){ var d=daysUntil(g.date); if(d!==null && d>=-1 && d<=1) live=true; });
+    if(live) return vs[i];
+  }
+  // otherwise the Settings tab decides which one the page opens on
+  if(norm(data.config.mode)==="showcase"){
+    var near=null, best=1e9;
+    for(i=0;i<vs.length;i++){
+      if(!vs[i].event) continue;
+      vs[i].games.forEach(function(g){
+        var d=daysUntil(g.date);
+        if(d===null) return;
+        var dist=Math.abs(d);
+        if(dist<best){ best=dist; near=vs[i]; }
+      });
+    }
+    if(near) return near;
+  }
+  return vs[0];
+}
+/* A standings table lists the clubs you actually play in that competition.
+   A club that only turns up in scrimmages, or only at a showcase, has no
+   business sitting at 0-0-0 in the league table all season. */
+function teamsInView(v){
+  var seen=bare();
+  v.games.forEach(function(g){
+    if(isExhibition(g)) return;
+    if(g.home) seen[g.home]=1;
+    if(g.away) seen[g.away]=1;
+  });
+  var list=data.teams.filter(function(t){ return seen[t]; });
+  // Before a single fixture is typed in, the Teams tab is all there is to go on.
+  return list.length ? list : data.teams;
+}
+/* Pool membership belongs to the event, not to the team: a club can be in
+   Pool A at one showcase and Pool B at the next. League divisions still come
+   from the Teams tab. */
+function poolsInView(v){
+  if(!v.event) return data.pools||{};
+  var map=bare();
+  v.games.forEach(function(g){
+    if(!g.pool) return;
+    if(g.home) map[g.home]=g.pool;
+    if(g.away) map[g.away]=g.pool;
+  });
+  return map;
+}
+
+/* ------------------------------------------------------- tiebreak rules */
+/* Real events publish real sequences and they disagree with each other, so
+   the order is data rather than code. Two-team and three-or-more paths are
+   separate because most rulebooks separate them: head-to-head settles a pair
+   and is meaningless across three clubs who didn't all play each other. */
+var RULESETS = {
+  none: {
+    label: "No published tiebreakers",
+    two: [], many: [], shareRank: true,
+    note: "This event publishes no tiebreakers, so teams level on points are shown level here."
+  },
+  goalpercentage: {
+    label: "Head-to-head, then goal percentage",
+    two: ["h2h","goalpct","diff","fewestga"],
+    many: ["goalpct","diff","fewestga"],
+    note: "Ties broken by head-to-head, then goal percentage — goals for divided by total goals for and against — then goal differential, then fewest goals against."
+  },
+  usahockey: {
+    label: "USA Hockey",
+    two: ["wins","regwins","diff","quotient"],
+    many: ["wins","regwins","diff","quotient"],
+    cap: 8,
+    note: "Ties broken by most wins, then goal differential and goal quotient, each capped at eight goals a game."
+  },
+  differential: {
+    label: "Head-to-head, then differential",
+    two: ["h2h","diff","gf"], many: ["diff","gf"],
+    note: "Ties broken by head-to-head, then goal differential, then goals for."
+  }
+};
+function rulesFor(v){
+  var key = norm(data.config.rules||"");
+  if(RULESETS[key]) return RULESETS[key];
+  // An event nobody seeds gets no invented order.
+  if(v && v.event && !v.hasBracket) return RULESETS.none;
+  return RULESETS.differential;
+}
+/* every comparator returns a number: higher is better unless noted */
+var METRIC = {
+  goalpct:  function(r){ return (r.gf+r.ga)?r.gf/(r.gf+r.ga):0; },
+  diff:     function(r,c){ return c?r.cap:r.gf-r.ga; },
+  quotient: function(r){ return r.ga?r.gf/r.ga:(r.gf?Infinity:0); },
+  fewestga: function(r){ return -r.ga; },
+  wins:     function(r){ return r.w; },
+  regwins:  function(r){ return r.w; },     // no OT/SO column in the sheet
+  gf:       function(r){ return r.gf; }
+};
+
+/* ---------------------------------------------------------- standings */
+function played(g){ return typeof g.hs==="number" && typeof g.as==="number"; }
+
+/* Not every game on the schedule counts toward anything. A bracket game is
+   decided by the pool standings rather than feeding them, and a scrimmage
+   counts toward nothing at all — putting one in a qualifying record would be
+   a real error, not a cosmetic one. Clubs word the second kind differently,
+   so match the words managers actually type instead of demanding one. */
+var EXHIBITION_WORDS = ["exhibition","exhib","scrimmage","friendly","nonleague","nonqualifier"];
+function isBracket(g){ return norm(g.type)==="bracket"; }
+function isExhibition(g){
+  var t=norm(g.type);
+  if(!t) return false;
+  for(var i=0;i<EXHIBITION_WORDS.length;i++) if(t.indexOf(EXHIBITION_WORDS[i])!==-1) return true;
+  return false;
+}
+function isOurs(g){ var t=data.config.teamName; return !!t && (g.home===t||g.away===t); }
+
+function standings(games, teams, isEvent, rules){
+  var cfg=data.config, rows=bare(), i, g;
+  for(i=0;i<teams.length;i++) rows[teams[i]]={team:teams[i],gp:0,w:0,l:0,t:0,gf:0,ga:0,cap:0,pts:0,h2h:bare()};
+  for(i=0;i<games.length;i++){
+    g=games[i];
+    if(!played(g)) continue;
+    if(isExhibition(g)) continue;                      // a scrimmage counts toward nothing
+    if(isEvent && isBracket(g)) continue;              // playoffs don't move pool standings
+    if(g.home===g.away) continue;
+    var h=rows[g.home], a=rows[g.away];
+    if(!h||!a) continue;
+    h.gp++; a.gp++;
+    h.gf+=g.hs; h.ga+=g.as; a.gf+=g.as; a.ga+=g.hs;
+    var margin=Math.min((rules&&rules.cap)||99,Math.abs(g.hs-g.as));
+    if(g.hs>g.as){
+      h.w++; a.l++; h.cap+=margin; a.cap-=margin;
+      h.h2h[g.away]=(h.h2h[g.away]||0)+1; a.h2h[g.home]=(a.h2h[g.home]||0)-1;
+    } else if(g.hs<g.as){
+      a.w++; h.l++; a.cap+=margin; h.cap-=margin;
+      a.h2h[g.home]=(a.h2h[g.home]||0)+1; h.h2h[g.away]=(h.h2h[g.away]||0)-1;
+    } else { h.t++; a.t++; }
+  }
+  var out=[];
+  for(var k in rows) if(Object.prototype.hasOwnProperty.call(rows,k)){
+    var r=rows[k];
+    r.pts=r.w*cfg.ptsWin+r.t*cfg.ptsTie+r.l*cfg.ptsLoss;
+    r.diff=r.gf-r.ga;
+    out.push(r);
+  }
+  return orderTable(out, rules, isEvent);
+}
+
+/* Sort by points, then settle each level group with the event's own sequence.
+   A group of exactly two uses the two-team path; three or more use the other
+   path, and any pair still level afterwards falls back to the two-team one,
+   which is what the rulebooks actually say. */
+/* Sorting a standings table is not one sort. Teams level on points form a
+   group, and rulebooks settle a group of two differently from a group of
+   three or more: head-to-head decides a pair, and means nothing across three
+   clubs who did not all play each other. So each group is settled with its
+   own sequence, and a group of three that narrows to two adjacent teams gets
+   the pair sequence applied to just those two (resettlePairs) — which is what
+   the rulebooks actually say to do. Teams a ruleset cannot separate keep the
+   same rank number rather than being put in an invented order. */
+function orderTable(rows, rules, isEvent){
+  rules = rules || RULESETS.differential;
+  var groups=bare(), order=[];
+  rows.forEach(function(r){
+    if(!groups[r.pts]){ groups[r.pts]=[]; order.push(r.pts); }
+    groups[r.pts].push(r);
+  });
+  order.sort(function(a,b){ return b-a; });
+  var out=[];
+  order.forEach(function(p){
+    var g=groups[p];
+    if(g.length===1){ g[0].level=false; out.push(g[0]); return; }
+    settle(g, g.length===2?rules.two:rules.many, rules);
+    if(g.length>2) resettlePairs(g, rules);
+    var unresolved = allEqual(g, g.length===2?rules.two:rules.many, rules);
+    g.forEach(function(r){ r.level=unresolved; out.push(r); });
+  });
+  return out;
+}
+function settle(g, seq, rules){
+  g.sort(function(x,y){
+    for(var i=0;i<seq.length;i++){
+      var k=seq[i];
+      if(k==="h2h"){ var res=x.h2h[y.team]||0; if(res!==0) return res>0?-1:1; continue; }
+      var f=METRIC[k]; if(!f) continue;
+      var a=f(x,rules.cap), b=f(y,rules.cap);
+      if(a!==b) return b-a;
+    }
+    return x.team.localeCompare(y.team);
+  });
+}
+function resettlePairs(g, rules){
+  for(var i=0;i<g.length-1;i++){
+    if(sameOn(g[i], g[i+1], rules.many, rules)){
+      var pair=[g[i],g[i+1]];
+      settle(pair, rules.two, rules);
+      g[i]=pair[0]; g[i+1]=pair[1];
+    }
+  }
+}
+function sameOn(x,y,seq,rules){
+  for(var i=0;i<seq.length;i++){
+    var k=seq[i]; if(k==="h2h") continue;
+    var f=METRIC[k]; if(!f) continue;
+    if(f(x,rules.cap)!==f(y,rules.cap)) return false;
+  }
+  return true;
+}
+function allEqual(g, seq, rules){
+  if(!seq.length) return true;                 // nothing published: everyone stays level
+  for(var i=1;i<g.length;i++) if(!sameOn(g[0],g[i],seq,rules)) return false;
+  return true;
+}
+
+/* -------------------------------------------------------------- render */
+function render(){
+  if(DIAG){ document.getElementById("app").innerHTML = diagHtml(); return; }
+  var cfg=data.config, h="";
+  var views=buildViews(), v=currentView();
+  var rules=rulesFor(v);
+  var st=standings(v.games, teamsInView(v), v.event, rules);
+  var rec=null, i;
+  for(i=0;i<st.length;i++) if(st[i].team===cfg.teamName) rec=st[i];
+
+  // logo.png is optional. It's probed once at startup rather than inserted and
+  // removed on every render, which was shoving the masthead text sideways.
+  h+='<header class="masthead">';
+  if(logoOk) h+='<img class="crest" src="logo.png" alt="">';
+  // the line above the team name names whatever competition you're looking at,
+  // so the record chip beside it can't be misread
+  // With no "our team" set — a tournament operator's view, where no club is
+  // ours — the competition becomes the headline instead of a team name.
+  var kicker, headline;
+  if(cfg.teamName){
+    kicker = v.event ? v.label : (cfg.leagueName||(loading?"Loading":"League tracker"));
+    headline = cfg.teamName;
+  } else {
+    kicker = loading ? "Loading" : "Live standings";
+    headline = v.event ? v.label : (cfg.leagueName||"Rink Report");
+  }
+  h+='<div class="txt"><div class="eyebrow">'+esc(kicker)+'</div>';
+  h+='<h1>'+esc(headline)+'</h1></div>';
+  if(rec&&rec.gp) h+='<div class="record">'+rec.w+"-"+rec.l+"-"+rec.t+" &middot; "+rec.pts+" PTS</div>";
+  h+="</header>";
+
+  if(loadError) h+='<div class="banner"><b>Can’t reach the schedule right now.</b> '+esc(loadError)+(fetchedAt?" Showing what was here as of "+esc(ago(fetchedAt))+".":"")+"</div>";
+  if(loading && !data.games.length && !loadError) h+=skeleton();
+  else {
+    h+=nextGameHtml();
+    h+=viewBarHtml(views, v);
+    h+=standingsHtml(v, st, rules);
+    h+=resultsHtml(v);
+  }
+
+  h+='<div class="status"><span id="rr-fresh">'+esc(freshText())+
+     '</span><button type="button" data-act="refresh">Refresh</button></div>';
+
+  if(problems.length){
+    // Six, not four: with a messy sheet the later warnings were the ones
+    // getting hidden, and those are the ones nobody had noticed yet.
+    h+='<div class="banner"><b>Things to fix on the sheet</b><ul>'+
+       problems.slice(0,6).map(function(x){ return "<li>"+esc(x)+"</li>"; }).join("")+"</ul>"+
+       (problems.length>6?'and '+(problems.length-6)+' more — <a href="?check">Setup check</a> lists them all':"")+"</div>";
+  }
+  h+='<p class="foot">Scores are entered by the team after each game.<br><a href="?check">Setup check</a></p>';
+  // The two-minute poll usually finds nothing new. Rewriting identical markup
+  // costs a repaint and buys nothing, so don't.
+  if(h===lastHtml) return;
+  lastHtml=h;
+  document.getElementById("app").innerHTML=h;
+  showActiveTab();
+}
+
+/* When the bar scrolls, the tab you are on must be the one you can see. */
+function showActiveTab(){
+  try{
+    var b=document.querySelector('.viewbar button[aria-pressed="true"]');
+    if(!b) return;
+    var bar=b.parentNode;
+    if(bar.scrollWidth<=bar.clientWidth) return;
+    bar.scrollLeft=Math.max(0, b.offsetLeft-(bar.clientWidth-b.offsetWidth)/2);
+  }catch(e){}
+}
+
+function freshText(){
+  return fetchedAt ? "Updated "+ago(fetchedAt) : (loading ? "Loading…" : "Not loaded");
+}
+/* Repainting the whole page every 30 seconds to re-word one line was the
+   flash people were seeing. Patch the line instead. */
+function tickFresh(){
+  var el=document.getElementById("rr-fresh");
+  if(el) el.textContent=freshText();
+}
+
+function skeleton(){
+  var h='<section class="card"><div class="card-b">';
+  for(var i=0;i<5;i++) h+='<div class="skel" style="margin:10px 0;width:'+(60+((i*13)%35))+'%"></div>';
+  return h+"</div></section>";
+}
+
+function viewBarHtml(views, cur){
+  if(views.length<2) return "";
+  var h='<nav class="viewbar" aria-label="Competition">';
+  views.forEach(function(v){
+    h+='<button type="button" data-act="view" data-v="'+esc(v.key)+'" aria-pressed="'+(v.key===cur.key)+'">'+esc(v.tab)+"</button>";
+  });
+  return h+"</nav>";
+}
+
+function nextGameHtml(){
+  var today=todayISO();
+  var open=data.games.filter(function(g){return !played(g);}).sort(bySlot);
+  var ahead=open.filter(function(g){return g.date>=today;});
+  // A past game with no score would otherwise sit here as "next" all week.
+  var pool=ahead.length?ahead:open, stale=!ahead.length&&open.length>0;
+  var ours=pool.filter(isOurs), g=ours[0]||pool[0], us=data.config.teamName;
+  var h='<section class="next"><div class="strip"><span class="eyebrow">'+(stale?"Waiting on a score":"Next game")+"</span>";
+  if(g&&!stale) h+='<span class="countdown">'+esc(countdownText(g.date))+"</span>";
+  else if(g) h+='<span class="countdown">SCORE NOT IN</span>';
+  h+='</div><div class="body">';
+  if(!g) h+='<p class="empty">No upcoming games on the schedule.</p>';
+  else{
+    if(!(g.away&&g.home)){
+      h+='<div class="matchup">'+esc(g.type||"Game")+' <span class="vs">— teams TBD</span></div>';
+    } else if(us&&isOurs(g)){
+      var opp=g.home===us?g.away:g.home, atHome=g.home===us;
+      h+='<div class="matchup">'+(atHome?"":'<span class="vs">at</span> ')+esc(opp)+(atHome?' <span class="vs">at home</span>':"")+"</div>";
+    } else {
+      h+='<div class="matchup">'+esc(g.away)+' <span class="vs">at</span> '+esc(g.home)+"</div>";
+    }
+    h+='<div class="when"><span><b>'+esc(fmtDate(g.date))+"</b></span>";
+    if(g.time) h+="<span>"+esc(g.time)+"</span>";
+    if(g.rink) h+="<span>"+esc(g.rink)+"</span>";
+    h+="</div>";
+    if(g.event) h+='<div class="evtag">'+esc(g.event)+(g.pool?" · "+esc(g.pool):"")+"</div>";
+  }
+  return h+"</div></section>";
+}
+
+function standingsHtml(v, flat, rules){
+  var cfg=data.config;
+  rules = rules || rulesFor(v);
+  var teams=teamsInView(v), pools=poolsInView(v);
+  var body="", groups=[], grouped=false, t, soleGroup="";
+  /* Ranking a table where nobody has played yet puts a "1" beside all eleven
+     clubs, which is technically true and reads as broken. Until a score is in,
+     the table is a team list and gets no numbers. */
+  var anyPlayed=false;
+  v.games.forEach(function(g){ if(played(g) && !isExhibition(g)) anyPlayed=true; });
+
+  if(teams.length){
+    for(t in pools) if(Object.prototype.hasOwnProperty.call(pools,t)){ grouped=true; break; }
+    if(grouped){
+      var byPool=bare();
+      teams.forEach(function(tm){ var p=pools[tm]||"Unpooled"; (byPool[p]=byPool[p]||[]).push(tm); });
+      Object.keys(byPool).sort().forEach(function(p){ groups.push({name:p, teams:byPool[p]}); });
+      // A single pool needs no heading above its own table, so it names the
+      // section instead — otherwise the Pool column never reaches the page.
+      if(groups.length===1 && groups[0].name){ soleGroup=groups[0].name; groups[0].name=""; }
+    } else groups.push({name:"", teams:teams});
+
+    body+='<div class="tablewrap">';
+    groups.forEach(function(grp){
+      if(grp.name) body+='<div class="poolname">'+esc(grp.name)+"</div>";
+      var st=(groups.length===1 && flat) ? flat : standings(v.games, grp.teams, v.event, rules);
+      body+='<table><thead><tr><th scope="col">Team</th><th scope="col">GP</th><th scope="col">W</th>'+
+        '<th scope="col">L</th><th scope="col">T</th><th scope="col">GF</th><th scope="col">GA</th>'+
+        '<th scope="col">+/-</th><th scope="col">Pts</th></tr></thead><tbody>';
+      var shownRank=0, prevPts=null, prevLevel=false;
+      st.forEach(function(r,i){
+        var mine=r.team===cfg.teamName;
+        if(!(r.level && prevLevel && r.pts===prevPts)) shownRank=i+1;
+        prevPts=r.pts; prevLevel=r.level;
+        body+="<tr"+(mine?' class="us"':"")+'><td><span class="rank">'+(anyPlayed?shownRank:"")+"</span>"+esc(r.team)+"</td>"+
+          "<td>"+r.gp+"</td><td>"+r.w+"</td><td>"+r.l+"</td><td>"+r.t+"</td><td>"+r.gf+"</td><td>"+r.ga+"</td>"+
+          "<td>"+(r.diff>0?"+":"")+r.diff+'</td><td class="pts">'+r.pts+"</td></tr>";
+      });
+      body+="</tbody></table>";
+    });
+    body+="</div>";
+    var note = rules.note || "";
+    if(v.hasBracket) note += (note?" ":"")+"Bracket games are not counted here.";
+    var exh=0;
+    v.games.forEach(function(g){ if(isExhibition(g)) exh++; });
+    if(exh) note += (note?" ":"")+(exh===1?"One scrimmage is":exh+" scrimmages are")+
+      " on the schedule but not in this table.";
+    if(note) body+='<p class="foot">'+esc(note)+"</p>";
+  } else {
+    body+='<p class="empty">'+(v.event?"No teams in this event yet.":"No teams loaded yet.")+"</p>";
+  }
+
+  // A round robin nobody seeds is not a "pool standing".
+  var title = !v.event ? "Standings" : (v.hasBracket ? "Pool standings" : "Round robin");
+  if(soleGroup) title = soleGroup;
+  return '<section class="card"><div class="card-h"><h2>'+esc(title)+'</h2>'+
+    '<span class="eyebrow">'+cfg.ptsWin+" pt win &middot; "+cfg.ptsTie+
+    ' pt tie</span></div><div class="card-b">'+body+"</div></section>";
+}
+
+function bySlot(a,b){
+  if(a.date!==b.date) return a.date<b.date?-1:1;
+  return timeKey(a.time)-timeKey(b.time);
+}
+
+/* Which end of the list goes on top depends on what you are looking at.
+   A season is a results feed: newest first, because the game you care about
+   just finished. A showcase weekend is a schedule: you read it forward, and
+   nobody wants to scroll past Sunday night to find out when Friday starts.
+   Deciding this per view rather than per game keeps the order from flipping
+   halfway through a weekend as scores come in. */
+function resultsHtml(v){
+  var all=v.games.slice().sort(bySlot);
+  // A results feed needs results. Before the first score of the season this is
+  // a schedule, and nobody wants to scroll back from February to find opening
+  // night. It flips once, the day the first game is scored.
+  if(!v.event && all.some(played)) all.reverse();
+  var shown=filterOurs?all.filter(isOurs):all;
+  var h='<section class="card"><div class="card-h"><h2>Schedule &amp; results</h2>'+
+    '<span class="seg"><button type="button" data-act="filter" data-v="all" aria-pressed="'+(!filterOurs)+'">All</button>'+
+    '<button type="button" data-act="filter" data-v="ours" aria-pressed="'+filterOurs+'">Ours</button></span></div><div class="card-b">';
+  if(!shown.length) h+='<p class="empty">Nothing here yet.</p>';
+  else{
+    var last=null;
+    shown.forEach(function(g){
+      if(g.date!==last){ if(last!==null) h+="</div>"; h+='<div class="daygroup"><div class="dayhead">'+esc(fmtDate(g.date))+"</div>"; last=g.date; }
+      h+=gameRow(g);
+    });
+    h+="</div>";
+  }
+  return h+"</div></section>";
+}
+
+function gameRow(g){
+  var us=data.config.teamName, done=played(g);
+  var aName=g.away||"TBD", hName=g.home||"TBD";
+  var h='<div class="game"><div class="teams">';
+  h+='<div class="side'+(done&&g.as<g.hs?" lost":"")+(us&&g.away===us?" ours":"")+'"><span class="nm">'+esc(aName)+'</span><span class="sc">'+(done?g.as:"")+"</span></div>";
+  h+='<div class="side'+(done&&g.hs<g.as?" lost":"")+(us&&g.home===us?" ours":"")+'"><span class="nm">'+esc(hName)+'</span><span class="sc">'+(done?g.hs:"")+"</span></div>";
+  h+='</div><div class="meta">';
+  // Time and rink stay on the row after a score goes in. A finished game still
+  // gets asked about — which sheet was it on, when did it start.
+  if(done){
+    if(us&&isOurs(g)){
+      var o=g.home===us?g.hs:g.as, t=g.home===us?g.as:g.hs;
+      h+='<span class="tag '+(o>t?"w":o<t?"l":"")+'">'+(o>t?"W":o<t?"L":"T")+"</span>";
+    } else {
+      h+='<span class="tag">FINAL</span>';
+    }
+    h+="<br>";
+  }
+  h+='<span class="tm">'+esc(g.time||"TBD")+"</span>";
+  if(g.rink) h+="<br>"+esc(g.rink);
+  // Say so on the row itself, in the manager's own wording, so nobody has to
+  // work out why a 6-1 win did not move the record.
+  if(isBracket(g)) h+='<br><span class="tag">BRACKET</span>';
+  else if(isExhibition(g)) h+='<br><span class="tag">'+esc(String(g.type).toUpperCase())+'</span>';
+  return h+"</div></div>";
+}
+
+/* ------------------------------------------------------------ diagnostics */
+function diagHtml(){
+  var L=[];
+  L.push("<b>Rink Report setup check</b>\n");
+  L.push("Sheet ID     " + (CFG.sheetId&&CFG.sheetId.indexOf("PASTE")===-1
+      ? '<span class="ok">'+esc(CFG.sheetId)+"</span>"
+      : '<span class="bad">not set — edit index.html and paste your sheet ID</span>'));
+  L.push("Tabs         " + esc([CFG.tabs.settings,CFG.tabs.teams,CFG.tabs.schedule].join("  /  ")));
+  L.push("Fetched      " + (fetchedAt?'<span class="ok">'+esc(new Date(fetchedAt).toLocaleString())+"</span>":(loading?"in progress":'<span class="bad">never</span>')));
+  if(loadError) L.push('Error        <span class="bad">'+esc(loadError)+"</span>");
+  L.push("");
+  L.push("<b>What loaded</b>");
+  L.push("Our team     " + (data.config.teamName?'<span class="ok">'+esc(data.config.teamName)+"</span>":'<span class="bad">blank — set it on the Settings tab</span>'));
+  L.push("Mode         " + esc(data.config.mode) + "   points " + data.config.ptsWin+"/"+data.config.ptsTie+"/"+data.config.ptsLoss);
+  L.push("Teams        " + data.teams.length);
+  L.push("Games        " + data.games.length + "   (" + data.games.filter(played).length + " with scores)");
+  var vs=buildViews();
+  L.push("Views        " + esc(vs.map(function(v){ return v.label+" ("+v.games.length+")"; }).join("   |   ")));
+  L.push("Showing      " + esc(currentView().label));
+  L.push("Read via     " + (routeUsed.length?routeUsed.join("   "):"(not fetched)"));
+  if(routeTrouble.length){
+    L.push('<span class="bad">Tab IDs in index.html do not match this sheet — see "Correct tab IDs" below.</span>');
+  }
+  if(headerMap.length){
+    L.push("");
+    L.push("<b>Which Schedule column is which</b>");
+    headerMap.forEach(function(m){
+      L.push("  "+esc(m)+(m.indexOf("not found")!==-1?'   <span class="bad">&lt;-- fix this</span>':""));
+    });
+  }
+  // Only worth showing when it disagrees with what's already in the file,
+  // otherwise it reads like an outstanding chore on a page that's healthy.
+  if(gidHint && !gidHintMatchesConfig()){
+    L.push(""); L.push("<b>Correct tab IDs for this sheet</b>"); L.push(gidHint);
+  }
+  if(data.config.teamName && data.teams.indexOf(data.config.teamName)===-1)
+    L.push('<span class="bad">Our team name does not match any row on the Teams tab — check the spelling.</span>');
+  L.push("");
+  L.push("<b>Warnings</b>");
+  if(!problems.length) L.push('<span class="ok">none</span>');
+  else problems.forEach(function(p){ L.push('<span class="warn">- '+esc(p)+"</span>"); });
+  L.push("");
+  L.push("<b>First rows read from the schedule</b>");
+  if(!data.games.length) L.push("(none)");
+  else data.games.slice(0,6).forEach(function(g){
+    L.push(esc("  "+g.date+"  "+(g.time||"--")+"  "+(g.away||"TBD")+" at "+(g.home||"TBD")+
+      (played(g)?"  "+g.as+"-"+g.hs:"  (no score)")+(g.pool?"  ["+g.pool+"]":"")+(g.type?"  "+g.type:"")));
+  });
+  L.push("");
+  L.push("<b>Request log</b>");
+  diagLog.forEach(function(m){ L.push("  "+esc(m)); });
+  L.push("");
+  L.push('<a href="./">back to the page</a>');
+  // Only go looking when the tab IDs are actually implicated: they are
+  // missing, or the export route they drive came back refusing them. On a
+  // page that is reading fine this section is noise, and the lookup is a
+  // request nobody needed.
+  if(DIAG && needGidHelp() && !gidHint && !gidLookupStarted){ gidLookupStarted=true; findGids(); }
+  return '<header class="masthead"><div class="txt"><div class="eyebrow">Diagnostics</div><h1>Setup check</h1></div></header><pre class="diag">'+L.join("\n")+"</pre>";
+}
+
+function needGidHelp(){
+  var g=CFG.gids||{};
+  if(routeTrouble.length) return true;
+  return !g.settings || !g.teams || !g.schedule;
+}
+
+/* True when the tab IDs the lookup found are the ones already configured, in
+   which case there is nothing for anyone to do about them. */
+function gidHintMatchesConfig(){
+  var cfg=CFG.gids||{}, k, m;
+  for(k in cfg) if(Object.prototype.hasOwnProperty.call(cfg,k)){
+    m=new RegExp(k+':\\s*"(\\d+)"').exec(gidHint);
+    if(!m || m[1]!==String(cfg[k])) return false;
+  }
+  return true;
+}
+
+/* The setup page can work out this sheet's real tab IDs on its own: Google's
+   htmlview page lists them, and each one identifies itself when exported. */
+function findGids(){
+  var id=encodeURIComponent(CFG.sheetId||"");
+  var base="https://docs.google.com/spreadsheets/d/"+id;
+  fetch(base+"/htmlview",{cache:"no-store",credentials:"omit"}).then(function(r){ return r.text(); }).then(function(t){
+    var seen={}, list=[], m, re=/gid=(\d{5,12})/g;
+    while((m=re.exec(t))!==null){ if(!seen[m[1]]){ seen[m[1]]=1; list.push(m[1]); } }
+    if(!list.length) throw new Error("none found");
+    return Promise.all(list.slice(0,10).map(function(g){
+      return fetch(base+"/export?format=csv&gid="+g,{cache:"no-store",credentials:"omit"})
+        .then(function(r){ return r.ok?r.text():""; })
+        .then(function(body){ return {gid:g, head:norm(body.slice(0,1500))}; })
+        .catch(function(){ return {gid:g, head:""}; });
+    }));
+  }).then(function(found){
+    /* Match the tab's HEADER ROW, not any text on the tab. Looking for the
+       bare word "teamname" anywhere in the first few hundred characters found
+       it inside the Settings tab's own hint text ("the small line above the
+       team name") and handed back the Settings gid for the Teams tab. Each
+       marker below is two adjacent column headings, which no prose contains.
+       A gid already claimed cannot be claimed again. */
+    var want={settings:"fieldyouranswer", teams:"teamnamepool", schedule:"datefaceoffawayteam"},
+        out=bare(), taken=bare(), k;
+    for(k in want) if(Object.prototype.hasOwnProperty.call(want,k)){
+      for(var i=0;i<found.length;i++){
+        if(taken[found[i].gid]) continue;
+        if(found[i].head.indexOf(want[k])!==-1){ out[k]=found[i].gid; taken[found[i].gid]=1; break; }
+      }
+    }
+    if(out.settings||out.teams||out.schedule){
+      gidHint = '  gids: { settings: "'+(out.settings||"?")+'", teams: "'+(out.teams||"?")+
+                '", schedule: "'+(out.schedule||"?")+'" },\n  (paste that line over the gids line in index.html)';
+    } else {
+      gidHint = "  couldn't identify the tabs automatically — click each tab in the sheet and copy the number after gid= in the address bar";
+    }
+    render();
+  }).catch(function(){
+    gidHint = "  lookup failed — click each tab in the sheet and copy the number after gid= in the address bar";
+    render();
+  });
+}
+
+/* ------------------------------------------------------------- plumbing */
+function saveCache(){
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({at:fetchedAt, data:data, pools:data.pools})); }catch(e){}
+}
+function loadCache(){
+  try{
+    var raw=localStorage.getItem(CACHE_KEY); if(!raw) return false;
+    var o=JSON.parse(raw);
+    if(!o||!o.data) return false;
+    data=o.data; data.pools=data.pools||{}; fetchedAt=o.at||null;
+    log("rendered from local cache saved "+ago(fetchedAt));
+    return true;
+  }catch(e){ return false; }
+}
+
+function load(){
+  loading=true; loadError=""; problems=[]; routeUsed=[]; headerMap=[]; routeTrouble=[];
+  // A page that already has content keeps it while the refetch runs.
+  if(!data.games.length) render(); else tickFresh();
+  Promise.all([getCSV("settings"),getCSV("teams"),getCSV("schedule")]).then(function(res){
+    var cfg=shapeSettings(res[0]);
+    var tm=shapeTeams(res[1]);
+    var next={ config:cfg, teams:tm.list, pools:tm.pools, games:[] };
+    var prev=data; data=next;                       // shapeGames reads data.config
+    next.games=shapeGames(res[2], tm.list, tm.alias);
+    if(!next.games.length && prev.games.length && !problems.length){
+      data=prev; problems.push("The Schedule tab came back empty, so the last good copy is still showing.");
+    }
+    if(routeTrouble.length){
+      problems.push("The tab IDs in index.html belong to a different sheet, so the page is falling back to the slower reader. "+
+        "That fallback is what blanks headers. Open Setup check — it works out the right numbers for this sheet and prints the line to paste into index.html.");
+    }
+    fetchedAt=Date.now(); loading=false; saveCache(); render(); notePoll(); schedulePoll();
+  }).catch(function(e){
+    loading=false; loadError=(e&&e.message)?e.message:"Unknown error";
+    log("FAILED: "+loadError); render(); pollQuiet=Math.max(pollQuiet,2); schedulePoll();
+  });
+}
+
+document.addEventListener("click",function(e){
+  var el=e.target.closest?e.target.closest("[data-act]"):null;
+  if(!el) return;
+  var a=el.getAttribute("data-act");
+  if(a==="filter"){ filterOurs=el.getAttribute("data-v")==="ours"; render(); }
+  if(a==="view"){
+    viewKey=el.getAttribute("data-v"); render();
+    try{ window.scrollTo(0,0); }catch(e){}
+  }
+  if(a==="refresh"){ pollQuiet=0; load(); }
+});
+document.addEventListener("visibilitychange",function(){
+  if(!document.hidden && fetchedAt && Date.now()-fetchedAt > (CFG.refreshSeconds||120)*1000) load();
+});
+setInterval(function(){ if(!document.hidden) tickFresh(); }, 30000);        // keeps "updated N ago" honest
+
+/* ---------------------------------------------------------------- polling
+   Two hundred phones on the same rink wifi, all refreshing on the same
+   120-second beat, is a small stampede aimed at one Google URL, and Google
+   answers a stampede with transient errors. So the page paces itself:
+
+     - it polls quickly only while a game is actually being played
+     - it slows down when nothing on the sheet has changed
+     - every delay gets +/- 25% of jitter, so two phones never line up
+     - a hidden tab does not fetch at all
+
+   Nobody has to configure any of this. refreshSeconds still sets the fast
+   pace, and everything else is derived from what's in the schedule. */
+var pollTimer=null, pollQuiet=0, pollSig="";
+
+function gameOnNow(){
+  var t=todayISO(), i, g, mins=nowMinutes();
+  for(i=0;i<data.games.length;i++){
+    g=data.games[i];
+    if(g.date!==t) continue;
+    if(played(g)) continue;
+    var st=minutesOf(g.time);
+    if(st===null) return true;                    // no face-off time: assume today counts
+    if(mins>=st-20 && mins<=st+200) return true;  // warmups through a long overtime
+  }
+  return false;
+}
+function nowMinutes(){ var d=new Date(); return d.getHours()*60+d.getMinutes(); }
+function minutesOf(hhmm){
+  var m=/^(\d{1,2}):(\d{2})/.exec(String(hhmm||""));
+  return m ? (+m[1])*60 + (+m[2]) : null;
+}
+function hasGameToday(){
+  var t=todayISO();
+  for(var i=0;i<data.games.length;i++) if(data.games[i].date===t) return true;
+  return false;
+}
+function pollDelay(){
+  var fast=Math.max(60,CFG.refreshSeconds||120)*1000;
+  var base = gameOnNow() ? fast : (hasGameToday() ? fast*3 : fast*8);
+  var cap  = gameOnNow() ? fast*4 : fast*15;
+  var d=Math.min(cap, base*Math.pow(1.6,Math.min(pollQuiet,6)));
+  return Math.round(d*(0.75+Math.random()*0.5));    // jitter
+}
+/* One string that changes whenever anything a parent would notice changes. */
+function dataSig(){
+  var n=data.games.length, s=n+"|"+data.teams.length+"|";
+  for(var i=0;i<n;i++){ var g=data.games[i]; s+=g.date+g.time+g.away+g.home+g.as+g.hs+g.rink+"~"; }
+  return s;
+}
+function notePoll(){
+  var sig=dataSig();
+  if(sig===pollSig) pollQuiet++; else { pollQuiet=0; pollSig=sig; }
+}
+function schedulePoll(){
+  if(pollTimer) clearTimeout(pollTimer);
+  pollTimer=setTimeout(function(){
+    if(document.hidden) { schedulePoll(); return; }
+    load();
+  }, pollDelay());
+}
+
+(function probeCrest(){
+  try{
+    var img=new Image();
+    img.onload=function(){ if(img.naturalWidth>0){ logoOk=true; render(); } };
+    img.onerror=function(){ logoOk=false; };
+    img.src="logo.png";
+  }catch(e){ logoOk=false; }
+})();
+
+loadCache();
+render();
+load();
+})();
+</script>
+</body>
+</html>

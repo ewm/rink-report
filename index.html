@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#003087">
+<title>Rink Report</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/rink.css">
+
+<!-- ============================================================
+     CONFIG — the only part you edit.
+     ============================================================ -->
+<script>
+window.RINK_CONFIG = {
+
+  // Paste the long ID from your Google Sheet's normal URL, the part between
+  // /d/ and /edit :  docs.google.com/spreadsheets/d/THIS_PART_HERE/edit
+  sheetId: "1HE3rTPmDsGSDqUN7p20wW9MIWQrbSTpNcaGHCWXHlmI",
+
+  // Tab names in the sheet. Change only if you renamed the tabs.
+  // "stats" is the Player Stats tab. It is optional: when the page can't read
+  // it, the Stats tab simply doesn't appear and nothing else is affected.
+  tabs: { settings: "Settings", teams: "Teams", schedule: "Schedule", stats: "Player Stats" },
+
+  // Optional but worth 60 seconds. Click each tab in the sheet and copy the
+  // number after "gid=" in the address bar. With these filled in the page uses
+  // Google's raw export, which never re-types a column and so never throws away
+  // text that shares a column with numbers. Left blank, it reads by tab name.
+  gids: { settings: "1160090892", teams: "239776309", schedule: "1739208952", stats: "703037060" },
+
+  // Last resort. Only if ?check says both routes above are blocked. Use
+  // File > Share > Publish to web, publish each tab as CSV, paste them here.
+  csvOverride: { settings: "", teams: "", schedule: "", stats: "" },
+
+  // How often the page re-checks the sheet, in seconds, while it's on screen.
+  refreshSeconds: 120
+};
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- ============================================================
+     The page itself lives in js/ — one module per responsibility.
+     Start at js/app.js; the map is in ../ARCHITECTURE.md.
+     Served as native ES modules: no build step, no bundler. Open it
+     through a web server (python3 -m http.server), not as a file://.
+     ============================================================ -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

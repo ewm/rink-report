@@ -1,0 +1,225 @@
+/* ------------------------------------------------------------------
+   West Seneca Wings — royal blue #003087 and jersey gold #FCD51E,
+   sampled from the club site.
+   Treatment: a printed game program, not an app. No floating cards,
+   no drop shadows, no rounded panels. Sections are divided by full
+   width rules with their name set into the rule; the numbers are the
+   loudest thing on the page, because that is what anyone came for.
+   ------------------------------------------------------------------ */
+:root{
+  --paper:#FFFFFF; --ground:#FFFFFF; --tint:#F4F6FA;
+  --ink:#0B1220; --ink-2:#55627A; --ink-3:#8A96AB;
+  --rule:#0B1220; --hair:#DFE4EE;
+  --navy:#003087; --navy-ink:#003087; --on-navy:#FFFFFF;
+  --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
+  --us-ink:#003087; --us-bg:rgba(252,213,30,.16);
+  --win:#116B45; --warn:#7A4E00; --warn-bg:#FFF6DC; --warn-rule:#E0B354;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A111C; --ground:#0A111C; --tint:#111A29;
+    --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#697991;
+    --rule:#EDF2F9; --hair:#1F2A3D;
+    --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
+    --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
+    --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+    --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A111C; --ground:#0A111C; --tint:#111A29;
+  --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#697991;
+  --rule:#EDF2F9; --hair:#1F2A3D;
+  --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
+  --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
+  --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+  --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
+}
+*{box-sizing:border-box}
+html{background:var(--ground)}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;}
+/* 640 was a phone column pasted onto a laptop: the standings numbers bunched
+   at the right while 750px of nothing sat either side. 780 gives the table
+   room without stretching a line of prose past comfortable reading length.
+   Below 780 nothing changes at all — a max-width only binds above itself. */
+#app{max-width:780px; margin:0 auto; padding:0 0 56px}
+h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacing:.01em; text-wrap:balance}
+.eyebrow{font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; color:var(--ink-3)}
+.mono,.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+/* ---- masthead: the club's navy bar, with the gold rule under it ---- */
+.masthead{background:var(--navy); padding:19px 18px 16px; display:flex; align-items:center; gap:13px;
+  border-bottom:5px solid var(--gold)}
+.masthead .crest{width:44px; height:44px; flex:0 0 auto; object-fit:contain; display:block}
+.masthead .txt{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto}
+.masthead .eyebrow{color:var(--gold)}
+.masthead h1{font-size:27px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
+.record{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:12px;
+  font-weight:600; white-space:nowrap; color:var(--gold); align-self:center;
+  border:1px solid rgba(252,213,30,.5); padding:5px 8px}
+
+/* ---- next game: the club's navy-on-yellow banner, full width ---- */
+.next{background:var(--gold); color:var(--on-gold)}
+.next .strip{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  padding:13px 18px 0}
+.next .strip .eyebrow{color:var(--on-gold)}
+.countdown{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
+  letter-spacing:.14em; color:var(--on-gold)}
+.next .body{padding:6px 18px 18px}
+.matchup{font-family:Bitter,Georgia,serif; font-weight:800; font-size:30px; line-height:1.02;
+  text-transform:uppercase; letter-spacing:-.005em; color:var(--on-gold); margin:0 0 10px}
+.matchup .vs{font-size:16px; letter-spacing:.08em; opacity:.62; padding-right:3px}
+.when{font-size:13px; display:flex; flex-wrap:wrap; gap:2px 14px; color:var(--on-gold-2);
+  font-family:"IBM Plex Mono",monospace}
+.when b{font-weight:700; color:var(--on-gold)}
+.empty{color:var(--ink-2); font-size:14px; margin:0; padding:2px 0}
+
+/* ---- competition switch: league play vs a showcase weekend ---- */
+/* Two tabs share the width evenly. By February a season can carry four —
+   league, a showcase and a couple of tournaments — and dividing 390px four
+   ways left "PRE-SEAS…" beside "PRESIDEN…", which is not a choice anyone can
+   make. Past a readable minimum the bar scrolls instead of compressing, and
+   the active tab is scrolled into view after every render. */
+.viewbar{display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:none; border-bottom:2px solid var(--rule); background:var(--tint)}
+.viewbar::-webkit-scrollbar{display:none}
+.viewbar button{flex:1 0 auto; min-width:88px; font:inherit; font-size:11px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; padding:11px 6px; background:transparent;
+  color:var(--ink-2); border:0; border-right:1px solid var(--hair); cursor:pointer;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.viewbar button:last-child{border-right:0}
+.viewbar button[aria-pressed="true"]{background:var(--navy); color:#fff;
+  box-shadow:inset 0 -4px 0 var(--gold)}
+
+.evtag{margin-top:9px; display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--on-gold);
+  border:1px solid currentColor; opacity:.85; padding:3px 7px}
+
+/* ---- sections: a rule with its name set into it ---- */
+.card{background:transparent; border:0; border-top:2px solid var(--rule); padding:0 18px 24px}
+.card-h{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 0 14px}
+.card-h h2{font-size:13px; text-transform:uppercase; letter-spacing:.16em; color:var(--ink)}
+.card-h .eyebrow{letter-spacing:.12em}
+.card-b{padding:0}
+
+/* ---- standings ---- */
+.tablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:14px}
+thead th{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  font-weight:700; text-align:right; padding:0 0 8px; white-space:nowrap}
+thead th+th{padding-left:9px}
+thead th:first-child{text-align:left; padding-left:32px}
+tbody td{padding:9px 0; border-top:1px solid var(--hair); text-align:right; white-space:nowrap;
+  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink-2)}
+tbody td+td{padding-left:9px}
+tbody td:first-child{text-align:left; padding-left:32px; text-indent:-24px;
+  font-family:"IBM Plex Sans",sans-serif; color:var(--ink); width:99%;
+  white-space:normal; overflow-wrap:anywhere; font-size:15px}
+tbody td.pts{color:var(--ink); font-weight:600; font-size:15px}
+tr.us td{background:var(--us-bg)}
+tr.us td:first-child{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--gold)}
+tr.us td.pts{color:var(--us-ink); font-weight:700}
+/* text-indent is inherited, and this inline-block would re-apply the cell's
+   negative indent to its own digit and push it out of view. */
+.rank{display:inline-block; width:24px; text-indent:0; color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600}
+/* ---- events list: one row per tournament or showcase, tap to open ---- */
+.evrow{display:grid; grid-template-columns:1fr auto; grid-template-rows:auto auto; column-gap:14px;
+  width:100%; text-align:left; font:inherit; color:var(--ink); background:transparent; border:0;
+  border-bottom:1px solid var(--hair); padding:12px 0; cursor:pointer}
+.evrow .evname{font-size:15px; font-weight:600; grid-column:1; grid-row:1; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.evrow .evdates{grid-column:1; grid-row:2; font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2); padding-top:2px}
+.evrow .evrec{grid-column:2; grid-row:1/3; align-self:center; font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums; font-size:16px; font-weight:600; color:var(--ink)}
+.evrow .evrec.muted{color:var(--ink-3); font-weight:500; font-size:12px}
+/* the way back from an event opened off the list */
+.crumb{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 18px 2px}
+.crumb button{font:inherit; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; background:transparent; border:1px solid var(--hair); color:var(--ink-2); padding:5px 10px; cursor:pointer}
+.crumb .evdates{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3); white-space:nowrap}
+/* Five number columns instead of the standings' nine, so the skater table can
+   afford air between them on a phone. */
+.skaters tbody td+td,.skaters thead th+th{padding-left:14px}
+.poolname{font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--navy-ink);
+  font-weight:700; padding:20px 0 8px}
+.poolname:first-child{padding-top:0}
+
+/* ---- results ---- */
+.dayhead{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:600; padding:18px 0 7px;
+  border-bottom:1px solid var(--hair)}
+.daygroup:first-child .dayhead{padding-top:0}
+.game{display:grid; grid-template-columns:1fr auto; gap:3px 14px; align-items:start;
+  padding:11px 0; border-bottom:1px solid var(--hair)}
+/* The score is right-aligned against the end of the teams block so the two
+   scores of a game line up vertically, which is the whole point of a
+   scoreboard. Uncapped, that block grew with the page and pushed the score
+   287px away from the name it belongs to. Capping it keeps the pair together
+   and still lets the column shrink on a phone. */
+.game .teams{display:flex; flex-direction:column; gap:3px; min-width:0; max-width:330px}
+.game .side{display:flex; justify-content:space-between; gap:12px; font-size:15px; align-items:baseline}
+.game .side .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.game .side .sc{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-weight:600; font-size:17px}
+.game .side.lost .nm,.game .side.lost .sc{color:var(--ink-3); font-weight:400}
+.game .side.ours .nm{font-weight:700}
+.game .meta{font-size:11px; color:var(--ink-3); text-align:right; white-space:nowrap; line-height:1.6; padding-top:1px}
+.game .meta .tag{margin-bottom:2px}
+.game .meta .tm{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  color:var(--ink-2); font-size:12px}
+.tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
+  letter-spacing:.1em; padding:2px 6px; border:1px solid var(--hair); color:var(--ink-3)}
+.tag.w{background:var(--gold); border-color:var(--gold); color:var(--on-gold)}
+.tag.l{color:var(--ink-3)}
+
+/* ---- controls ---- */
+.seg{display:inline-flex; border:1px solid var(--rule)}
+.seg button{font:inherit; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  padding:5px 10px; background:transparent; color:var(--ink-2); border:0; cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--navy); color:#fff}
+button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+
+.status{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); padding:16px 18px 0; border-top:2px solid var(--rule); margin-top:0}
+.status button{font:inherit; font-size:10px; letter-spacing:.1em; background:transparent;
+  border:1px solid var(--hair); color:var(--ink-2); padding:5px 10px; cursor:pointer}
+.banner{border-left:4px solid var(--warn-rule); background:var(--warn-bg); color:var(--warn);
+  padding:12px 14px; font-size:13px; line-height:1.55; margin:18px 18px 0}
+.banner ul{list-style:none; margin:6px 0 0; padding:0}
+.banner li{font-size:12.5px; line-height:1.5; color:inherit; border:0; padding:5px 0 5px 12px; position:relative}
+.banner li::before{content:""; position:absolute; left:0; top:11px; width:5px; height:5px; background:currentColor}
+.banner li+li{border-top:1px solid rgba(128,100,20,.22)}
+.banner b{font-weight:700}
+.foot{font-size:11px; color:var(--ink-3); text-align:center; line-height:1.8; margin:22px 0 0; padding:0 18px}
+.foot a{color:var(--ink-3)}
+.card .foot{text-align:left; padding:12px 0 0; margin:0; border-top:1px solid var(--hair)}
+.skel{height:14px; background:var(--tint); animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+pre.diag{background:var(--tint); border-left:4px solid var(--navy); padding:14px 16px;
+  font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.65; overflow-x:auto;
+  white-space:pre-wrap; word-break:break-word; color:var(--ink-2); margin:18px}
+pre.diag b{color:var(--ink)}
+pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color:var(--warn)}
+
+/* Room earned on a laptop goes to the numbers, which are what people squint
+   at, and to the team-name column, which takes whatever is left. */
+@media (min-width:700px){
+  tbody td+td,thead th+th{padding-left:15px}
+  table{font-size:15px}
+  tbody td:first-child{font-size:16px}
+  tbody td.pts{font-size:16px}
+}
+
+@media (max-width:420px){
+  .masthead h1{font-size:23px}
+  .matchup{font-size:26px}
+  tbody td+td,thead th+th{padding-left:7px}
+  table{font-size:13px}
+  tbody td:first-child{font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}

@@ -23,7 +23,7 @@ import { clean, norm } from "../util/text.js";
 var SPEC_SKATER = { gp:["gp","gamesplayed","games"], g:["g","goals"], a:["a","assists"],
   pts:["pts","points","p"], pim:["pim","penaltyminutes","penaltymin"] };
 var SPEC_GOALIE = { gp:["gp","gamesplayed","games"], min:["min","mins","minutes"], saves:["saves","sv"],
-  ga:["ga","goalsagainst"], svpct:["svpct","savepct","savepercentage"], so:["so","shutouts"],
+  ga:["ga","goalsagainst"], svpct:["svpct","savepct","savepercentage"], gaa:["gaa","goalsagainstaverage","goalsagainstavg"], so:["so","shutouts"],
   w:["w","wins"], l:["l","losses"] };
 var NUMBER_HEADS = ["no","num","number","jersey"];
 
@@ -121,6 +121,13 @@ function shapeStats(rows){
     if((y.pts||0)!==(x.pts||0)) return (y.pts||0)-(x.pts||0);
     if((y.g||0)!==(x.g||0)) return (y.g||0)-(x.g||0);
     return (x.no||999)-(y.no||999);
+  });
+  // GAA is figured here from two totals the sheet already has, GA and
+  // minutes, per 60 the standard way. That keeps the page right whether the
+  // sheet's fifth goalie column still says SV% (older tabs) or GAA.
+  out.goalies.forEach(function(g){
+    if(g.min>0 && g.ga!==null && g.ga!==undefined) g.gaa=Math.round(g.ga*60/g.min*100)/100;
+    else if(g.gaa===undefined) g.gaa=null;
   });
   out.goalies.sort(function(x,y){
     if((y.gp||0)!==(x.gp||0)) return (y.gp||0)-(x.gp||0);

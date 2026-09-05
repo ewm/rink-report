@@ -24,17 +24,19 @@ window.RINK_CONFIG = {
   // Tab names in the sheet. Change only if you renamed the tabs.
   // "stats" is the Player Stats tab. It is optional: when the page can't read
   // it, the Stats tab simply doesn't appear and nothing else is affected.
-  tabs: { settings: "Settings", teams: "Teams", schedule: "Schedule", stats: "Player Stats" },
+  // "rinks" is the Rinks tab. Also optional: give a rink a street address there
+  // and the page shows a Directions link for its games.
+  tabs: { settings: "Settings", teams: "Teams", schedule: "Schedule", stats: "Player Stats", rinks: "Rinks" },
 
   // Optional but worth 60 seconds. Click each tab in the sheet and copy the
   // number after "gid=" in the address bar. With these filled in the page uses
   // Google's raw export, which never re-types a column and so never throws away
   // text that shares a column with numbers. Left blank, it reads by tab name.
-  gids: { settings: "1160090892", teams: "239776309", schedule: "1739208952", stats: "703037060" },
+  gids: { settings: "1160090892", teams: "239776309", schedule: "1739208952", stats: "703037060", rinks: "1202177208" },
 
   // Last resort. Only if ?check says both routes above are blocked. Use
   // File > Share > Publish to web, publish each tab as CSV, paste them here.
-  csvOverride: { settings: "", teams: "", schedule: "", stats: "" },
+  csvOverride: { settings: "", teams: "", schedule: "", stats: "", rinks: "" },
 
   // How often the page re-checks the sheet, in seconds, while it's on screen.
   refreshSeconds: 120

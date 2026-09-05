@@ -52,7 +52,9 @@ h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacin
 /* ---- masthead: the club's navy bar, with the gold rule under it ---- */
 .masthead{background:var(--navy); padding:19px 18px 16px; display:flex; align-items:center; gap:13px;
   border-bottom:5px solid var(--gold)}
-.masthead .crest{width:44px; height:44px; flex:0 0 auto; object-fit:contain; display:block}
+/* The Wings crest is wide (a wing off a circle), so it is sized by height and
+   takes the width it needs, capped so a long team name still fits beside it. */
+.masthead .crest{height:44px; width:auto; max-width:84px; flex:0 0 auto; object-fit:contain; display:block}
 .masthead .txt{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto}
 .masthead .eyebrow{color:var(--gold)}
 .masthead h1{font-size:27px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
@@ -75,6 +77,12 @@ h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacin
   font-family:"IBM Plex Mono",monospace}
 .when b{font-weight:700; color:var(--on-gold)}
 .empty{color:var(--ink-2); font-size:14px; margin:0; padding:2px 0}
+/* the row of things to tap under the next game: directions, calendar */
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.actions .act{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--on-gold); text-decoration:none; border:1px solid var(--on-gold);
+  padding:6px 10px; background:rgba(255,255,255,.28)}
+.actions .act:hover{background:rgba(255,255,255,.55)}
 
 /* ---- competition switch: league play vs a showcase weekend ---- */
 /* Two tabs share the width evenly. By February a season can carry four —
@@ -169,6 +177,17 @@ tr.us td.pts{color:var(--us-ink); font-weight:700}
 .game .meta .tag{margin-bottom:2px}
 .game .meta .tm{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
   color:var(--ink-2); font-size:12px}
+.game .meta .rinklink{color:var(--navy-ink); text-decoration:underline; text-decoration-color:var(--hair); text-underline-offset:2px}
+.card .foot .seasoncal{color:var(--navy-ink); font-weight:600}
+/* ---- before opening day ---- */
+.lead{font-size:16px; margin:0 0 6px; color:var(--ink)}
+.lead b{font-weight:700}
+.evrow.pre{border-top:1px solid var(--hair); margin-top:8px}
+.division{margin-top:18px}
+.division ul{list-style:none; margin:6px 0 0; padding:0; columns:2; column-gap:18px}
+.division li{font-size:15px; padding:6px 0; border-bottom:1px solid var(--hair); break-inside:avoid; color:var(--ink)}
+.division li.us{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--gold); padding-left:10px}
+@media (max-width:420px){ .division ul{columns:1} }
 .tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
   letter-spacing:.1em; padding:2px 6px; border:1px solid var(--hair); color:var(--ink-3)}
 .tag.w{background:var(--gold); border-color:var(--gold); color:var(--on-gold)}

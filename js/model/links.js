@@ -6,13 +6,21 @@
 import { isOurs, played } from "./game.js";
 import { state } from "../state.js";
 import { dateObj, timeKey } from "../util/dates.js";
-import { norm } from "../util/text.js";
+import { nearestName, norm } from "../util/text.js";
 
-/* The rink row for a game, or null when the Rinks tab has no such rink. */
+/* The rink row for a game, or null when the Rinks tab has no such rink.
+   A Schedule rink is text, like a team name, so "Wlland JBM" against a Rinks
+   row of "Welland JBM" (one letter off, seen on the live sheet) still finds
+   its address. Same rule as team snapping: within two edits, never more. */
 function rinkFor(g){
   var rinks=state.data.rinks;
   if(!g || !g.rink || !rinks) return null;
-  return rinks[norm(g.rink)] || null;
+  var hit=rinks[norm(g.rink)];
+  if(hit) return hit;
+  var names=[], k;
+  for(k in rinks) names.push(rinks[k].name);
+  var near=nearestName(g.rink, names);
+  return near ? (rinks[norm(near)]||null) : null;
 }
 /* A street address for a game's rink, or "" when the sheet has none. */
 function rinkAddress(g){

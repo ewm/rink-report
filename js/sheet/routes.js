@@ -49,9 +49,9 @@ function getCSV(which){
     }).catch(function(e){
       lastErr=new Error(which+" — "+route.how+": "+(e&&e.message?e.message:e));
       log("  "+which+" failed via "+route.how+" try "+(ai+1)+": "+(e&&e.message?e.message:e));
-      // The stats tab is optional and may simply not exist yet, so its export
-      // failing says nothing about whether the other tab IDs are right.
-      if(ai===0 && route.how==="raw export" && which!=="stats") state.routeTrouble.push(which);
+      // The stats and rinks tabs are optional and may simply not exist yet, so
+      // their export failing says nothing about whether the other tab IDs are right.
+      if(ai===0 && route.how==="raw export" && which!=="stats" && which!=="rinks") state.routeTrouble.push(which);
       ai++;
       if(ai>=BACKOFF.length){ ai=0; ri++; }
       return attempt();

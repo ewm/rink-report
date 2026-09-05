@@ -46,7 +46,7 @@ function findGids(){
        team name") and handed back the Settings gid for the Teams tab. Each
        marker below is two adjacent column headings, which no prose contains.
        A gid already claimed cannot be claimed again. */
-    var want={settings:"fieldyouranswer", teams:"teamnamepool", schedule:"datefaceoffawayteam", stats:"noplayergpgapts"},
+    var want={settings:"fieldyouranswer", teams:"teamnamepool", schedule:"datefaceoffawayteam", stats:"noplayergpgapts", rinks:"rinknameaddress"},
         out=bare(), taken=bare(), k;
     for(k in want) if(Object.prototype.hasOwnProperty.call(want,k)){
       for(var i=0;i<found.length;i++){
@@ -56,7 +56,7 @@ function findGids(){
     }
     if(out.settings||out.teams||out.schedule){
       state.gidHint = '  gids: { settings: "'+(out.settings||"?")+'", teams: "'+(out.teams||"?")+
-                '", schedule: "'+(out.schedule||"?")+'"'+(out.stats?', stats: "'+out.stats+'"':"")+' },\n  (paste that line over the gids line in index.html)';
+                '", schedule: "'+(out.schedule||"?")+'"'+(out.stats?', stats: "'+out.stats+'"':"")+(out.rinks?', rinks: "'+out.rinks+'"':"")+' },\n  (paste that line over the gids line in index.html)';
     } else {
       state.gidHint = "  couldn't identify the tabs automatically — click each tab in the sheet and copy the number after gid= in the address bar";
     }

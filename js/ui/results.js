@@ -3,6 +3,7 @@
 resultsHtml(view) -> HTML. League play lists newest first once a score is
 in; an event reads forward like a schedule. Honors state.filterOurs. */
 import { bySlot, isBracket, isExhibition, isOurs, played } from "../model/game.js";
+import { directionsFor, icsUrl, ourSeasonGames } from "../model/links.js";
 import { state } from "../state.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -31,8 +32,17 @@ function resultsHtml(v){
       h+=gameRow(g);
     });
     h+="</div>";
+    // Every game we still have to get to, as one calendar file. Built here in
+    // the browser; nothing to publish or keep in sync.
+    var mine=ourSeasonGames();
+    if(mine.length) h+='<p class="foot"><a class="seasoncal" href="'+esc(icsUrl(mine))+'" download="'+esc(fileNameFor())+'">Add our remaining '+
+      mine.length+' game'+(mine.length===1?"":"s")+' to your calendar</a> (.ics, opens in Apple, Google or Outlook)</p>';
   }
   return h+"</div></section>";
+}
+function fileNameFor(){
+  var t=state.data.config.teamName||"schedule";
+  return t.replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")+"-schedule.ics";
 }
 
 function gameRow(g){
@@ -54,7 +64,11 @@ function gameRow(g){
     h+="<br>";
   }
   h+='<span class="tm">'+esc(g.time||"TBD")+"</span>";
-  if(g.rink) h+="<br>"+esc(g.rink);
+  // The rink name is the directions link when the Rinks tab knows its address.
+  if(g.rink){
+    var dir=done?"":directionsFor(g);
+    h+="<br>"+(dir?'<a class="rinklink" href="'+esc(dir)+'" target="_blank" rel="noopener">'+esc(g.rink)+"</a>":esc(g.rink));
+  }
   // Say so on the row itself, in the manager's own wording, so nobody has to
   // work out why a 6-1 win did not move the record.
   if(isBracket(g)) h+='<br><span class="tag">BRACKET</span>';

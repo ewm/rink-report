@@ -2,8 +2,13 @@
 
 nextGameHtml() -> HTML. Reads state.data.games; prefers our next unplayed
 game, else the next game on the schedule; a past game with no score shows
-as "Waiting on a score" instead of sitting there as next all week. */
+as "Waiting on a score" instead of sitting there as next all week.
+
+Under the date line sit the links a parent actually wants from this card:
+directions to the rink (when the Rinks tab has its address) and two ways to
+put the game in a calendar. */
 import { bySlot, isOurs, played } from "../model/game.js";
+import { directionsFor, googleCalendarUrl, icsUrlFor } from "../model/links.js";
 import { state } from "../state.js";
 import { countdownText, fmtDate, todayISO } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -34,8 +39,20 @@ function nextGameHtml(){
     if(g.rink) h+="<span>"+esc(g.rink)+"</span>";
     h+="</div>";
     if(g.event) h+='<div class="evtag">'+esc(g.event)+(g.pool?" · "+esc(g.pool):"")+"</div>";
+    h+=actionsHtml(g, stale);
   }
   return h+"</div></section>";
+}
+
+/* Directions and calendar links for one game. A game already waiting on a
+   score gets none: nobody needs directions to last Tuesday. */
+function actionsHtml(g, stale){
+  if(stale) return "";
+  var dir=directionsFor(g), gcal=googleCalendarUrl(g), ics=icsUrlFor(g), h="";
+  if(dir) h+='<a class="act" href="'+esc(dir)+'" target="_blank" rel="noopener">Directions</a>';
+  if(ics) h+='<a class="act" href="'+esc(ics)+'" download="game.ics">Add to calendar</a>';
+  if(gcal) h+='<a class="act" href="'+esc(gcal)+'" target="_blank" rel="noopener">Google Calendar</a>';
+  return h ? '<div class="actions">'+h+"</div>" : "";
 }
 
 export { nextGameHtml };

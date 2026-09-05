@@ -4,8 +4,9 @@ standingsHtml(view, precomputedRows, rules) -> HTML. Pools come from
 poolsInView(); a single pool names the section instead of heading it. */
 import { isExhibition, played } from "../model/game.js";
 import { rulesFor, standings } from "../model/standings.js";
-import { poolsInView, teamsInView } from "../model/views.js";
+import { dataViews, ourRecordIn, poolsInView, teamsInView } from "../model/views.js";
 import { state } from "../state.js";
+import { fmtDate, todayISO } from "../util/dates.js";
 import { bare, esc } from "../util/text.js";
 
 function standingsHtml(v, flat, rules){
@@ -19,6 +20,12 @@ function standingsHtml(v, flat, rules){
   var anyPlayed=false;
   v.games.forEach(function(g){ if(played(g) && !isExhibition(g)) anyPlayed=true; });
 
+  // Eleven rows of zeros is what a league table looks like before opening day,
+  // and it reads as a broken page. Until the first league score is in, say when
+  // play starts, show the pre-season record, and list the division as a list.
+  if(teams.length && !v.event && !anyPlayed){
+    return preseasonHtml(v, teams, cfg);
+  }
   if(teams.length){
     for(t in pools) if(Object.prototype.hasOwnProperty.call(pools,t)){ grouped=true; break; }
     if(grouped){
@@ -66,6 +73,35 @@ function standingsHtml(v, flat, rules){
   return '<section class="card"><div class="card-h"><h2>'+esc(title)+'</h2>'+
     '<span class="eyebrow">'+cfg.ptsWin+" pt win &middot; "+cfg.ptsTie+
     ' pt tie</span></div><div class="card-b">'+body+"</div></section>";
+}
+
+/* The League tab before the first league score. */
+function preseasonHtml(v, teams, cfg){
+  var today=todayISO(), first="", firstAny="";
+  v.games.forEach(function(g){
+    if(isExhibition(g)) return;
+    if(!firstAny || g.date<firstAny) firstAny=g.date;
+    if(g.date>=today && (!first || g.date<first)) first=g.date;
+  });
+  var body="";
+  if(first) body+='<p class="lead">League play starts <b>'+esc(fmtDate(first))+'</b>.</p>';
+  else if(firstAny) body+='<p class="lead">League play has started. Standings appear once the first score is in.</p>';
+  else body+='<p class="lead">No league games on the schedule yet.</p>';
+  // Pre-season events already played: one line each, tap to open.
+  var evs=dataViews().filter(function(x){ return x.event && x.last<today; });
+  evs.sort(function(a,b){ return a.first>b.first?-1:1; });
+  evs.forEach(function(x){
+    var rec=ourRecordIn(x);
+    if(!rec) return;
+    body+='<button type="button" class="evrow pre" data-act="view" data-v="'+esc(x.key)+'">'+
+      '<span class="evname">'+esc(x.label)+'</span><span class="evdates">'+esc(fmtDate(x.first))+(x.first!==x.last?" – "+esc(fmtDate(x.last)):"")+
+      '</span><span class="evrec">'+rec.w+"-"+rec.l+"-"+rec.t+"</span></button>";
+  });
+  body+='<div class="division"><div class="eyebrow">In the division</div><ul>';
+  teams.forEach(function(t){ body+='<li'+(t===cfg.teamName?' class="us"':"")+">"+esc(t)+"</li>"; });
+  body+="</ul></div>";
+  return '<section class="card"><div class="card-h"><h2>Standings</h2>'+
+    '<span class="eyebrow">'+teams.length+' teams</span></div><div class="card-b">'+body+"</div></section>";
 }
 
 export { standingsHtml };

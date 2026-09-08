@@ -11,6 +11,15 @@ import { esc } from "../util/text.js";
 
 /* How many rinks have an address, and which still need one, so the manager
    knows exactly which Directions links are missing and why. */
+/* The sponsors block only exists when the tab does, so say plainly whether it
+   was read and how many names came off it. */
+function sponsorsLine(){
+  var s=state.data.sponsors;
+  if(!s) return state.sponsorsNote ? '<span class="warn">not shown — '+esc(state.sponsorsNote)+"</span>"
+    : "not shown — add a Sponsors tab (Sponsor, Tier, Website) to list them at the foot of the page (optional)";
+  var tiers=s.groups.map(function(g){ return (g.label||"no tier")+" "+g.list.length; }).join(", ");
+  return '<span class="ok">'+s.count+" sponsor"+(s.count===1?"":"s")+"</span>   "+esc(tiers);
+}
 function rinksLine(){
   var r=state.data.rinks, k, n=0, missing=[];
   if(!r){
@@ -29,7 +38,7 @@ function diagHtml(){
   L.push("Sheet ID     " + (CFG.sheetId&&CFG.sheetId.indexOf("PASTE")===-1
       ? '<span class="ok">'+esc(CFG.sheetId)+"</span>"
       : '<span class="bad">not set — edit index.html and paste your sheet ID</span>'));
-  L.push("Tabs         " + esc([CFG.tabs.settings,CFG.tabs.teams,CFG.tabs.schedule,CFG.tabs.stats||"(no stats tab)",CFG.tabs.rinks||"(no rinks tab)"].join("  /  ")));
+  L.push("Tabs         " + esc([CFG.tabs.settings,CFG.tabs.teams,CFG.tabs.schedule,CFG.tabs.stats||"(no stats tab)",CFG.tabs.rinks||"(no rinks tab)",CFG.tabs.sponsors||"(no sponsors tab)"].join("  /  ")));
   L.push("Fetched      " + (state.fetchedAt?'<span class="ok">'+esc(new Date(state.fetchedAt).toLocaleString())+"</span>":(state.loading?"in progress":'<span class="bad">never</span>')));
   if(state.loadError) L.push('Error        <span class="bad">'+esc(state.loadError)+"</span>");
   L.push("");
@@ -42,6 +51,7 @@ function diagHtml(){
       ? '<span class="ok">'+state.data.stats.skaters.length+" skaters, "+state.data.stats.goalies.length+" goalies</span>"
       : (state.statsNote ? '<span class="warn">not shown — '+esc(state.statsNote)+"</span>" : "not shown — the Player Stats tab hasn't been read yet (optional)")));
   L.push("Rinks        " + rinksLine());
+  L.push("Sponsors     " + sponsorsLine());
   var vs=buildViews(), evs=dataViews().filter(function(v){ return v.event; }), feat=featuredEvent(evs);
   L.push("Bar          " + esc(vs.map(function(v){ return v.tab; }).join("   |   ")));
   L.push("Events       " + (evs.length ? esc(evs.map(function(v){ return v.label+" ("+v.games.length+", "+v.first+" to "+v.last+(v===feat?", in the bar":"")+")"; }).join("   |   ")) : "none"));

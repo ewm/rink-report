@@ -32,6 +32,9 @@ function once(url){
 }
 function wait(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
 
+/* Tabs the page works fine without. */
+var OPTIONAL=["stats","rinks","sponsors"];
+
 /* Three tries per route with a short backoff, then the next route. A single
    blip from Google used to leave the page sitting on an error banner. */
 var BACKOFF=[0,500,1500];
@@ -49,9 +52,10 @@ function getCSV(which){
     }).catch(function(e){
       lastErr=new Error(which+" — "+route.how+": "+(e&&e.message?e.message:e));
       log("  "+which+" failed via "+route.how+" try "+(ai+1)+": "+(e&&e.message?e.message:e));
-      // The stats and rinks tabs are optional and may simply not exist yet, so
-      // their export failing says nothing about whether the other tab IDs are right.
-      if(ai===0 && route.how==="raw export" && which!=="stats" && which!=="rinks") state.routeTrouble.push(which);
+      // The stats, rinks and sponsors tabs are optional and may simply not exist
+      // yet, so their export failing says nothing about whether the other tab IDs
+      // are right.
+      if(ai===0 && route.how==="raw export" && OPTIONAL.indexOf(which)===-1) state.routeTrouble.push(which);
       ai++;
       if(ai>=BACKOFF.length){ ai=0; ri++; }
       return attempt();

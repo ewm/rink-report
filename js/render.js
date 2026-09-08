@@ -35,6 +35,10 @@ function render(){
   if(state.loading && !state.data.games.length && !state.loadError) h+=skeleton();
   else {
     h+=nextGameHtml();
+    // The sponsors sit high, under the next game and above the tabs, because a
+    // block at the foot of the page is a block nobody scrolls to. It folds:
+    // one tap and it stays folded on that phone. See ui/sponsors.js.
+    h+=sponsorsHtml();
     h+=viewBarHtml(views, barKeyFor(views, v));
     if(v.stats){
       h+=statsHtml();
@@ -48,9 +52,6 @@ function render(){
       h+=resultsHtml(v);
     }
   }
-  // The sponsors sit under the scores on every view and above the housekeeping
-  // line, the way the sponsor page sits at the back of a printed program.
-  h+=sponsorsHtml();
   h+=statusHtml();
   h+=problemsHtml();
   h+=footHtml();

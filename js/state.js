@@ -7,7 +7,7 @@
    size of the problem.
 
    What lives here and why:
-     data         config, teams, pools, games, stats, rinks — the shaped sheet
+     data         config, teams, pools, games, stats, rinks, sponsors — the shaped sheet
      problems     plain-English warnings for the manager, reset per load
      fetchedAt / loading / loadError   fetch status, for the status line
      viewKey      the tab the reader chose (null = let the calendar decide)
@@ -15,6 +15,7 @@
      diagLog / routeUsed / headerMap / routeTrouble / gidHint   for ?check
      statsNote    why the Stats tab is missing, for ?check
      rinksNote    why the Rinks tab could not be read, for ?check
+     sponsorsNote why the Sponsors tab could not be read, for ?check
      logoOk       whether logo.png exists (probed once)
      lastHtml     the last markup written, so a no-op poll is a no-op paint
      pollTimer / pollQuiet / pollSig   the poll's own bookkeeping
@@ -24,7 +25,7 @@
    listener. That keeps every module one-way: state <- shape <- sheet, and
    ui -> state, with render() the only thing that reads all of it. */
 var state = {
-  data: { config:{leagueName:"",teamName:"",mode:"season",ptsWin:2,ptsTie:1,ptsLoss:0}, teams:[], games:[], stats:null, rinks:null },
+  data: { config:{leagueName:"",teamName:"",mode:"season",ptsWin:2,ptsTie:1,ptsLoss:0}, teams:[], games:[], stats:null, rinks:null, sponsors:null },
   problems: [],
   fetchedAt: null,
   loading: true,
@@ -39,6 +40,7 @@ var state = {
   gidLookupStarted: false,
   statsNote: "",
   rinksNote: "",
+  sponsorsNote: "",
   logoOk: false,
   lastHtml: null,
   pollTimer: null,

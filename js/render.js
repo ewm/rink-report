@@ -14,6 +14,7 @@ import { standingsHtml } from "./ui/standings.js";
 import { resultsHtml } from "./ui/results.js";
 import { eventsHtml, crumbHtml } from "./ui/events.js";
 import { statsHtml } from "./ui/stats.js";
+import { sponsorsHtml } from "./ui/sponsors.js";
 import { skeleton, problemsHtml, errorBannerHtml, statusHtml, footHtml } from "./ui/chrome.js";
 import { diagHtml } from "./ui/diagnostics.js";
 
@@ -47,6 +48,9 @@ function render(){
       h+=resultsHtml(v);
     }
   }
+  // The sponsors sit under the scores on every view and above the housekeeping
+  // line, the way the sponsor page sits at the back of a printed program.
+  h+=sponsorsHtml();
   h+=statusHtml();
   h+=problemsHtml();
   h+=footHtml();

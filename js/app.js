@@ -14,6 +14,7 @@ import { shapeTeams } from "./shape/teams.js";
 import { shapeGames } from "./shape/games.js";
 import { shapeStats } from "./shape/stats.js";
 import { shapeRinks } from "./shape/rinks.js";
+import { shapeSponsors } from "./shape/sponsors.js";
 import { saveCache, loadCache } from "./cache.js";
 import { initPoll, notePoll, schedulePoll } from "./poll.js";
 import { tickFresh } from "./ui/chrome.js";
@@ -21,7 +22,7 @@ import { tickFresh } from "./ui/chrome.js";
 onChange(render);
 
 function load(){
-  state.loading=true; state.loadError=""; state.problems=[]; state.routeUsed=[]; state.headerMap=[]; state.routeTrouble=[]; state.statsNote=""; state.rinksNote="";
+  state.loading=true; state.loadError=""; state.problems=[]; state.routeUsed=[]; state.headerMap=[]; state.routeTrouble=[]; state.statsNote=""; state.rinksNote=""; state.sponsorsNote="";
   // A page that already has content keeps it while the refetch runs.
   if(!state.data.games.length) render(); else tickFresh();
   // The stats tab rides along but never gates the page: a missing or broken
@@ -33,10 +34,14 @@ function load(){
   var rinksRead = (CFG.tabs&&CFG.tabs.rinks) || (CFG.gids&&CFG.gids.rinks) || (CFG.csvOverride&&CFG.csvOverride.rinks)
     ? getCSV("rinks").catch(function(e){ state.rinksNote=(e&&e.message)?e.message:"could not be read"; log("  rinks: giving up, the tab is optional"); return null; })
     : Promise.resolve(null);
-  Promise.all([getCSV("settings"),getCSV("teams"),getCSV("schedule"),statsRead,rinksRead]).then(function(res){
+  // And so is the Sponsors tab: it only adds the block at the foot of the page.
+  var sponsorsRead = (CFG.tabs&&CFG.tabs.sponsors) || (CFG.gids&&CFG.gids.sponsors) || (CFG.csvOverride&&CFG.csvOverride.sponsors)
+    ? getCSV("sponsors").catch(function(e){ state.sponsorsNote=(e&&e.message)?e.message:"could not be read"; log("  sponsors: giving up, the tab is optional"); return null; })
+    : Promise.resolve(null);
+  Promise.all([getCSV("settings"),getCSV("teams"),getCSV("schedule"),statsRead,rinksRead,sponsorsRead]).then(function(res){
     var cfg=shapeSettings(res[0]);
     var tm=shapeTeams(res[1]);
-    var next={ config:cfg, teams:tm.list, pools:tm.pools, games:[], stats:null, rinks:null };
+    var next={ config:cfg, teams:tm.list, pools:tm.pools, games:[], stats:null, rinks:null, sponsors:null };
     var prev=state.data; state.data=next;                       // shapeGames reads state.data.config
     next.games=shapeGames(res[2], tm.list, tm.alias);
     next.stats=res[3] ? shapeStats(res[3]) : null;
@@ -45,6 +50,8 @@ function load(){
     if(res[3]===null && prev.stats){ next.stats=prev.stats; log("  stats: keeping the previous copy"); }
     next.rinks=res[4] ? shapeRinks(res[4]) : null;
     if(res[4]===null && prev.rinks){ next.rinks=prev.rinks; log("  rinks: keeping the previous copy"); }
+    next.sponsors=res[5] ? shapeSponsors(res[5]) : null;
+    if(res[5]===null && prev.sponsors){ next.sponsors=prev.sponsors; log("  sponsors: keeping the previous copy"); }
     if(!next.games.length && prev.games.length && !state.problems.length){
       state.data=prev; state.problems.push("The Schedule tab came back empty, so the last good copy is still showing.");
     }

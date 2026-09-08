@@ -13,6 +13,7 @@
   --navy:#003087; --navy-ink:#003087; --on-navy:#FFFFFF;
   --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
   --us-ink:#003087; --us-bg:rgba(252,213,30,.16);
+  --m-gold:#B58B00; --m-silver:#78849A; --m-bronze:#A2662F;
   --win:#116B45; --warn:#7A4E00; --warn-bg:#FFF6DC; --warn-rule:#E0B354;
 }
 @media (prefers-color-scheme:dark){
@@ -23,6 +24,7 @@
     --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
     --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
     --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+    --m-gold:#FCD51E; --m-silver:#AEBACD; --m-bronze:#D9945A;
     --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
   }
 }
@@ -33,6 +35,7 @@
   --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
   --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
   --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+    --m-gold:#FCD51E; --m-silver:#AEBACD; --m-bronze:#D9945A;
   --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
 }
 *{box-sizing:border-box}
@@ -216,6 +219,38 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offs
 .foot{font-size:11px; color:var(--ink-3); text-align:center; line-height:1.8; margin:22px 0 0; padding:0 18px}
 .foot a{color:var(--ink-3)}
 .card .foot{text-align:left; padding:12px 0 0; margin:0; border-top:1px solid var(--hair)}
+/* ---- sponsors: the back page of the program ----
+   Each sponsor in its own outlined box, the way the paper banner sets them.
+   The outline carries the tier: real gold on the top row, a cool grey for
+   silver, a warm brown for bronze, in shades that hold up on white paper and
+   on the dark ground both. Jersey gold #FCD51E is invisible on white, so light
+   mode uses a deeper gold. The tier is also in the label and in the size of
+   the box, so nobody has to read colour to get it. */
+.sponsors .sptier{padding:11px 0; border-top:1px solid var(--hair); --tier:var(--hair)}
+.sponsors .sptier:first-child{border-top:0; padding-top:2px}
+.sponsors .sp0{--tier:var(--m-gold)}
+.sponsors .sp1{--tier:var(--m-silver)}
+.sponsors .sp2{--tier:var(--m-bronze)}
+.sponsors .sptl{display:block; font-family:"IBM Plex Mono",monospace; font-size:9px; font-weight:700;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--tier); padding-bottom:7px}
+/* A row of boxes that wraps. gap, not margins, so a name never trails a stray
+   half-gap at the end of a line. */
+.sponsors .sprail{display:flex; flex-wrap:wrap; gap:6px}
+.sponsors .sprail a,.sponsors .sprail span{font-family:"IBM Plex Sans",sans-serif; font-weight:600;
+  font-size:13px; line-height:1.25; color:var(--ink); text-decoration:none;
+  border:1px solid var(--tier); padding:6px 10px; max-width:100%}
+.sponsors .sp0 .sprail a,.sponsors .sp0 .sprail span{font-size:15px; font-weight:700; padding:8px 12px}
+.sponsors .sp2 .sprail a,.sponsors .sp2 .sprail span{font-size:12.5px}
+/* A sponsor with a website has to LOOK tappable on a phone, where there is no
+   hover to discover it with. An underline in the row's own colour is the only
+   thing that separates a linked box from a plain one. */
+.sponsors .sprail a{text-decoration:underline; text-decoration-color:var(--tier);
+  text-decoration-thickness:2px; text-underline-offset:3px}
+.sponsors .sprail a:hover{background:var(--tint)}
+@media (max-width:420px){
+  .sponsors .sp0 .sprail a,.sponsors .sp0 .sprail span{font-size:14.5px}
+}
+
 .skel{height:14px; background:var(--tint); animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 

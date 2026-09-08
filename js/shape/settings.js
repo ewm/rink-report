@@ -26,7 +26,8 @@ var SETTINGS_ROWS = [
   { match:["league","showcase","eventname","event"], apply:function(c,v){ c.leagueName = v; } },
   { match:["pointsforawin","win"],   apply:function(c,v){ c.ptsWin  = num(v)===null ? 2 : num(v); } },
   { match:["pointsforatie","tie"],   apply:function(c,v){ c.ptsTie  = num(v)===null ? 1 : num(v); } },
-  { match:["pointsforaloss","loss"], apply:function(c,v){ c.ptsLoss = num(v)===null ? 0 : num(v); } }
+  { match:["pointsforaloss","loss"], apply:function(c,v){ c.ptsLoss = num(v)===null ? 0 : num(v); } },
+  { match:["sponsorcontact","sponsorship"], apply:function(c,v){ c.sponsorContact = v; } }
 ];
 function applySetting(cfg, label, val){
   for(var i=0;i<SETTINGS_ROWS.length;i++){
@@ -47,7 +48,7 @@ function isPanelHeading(label){
   return false;
 }
 function shapeSettings(rows){
-  var c={leagueName:"",teamName:"",mode:"season",ptsWin:2,ptsTie:1,ptsLoss:0,rules:""};
+  var c={leagueName:"",teamName:"",mode:"season",ptsWin:2,ptsTie:1,ptsLoss:0,rules:"",sponsorContact:""};
   // Read the "Your answer" column by position. Collapsing non-empty cells
   // instead would slide the Notes column into an unanswered row.
   var hdr=locateHeader(rows,SPEC_SETTINGS);

@@ -226,6 +226,18 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offs
    on the dark ground both. Jersey gold #FCD51E is invisible on white, so light
    mode uses a deeper gold. The tier is also in the label and in the size of
    the box, so nobody has to read colour to get it. */
+/* The header is the fold control. It has to look like the other card headers,
+   so the button resets everything a button brings with it. */
+.sponsors .sph{display:flex; width:100%; align-items:baseline; justify-content:space-between;
+  gap:12px; padding:12px 0 14px; background:transparent; border:0; font:inherit;
+  color:inherit; text-align:left; cursor:pointer}
+/* Folded, the section is just its own header: no empty box left under it. */
+.sponsors.shut{padding-bottom:6px}
+.sponsors.shut .sph{padding-bottom:12px}
+.sponsors .sph .eyebrow{display:flex; align-items:center; gap:6px; white-space:nowrap}
+.sponsors .chev{transition:transform .15s ease; transform:rotate(180deg)}
+.sponsors.shut .chev{transform:rotate(0deg)}
+@media (prefers-reduced-motion:reduce){.sponsors .chev{transition:none}}
 .sponsors .sptier{padding:11px 0; border-top:1px solid var(--hair); --tier:var(--hair)}
 .sponsors .sptier:first-child{border-top:0; padding-top:2px}
 .sponsors .sp0{--tier:var(--m-gold)}

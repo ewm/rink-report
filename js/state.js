@@ -12,6 +12,7 @@
      fetchedAt / loading / loadError   fetch status, for the status line
      viewKey      the tab the reader chose (null = let the calendar decide)
      filterOurs   the All / Ours switch on results
+     sponsorsOpen whether the sponsors block is expanded (remembered per device)
      diagLog / routeUsed / headerMap / routeTrouble / gidHint   for ?check
      statsNote    why the Stats tab is missing, for ?check
      rinksNote    why the Rinks tab could not be read, for ?check
@@ -32,6 +33,9 @@ var state = {
   loadError: "",
   viewKey: null,
   filterOurs: false,
+  // Open by default: the sponsors paid to be seen. A reader who folds it away
+  // keeps it folded on that phone, and nowhere else.
+  sponsorsOpen: (function(){ try{ return localStorage.getItem("rinkreport.sponsorsOpen")!=="0"; }catch(e){ return true; } })(),
   diagLog: [],
   routeUsed: [],
   headerMap: [],

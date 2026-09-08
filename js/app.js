@@ -75,6 +75,11 @@ document.addEventListener("click",function(e){
     state.viewKey=el.getAttribute("data-v"); render();
     try{ window.scrollTo(0,0); }catch(err){}
   }
+  if(a==="sponsors"){
+    state.sponsorsOpen=!state.sponsorsOpen;
+    try{ localStorage.setItem("rinkreport.sponsorsOpen", state.sponsorsOpen?"1":"0"); }catch(err){}
+    render();
+  }
   if(a==="refresh"){ state.pollQuiet=0; load(); }
 });
 document.addEventListener("visibilitychange",function(){

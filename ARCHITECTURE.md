@@ -2,7 +2,7 @@
 
 One page, no build step, no backend. A Google Sheet is the database and the
 page is a reader that runs on a parent's phone. This document is the map and
-the design notes. Start here, then open `site/js/app.js`.
+the design notes. Start here, then open `docs/js/app.js`.
 
 Code comments in `js/` say what a function does and the one rule you need to
 change it safely. The reasoning behind those rules lives here, under the
@@ -11,7 +11,7 @@ section each comment names.
 ## Module map
 
 ```
-site/
+docs/
   index.html          the shell: fonts, the CONFIG block (the only thing a
                       manager edits), an empty #app, and one module script
   css/rink.css        every style
@@ -37,7 +37,7 @@ tests/                Playwright suite + fixtures; see tests/README.md
 Modules are native ES modules (`<script type="module">`). Every phone that
 can open a Google Sheet can run them. The one consequence: the page has to
 come from a web server, not a `file://` double-click. Use
-`python3 -m http.server 8000` in `site/` for local preview.
+`python3 -m http.server 8000` in `docs/` for local preview.
 
 ### Data flow
 
@@ -510,7 +510,7 @@ right place: labels match by prefix and order disambiguates.
   docblock on every function. Comments carry the one rule a reader needs;
   the reasoning lives in this document.
 - No em-dashes in comments or docs.
-- The CSP in `site/_headers` allows scripts only from the site itself and
+- The CSP in `docs/_headers` allows scripts only from the site itself and
   connections only to Google. A CDN import will be blocked.
 
 ## Testing

@@ -1,6 +1,7 @@
-# Saves a copy of the Google Sheet into data/ every six hours.
+# Saves a copy of the Google Sheet into docs/data/ every six hours.
 #
-# The page reads data/<tab>.csv only when Google itself cannot be reached, and
+# The page reads data/<tab>.csv (beside it, under docs/) only when Google
+# itself cannot be reached, and
 # the files double as a backup of the sheet with full history in git. Nothing
 # is committed when the sheet has not changed. Run it by hand from the Actions
 # tab ("Run workflow") after a big edit if you want the copy fresh right away.
@@ -17,6 +18,13 @@ permissions:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
+
+    # Every step below runs inside docs/, which is the folder Pages serves,
+    # so index.html and data/ are where the script expects them.
+    defaults:
+      run:
+        working-directory: docs
+
     steps:
       - uses: actions/checkout@v4
 

@@ -77,16 +77,14 @@ are for building it from nothing, e.g. for another club.
 **Public** (Pages is free only for public repos), switch **Add a README** on,
 **Create repository**.
 
-**2.** Go to `github.com/YOURNAME/rink-report/upload/main`. Open the `site`
-folder in Finder, select everything inside it (`index.html`, `css`, `js`,
-`.nojekyll`, `_headers`) and drag that selection onto the upload page. Drag the
-*contents*, not the `site` folder itself, otherwise everything lands under
-`site/` and the page won't be at the root. Dragged folders keep their structure.
+**2.** Go to `github.com/YOURNAME/rink-report/upload/main`. Drag the whole
+`docs` folder onto the upload page. Dragged folders keep their structure, so
+everything lands under `docs/`, which is where the next step points Pages.
 
 Type a one-line note in **Commit summary** and click **Commit changes**.
 
 **3.** **Settings → Pages**. Under *Build and deployment*, Source = *Deploy from a
-branch*, Branch = `main`, folder = `/ (root)`, **Save**.
+branch*, Branch = `main`, folder = `/docs`, **Save**.
 
 **4.** Wait a minute or two. The page is at
 `https://YOURNAME.github.io/rink-report/`. The first build sometimes takes five

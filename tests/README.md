@@ -1,6 +1,6 @@
 # Rink Report — tests
 
-End-to-end checks for the page in `../site`. Nothing here touches Google:
+End-to-end checks for the page in `../docs`. Nothing here touches Google:
 every sheet request is answered from `fixtures/`, so the suite runs offline
 and gives the same answer every time.
 

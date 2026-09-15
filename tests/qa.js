@@ -1,6 +1,6 @@
 // Rink Report end-to-end checks.
 //
-// Serves ../site from disk, stubs every Google Sheets request with the CSVs
+// Serves ../docs from disk, stubs every Google Sheets request with the CSVs
 // in fixtures/ (keyed on BOTH gid= and sheet= — a stub that matched only tab
 // names once misrouted every tab and reported a phantom regression), drives
 // the page in headless Chromium and checks the rendered DOM.
@@ -147,7 +147,7 @@ async function openPage(browser, url, opts){
   return {page, ctx, errors, asked};
 }
 
-const SITE_DIR = process.env.SITE || path.join(HERE,'..','site');
+const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
 (async()=>{
   const SITE = SITE_DIR;
   const sNew = await serve(SITE, 8811);

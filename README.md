@@ -47,17 +47,19 @@ change.
 
 ## What is in this repo
 
-(On the working copy in `Youth Hockey/rink-report-site/`, the deployable files sit under `site/`; that folder is the root of the repo.)
+The page lives in `docs/`, which is the folder GitHub Pages serves. Your
+working folder and the repository are the same thing, so a change is a
+normal commit and push.
 
 | Path | What it is |
 |---|---|
-| `index.html` | The shell: the config block you edit, and one line that loads the page. |
-| `js/` | The page itself, one module per responsibility. Native ES modules, no build step. `ARCHITECTURE.md` is the map. |
-| `css/rink.css` | Every style. |
-| `logo.png` | The crest in the masthead. Optional; delete it and the masthead is text only. |
-| `_headers` | Security headers Netlify would read. Ignored by GitHub Pages; harmless. |
-| `.nojekyll` | Tells GitHub Pages to serve the folder as-is. Keep it. |
-| `data/` | The saved copy of the sheet, one CSV per tab, written by the GitHub job. Do not edit by hand. |
+| `docs/index.html` | The shell: the config block you edit, and one line that loads the page. |
+| `docs/js/` | The page itself, one module per responsibility. Native ES modules, no build step. `ARCHITECTURE.md` is the map. |
+| `docs/css/rink.css` | Every style. |
+| `docs/logo.png` | The crest in the masthead. Optional; delete it and the masthead is text only. |
+| `docs/_headers` | Security headers Netlify would read. Ignored by GitHub Pages; harmless. |
+| `docs/.nojekyll` | Tells GitHub Pages to serve the folder as-is. Keep it. |
+| `docs/data/` | The saved copy of the sheet, one CSV per tab, written by the GitHub job. Do not edit by hand. |
 | `.github/workflows/snapshot.yml` | The job that saves the copy. Runs every six hours; commits only when a tab changed. |
 | `tests/` | The check suite and its fixture sheets. `npm install`, `npm test`. |
 | `ARCHITECTURE.md` | How the code is put together, the reasoning behind each rule, and how to add to it. |

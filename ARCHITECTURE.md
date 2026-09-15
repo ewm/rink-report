@@ -306,6 +306,27 @@ evidence of a reading problem.
 Dates accept `2026-11-14`, `11/14/2026`, `14 Nov 2026`, `Nov 14 2026`,
 `Date(2026,10,14)` (gviz, zero-based month) and Sheets serial numbers.
 
+Period length is an optional eleventh column, and the only one matched by
+name alone. It is deliberately kept out of the positional recovery that
+rescues a sheet whose headers went numeric, because a sheet written before
+this column existed must never have its tenth column mistaken for one. Blank
+means the league's own length from the Settings tab, so a tournament that
+plays 12 minute periods is one cell filled down its block.
+
+## The game log
+
+The Player Stats tab carries one row per player per game to the right of the
+two totals tables, and the page reads both logs. They answer what a season
+total cannot: which game an appearance was, and therefore how long it ran and
+whether it counted in the league table.
+
+A logged row is matched to its game by date and nothing else. The log records
+the opponent the way the scoresheet spells it, "Southtowns 12U Martino",
+while the Schedule tab uses the league's name for the club, "Southtown
+Stars". Those two will never match and the code does not try. Two games on
+one date belong to the same event and run the same clock, so the date is
+enough to answer both questions.
+
 ## Player Stats tab
 
 The tab holds several blocks side by side: skater totals, goalie totals, then
@@ -444,12 +465,22 @@ column says SV% (older tabs) or GAA.
 
 GAA is per full game, not per 60 minutes. Sixty is the pro number: a youth
 game is shorter, so dividing by 60 inflates every goalie on the page. The
-length comes from the Period length row on the Settings tab, where a manager
+league's length is the Period length row on the Settings tab, where a manager
 types the periods the league states, "15, 15, 12", and the page adds them up.
 A single number is taken as the whole game, so "42" means the same thing.
-With no row at all the page assumes three 15 minute periods, which is the
-common youth format. The note under the table always names the number it
-used, so a parent can see what the figure is per.
+With no row at all the page assumes three 15 minute periods.
+
+Showcases and tournaments often run a shorter clock, and then there is no
+single length to multiply by: a season that mixes a 45 minute league game
+with a 36 minute tournament game has not been played in games of one size.
+So each appearance in the goalie log is counted as the share of a full game
+it actually was, its minutes over that game's own length, and the goals are
+divided by the total. With every game the same length this gives exactly the
+old answer, which is the point. Without a log at all the page falls back to
+the season totals against the league's length.
+
+The note under the table always names the number it used, and says so when
+the schedule overrides it somewhere.
 
 The minutes in the sheet and the Period length have to describe the same
 game. If the goalie log records 42 minutes for a full game while the setting

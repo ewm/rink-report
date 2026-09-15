@@ -119,6 +119,16 @@ async function openPage(browser, url, opts){
     let body=FIX[which];
     if(which==='schedule' && opts.schedule) body=ALT[opts.schedule];
     if(which==='settings' && opts.settingsTeam) body=body.replace(/(Our team,)West Seneca Wings/, '$1'+opts.settingsTeam);
+    if(which==='schedule' && opts.eventPeriods){
+      // Adds a Period length column and fills it for rows of a given event.
+      body = body.split(/\r?\n/).map((l,i,all)=>{
+        if(/^Date,Face-off,/.test(l)) return l+',Period length';
+        if(!/^20\d\d-/.test(l)) return l;
+        // Quoted, because a manager types "12, 12, 12" and the commas are
+        // part of the value, not column breaks.
+        return l + ',' + (l.indexOf(opts.eventPeriods.event)!==-1 ? '"'+opts.eventPeriods.value+'"' : '');
+      }).join('\r\n');
+    }
     if(which==='settings' && opts.periods) body=body.replace(/\n,Points for a win,/, '\n,Period length,"'+opts.periods+'",the periods the league plays,,,\n,Points for a win,');
     if(how==='gviz') body=coerceNumericHeaders(body, !!opts.harsh);
     route.fulfill({status:200, contentType:'text/csv', body});
@@ -928,6 +938,12 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     // One number is the whole game, not one period.
     const flat = await read({periods:'60'});
     ok(flat.gaa[0]==='3.21', 'a single number is taken as the whole game: '+flat.gaa[0]);
+    // A showcase running a shorter clock than the league it sits inside.
+    const mixed = await read({eventPeriods:{event:'Pre-Season Summer Showcase', value:'12, 12, 12'}});
+    ok(mixed.gaa[0]==='1.93' && mixed.gaa[1]==='4.29',
+      'a 36 minute showcase is counted as less than a full game: '+mixed.gaa.join('/'));
+    ok(/different clock/.test(mixed.foot), 'the note says the schedule can override: '+mixed.foot.slice(0,90));
+    ok(!/different clock/.test(dflt.foot), 'and stays quiet when nothing overrides');
   }
 
   await browser.close(); sNew.close();

@@ -1,12 +1,14 @@
 /**
  * The Player Stats tab -> skater and goalie totals.
  *
- * Reads only the two totals blocks, anchored on the "Player" and "Goalie"
- * headers, with numeric headers matched by name or by position. Names leave
- * here as first name + last initial; the full name never enters the model.
+ * Reads the two totals blocks, anchored on the "Player" and "Goalie"
+ * headers, with numeric headers matched by name or by position, and the two
+ * game logs to their right, anchored on their Date columns. Names leave here
+ * as first name + last initial; the full name never enters the model.
  * See ARCHITECTURE.md, "Player Stats tab".
  */
 import { log, state } from "../state.js";
+import { parseDate } from "../util/dates.js";
 import { clean, norm } from "../util/text.js";
 
 var SPEC_SKATER = {
@@ -31,6 +33,28 @@ var SPEC_GOALIE = {
 
 /** Header spellings for the jersey number column, which sits left of the name. */
 var NUMBER_HEADS = ["no", "num", "number", "jersey"];
+
+/** The game logs, which carry one row per player per game. */
+var SPEC_LOG_SKATER = {
+  date: ["date", "gamedate"],
+  opponent: ["opponent", "opp", "versus", "vs", "against"],
+  no: NUMBER_HEADS,
+  player: ["player", "skater", "name"],
+  g: ["g", "goals"],
+  a: ["a", "assists"],
+  pim: ["pim", "penaltyminutes", "penaltymin"]
+};
+
+var SPEC_LOG_GOALIE = {
+  date: ["date", "gamedate"],
+  opponent: ["opponent", "opp", "versus", "vs", "against"],
+  no: NUMBER_HEADS,
+  goalie: ["goalie", "name", "keeper"],
+  min: ["min", "mins", "minutes"],
+  saves: ["saves", "sv"],
+  ga: ["ga", "goalsagainst"],
+  result: ["result", "wl", "outcome", "wlt"]
+};
 
 /**
  * A stat cell as a number, or null. "1.5", "0.", "0.792" and "1,234" are
@@ -188,7 +212,7 @@ function blockColumns(row, anchor, end, canonical, spec) {
  * @returns {{skaters: Object[], goalies: Object[]}|null}
  */
 function shapeStats(rows) {
-  var out = { skaters: [], goalies: [] };
+  var out = { skaters: [], goalies: [], logSkaters: [], logGoalies: [] };
   var r;
   var c;
   var hdr = -1;
@@ -283,14 +307,88 @@ function shapeStats(rows) {
     return list;
   }
 
-  var logStart = width;
+  /**
+   * Reads one game-log block: a run of columns that starts with Date and
+   * carries one row per player per game.
+   *
+   * Rows stop at the first blank date, the same way the totals blocks stop
+   * at the first blank name. A row with a date but no name is skipped rather
+   * than ending the block, because a manager clearing a mistyped name should
+   * not truncate the season.
+   *
+   * @param {number} start - The block's Date column.
+   * @param {number} end - Where the block ends.
+   * @param {Object} spec - Header spellings per key.
+   * @param {string} nameKey - "player" or "goalie".
+   * @returns {Object[]}
+   */
+  function readLog(start, end, spec, nameKey) {
+    var map = {};
+    var cc;
+    var k;
+
+    for (cc = start; cc < end; cc++) {
+      var hh = norm(head[cc]);
+
+      for (k in spec) {
+        if (
+          Object.prototype.hasOwnProperty.call(spec, k) &&
+          map[k] === undefined &&
+          spec[k].indexOf(hh) !== -1
+        ) {
+          map[k] = cc;
+        }
+      }
+    }
+
+    if (map.date === undefined || map[nameKey] === undefined) {
+      return [];
+    }
+
+    var list = [];
+
+    for (var rr = hdr + 1; rr < rows.length; rr++) {
+      var row = rows[rr] || [];
+      var iso = parseDate(clean(row[map.date]));
+
+      if (!iso) {
+        break;
+      }
+
+      var nm = clean(row[map[nameKey]]);
+
+      if (!nm) {
+        continue;
+      }
+
+      var o = { date: iso, name: shortName(nm) };
+
+      o.opponent = map.opponent === undefined ? "" : clean(row[map.opponent]);
+      o.result = map.result === undefined ? "" : norm(row[map.result]);
+
+      ["no", "g", "a", "pim", "min", "saves", "ga"].forEach(function (key) {
+        if (map[key] !== undefined) {
+          o[key] = numf(row[map[key]]);
+        }
+      });
+
+      list.push(o);
+    }
+
+    return list;
+  }
+
+  // Every game-log block starts with its own Date column. The first one also
+  // marks where the goalie totals stop.
+  var dateCols = [];
 
   for (c = Math.max(pc, gc) + 1; c < head.length; c++) {
     if (norm(head[c]) === "date") {
-      logStart = c;
-      break;
+      dateCols.push(c);
     }
   }
+
+  var logStart = dateCols.length ? dateCols[0] : width;
 
   out.skaters = readBlock(
     pc,
@@ -307,6 +405,41 @@ function shapeStats(rows) {
     SPEC_GOALIE,
     "g"
   );
+
+  // Each log block runs from its Date column to the next one. Which block is
+  // which is decided by the name column inside it, not by its position, so a
+  // sheet that lists goalies first still reads correctly.
+  dateCols.forEach(function (start, i) {
+    var end = i + 1 < dateCols.length ? dateCols[i + 1] : width;
+    var hasPlayer = false;
+    var hasGoalie = false;
+
+    for (var cc = start; cc < end; cc++) {
+      var hh = norm(head[cc]);
+
+      if (SPEC_LOG_SKATER.player.indexOf(hh) !== -1) {
+        hasPlayer = true;
+      } else if (hh === "goalie") {
+        hasGoalie = true;
+      }
+    }
+
+    if (hasGoalie) {
+      out.logGoalies = readLog(start, end, SPEC_LOG_GOALIE, "goalie");
+    } else if (hasPlayer) {
+      out.logSkaters = readLog(start, end, SPEC_LOG_SKATER, "player");
+    }
+  });
+
+  if (out.logSkaters.length || out.logGoalies.length) {
+    log(
+      "stats: game log read -> " +
+        out.logSkaters.length +
+        " skater rows, " +
+        out.logGoalies.length +
+        " goalie rows"
+    );
+  }
 
   out.skaters.forEach(function (s) {
     if (s.pts === null && (s.g !== null || s.a !== null)) {

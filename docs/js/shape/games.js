@@ -9,7 +9,7 @@ import { played } from "../model/game.js";
 import { log, state } from "../state.js";
 import { locateHeader, recoverByPosition } from "../util/csv.js";
 import { parseDate, todayISO } from "../util/dates.js";
-import { bare, clean, nearestName, norm, num } from "../util/text.js";
+import { bare, clean, minutesTotal, nearestName, norm, num } from "../util/text.js";
 
 /** The header text each Schedule column is expected to carry. */
 var COLNAME = {
@@ -22,7 +22,8 @@ var COLNAME = {
   rink: "Rink",
   pool: "Pool / division",
   type: "Game type",
-  event: "Event"
+  event: "Event",
+  mins: "Period length"
 };
 
 /**
@@ -56,7 +57,11 @@ var SPEC_SCHEDULE = {
   rink: ["rink", "location", "venue", "arena", "sheet"],
   pool: ["pooldivision", "pool", "division", "group", "bracketpool"],
   type: ["gametype", "type", "round"],
-  event: ["event", "showcase", "tournament", "eventname"]
+  event: ["event", "showcase", "tournament", "eventname"],
+  // Optional, and matched by name only. It is deliberately left out of the
+  // positional recovery below: a sheet written before this column existed
+  // must not have its tenth column mistaken for one.
+  mins: ["periodlength", "periodlengths", "periods", "gamelength"]
 };
 
 /**
@@ -211,7 +216,8 @@ function shapeGames(rows, teamList, alias) {
       rink: h.map.rink !== undefined ? clean(row[h.map.rink]) : "",
       pool: h.map.pool !== undefined ? clean(row[h.map.pool]) : "",
       type: h.map.type !== undefined ? clean(row[h.map.type]) : "",
-      event: h.map.event !== undefined ? clean(row[h.map.event]) : ""
+      event: h.map.event !== undefined ? clean(row[h.map.event]) : "",
+      mins: h.map.mins !== undefined ? minutesTotal(row[h.map.mins]) : null
     };
 
     // a team playing itself would be double-counted

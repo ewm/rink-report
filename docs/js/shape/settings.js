@@ -8,7 +8,7 @@
  */
 import { state } from "../state.js";
 import { locateHeader } from "../util/csv.js";
-import { clean, norm, num } from "../util/text.js";
+import { clean, minutesTotal, norm, num } from "../util/text.js";
 
 var SPEC_SETTINGS = {
   field: ["field", "setting"],
@@ -71,7 +71,7 @@ var SETTINGS_ROWS = [
   {
     match: ["periodlength", "periodlengths", "periods", "gamelength"],
     apply: function (c, v) {
-      var mins = periodMinutes(v);
+      var mins = minutesTotal(v);
 
       if (mins !== null) {
         c.gameMinutes = mins;
@@ -85,33 +85,6 @@ var SETTINGS_ROWS = [
     }
   }
 ];
-
-/**
- * Total regulation minutes from a period-length answer.
- *
- * A manager types the periods the way the league states them, "15, 15, 12",
- * and the total is what GAA is figured against. A single number is taken as
- * the whole game, so "42" and "15/15/12" mean the same thing. Separators are
- * anything that is not a digit or a decimal point, so commas, slashes,
- * hyphens and the word "and" all work.
- *
- * @param {string} v - The Your answer cell.
- * @returns {number|null} Total minutes, or null when nothing usable is there.
- */
-function periodMinutes(v) {
-  var parts = String(v || "").split(/[^0-9.]+/);
-  var total = 0;
-
-  parts.forEach(function (p) {
-    var n = parseFloat(p);
-
-    if (!isNaN(n) && n > 0) {
-      total += n;
-    }
-  });
-
-  return total > 0 ? total : null;
-}
 
 /**
  * Applies one settings row to the config: the first SETTINGS_ROWS entry

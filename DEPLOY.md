@@ -405,6 +405,13 @@ plays, written the way the league states them: `15, 15, 12`. The page adds
 them up. One number works too, so `42` means the same thing. Leave it blank
 and the page assumes three 15 minute periods.
 
+Showcases and tournaments often run a shorter clock. Add a **Period length**
+column to the Schedule tab, to the right of Event, and fill it in on those
+rows only: `12, 12, 12`. Select the cell and drag it down the tournament's
+block. Every blank row uses the league's length, so you only ever type the
+exceptions. GAA then counts a short game as the part of a full game it was,
+rather than pretending every game was the same size.
+
 One thing to keep straight: the minutes you record in the goalie game log
 have to be minutes of the same game. If a full game is 45 minutes by the
 setting but you log 42 for a goalie who played the whole thing, the page

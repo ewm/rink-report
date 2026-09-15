@@ -180,4 +180,31 @@ function num(v) {
   return isNaN(n) || n < 0 ? null : n;
 }
 
-export { esc, norm, clean, bare, nearestName, num, safeUrl };
+/**
+ * Total minutes from a period-length cell.
+ *
+ * A manager types the periods the way the league states them, "15, 15, 12",
+ * and the total is what a full game is worth. A single number is taken as
+ * the whole game, so "42" and "15/15/12" mean the same thing. Separators are
+ * anything that is not a digit or a decimal point, so commas, slashes,
+ * hyphens and the word "and" all work.
+ *
+ * @param {string} v - The cell.
+ * @returns {number|null} Total minutes, or null when nothing usable is there.
+ */
+function minutesTotal(v) {
+  var parts = String(v === null || v === undefined ? "" : v).split(/[^0-9.]+/);
+  var total = 0;
+
+  parts.forEach(function (p) {
+    var n = parseFloat(p);
+
+    if (!isNaN(n) && n > 0) {
+      total += n;
+    }
+  });
+
+  return total > 0 ? total : null;
+}
+
+export { esc, norm, clean, bare, nearestName, num, minutesTotal, safeUrl };

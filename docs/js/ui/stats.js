@@ -6,6 +6,7 @@
  * thing figured here is GAA, from the sheet's own GA and minutes and the
  * league's game length. See ARCHITECTURE.md, "Stats".
  */
+import { gaaFromLog, goalieLogFor } from "../model/gamelog.js";
 import { state } from "../state.js";
 import { esc } from "../util/text.js";
 
@@ -43,14 +44,23 @@ function fmtGaa(n) {
  *
  * Sixty is the pro number and it is wrong for a youth game. Three 15 minute
  * periods is a 45 minute game, so a goalie who gives up two in a full game
- * reads 2.00, which is what a parent expects. The length comes from the
- * Settings tab; the sheet's own GAA column is used only when minutes are
- * missing.
+ * reads 2.00, which is what a parent expects.
+ *
+ * The game log is used when it is there, because it knows which game each
+ * appearance was and therefore how long that game ran. Without a log the
+ * season totals are figured against the league's own length, which is right
+ * until a tournament plays shorter periods.
  *
  * @param {Object} g - A goalie row.
  * @returns {number|null} GAA, or null when it cannot be figured.
  */
 function gaaFor(g) {
+  var logged = gaaFromLog(goalieLogFor(g.name));
+
+  if (logged !== null) {
+    return logged;
+  }
+
   var full = state.data.config.gameMinutes;
 
   if (g.min > 0 && g.ga !== null && g.ga !== undefined && full > 0) {
@@ -58,6 +68,26 @@ function gaaFor(g) {
   }
 
   return g.gaa === undefined ? null : g.gaa;
+}
+
+/**
+ * Whether any game on the schedule sets its own period length.
+ *
+ * Only then is it worth telling a reader that the number under the table is
+ * not the only one in play.
+ *
+ * @returns {boolean}
+ */
+function mixedLengths() {
+  var games = state.data.games || [];
+
+  for (var i = 0; i < games.length; i++) {
+    if (games[i].mins && games[i].mins !== state.data.config.gameMinutes) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -156,7 +186,9 @@ function statsHtml() {
     h +=
       '<p class="foot">GAA is goals against per full game of ' +
       fmtNum(state.data.config.gameMinutes) +
-      ' minutes. Saves are not listed because most scoresheets do not record shots.</p>';
+      " minutes" +
+      (mixedLengths() ? ", and of whatever the Schedule tab says for an event that runs a different clock" : "") +
+      '. Saves are not listed because most scoresheets do not record shots.</p>';
     h += "</div></section>";
   }
 

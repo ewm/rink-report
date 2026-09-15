@@ -1,0 +1,61 @@
+# Saves a copy of the Google Sheet into data/ every six hours.
+#
+# The page reads data/<tab>.csv only when Google itself cannot be reached, and
+# the files double as a backup of the sheet with full history in git. Nothing
+# is committed when the sheet has not changed. Run it by hand from the Actions
+# tab ("Run workflow") after a big edit if you want the copy fresh right away.
+name: Save a copy of the sheet
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch every tab as CSV
+        run: |
+          set -e
+          SHEET=$(grep -o 'sheetId: *"[^"]*"' index.html | sed 's/.*"\(.*\)"/\1/')
+          GIDS=$(grep -o 'gids: *{[^}]*}' index.html)
+          mkdir -p data
+          got=0
+          for tab in settings teams schedule stats rinks sponsors; do
+            gid=$(echo "$GIDS" | grep -o "$tab: *\"[0-9]*\"" | grep -o '[0-9]*' || true)
+            if [ -z "$gid" ]; then continue; fi
+            url="https://docs.google.com/spreadsheets/d/$SHEET/export?format=csv&gid=$gid"
+            if curl -fsSL --max-time 30 "$url" -o "data/$tab.csv.new"; then
+              if head -c 1 "data/$tab.csv.new" | grep -q '<'; then
+                echo "$tab: got a web page, not data; keeping the old copy"
+                rm -f "data/$tab.csv.new"
+              else
+                mv "data/$tab.csv.new" "data/$tab.csv"
+                got=1
+              fi
+            else
+              echo "$tab: could not be fetched; keeping the old copy"
+              rm -f "data/$tab.csv.new"
+            fi
+          done
+          if [ "$got" = 1 ]; then
+            date -u +%Y-%m-%dT%H:%M:%SZ > data/updated.txt
+          fi
+
+      - name: Commit when a tab changed
+        run: |
+          git config user.name "rink-report snapshot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet -- data ':!data/updated.txt'; then
+            echo "sheet unchanged since the last copy"
+            exit 0
+          fi
+          git commit -m "Snapshot: copy of the sheet at $(cat data/updated.txt)"
+          git push

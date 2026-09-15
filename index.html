@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#003087">
+<title>Rink Report</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Loaded without blocking the first paint: the page shows in a system font until the web fonts arrive. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="css/rink.css">
+
+<!-- ============================================================
+     CONFIG — the only part you edit.
+     ============================================================ -->
+<script>
+window.RINK_CONFIG = {
+
+  // Paste the long ID from your Google Sheet's normal URL, the part between
+  // /d/ and /edit :  docs.google.com/spreadsheets/d/THIS_PART_HERE/edit
+  sheetId: "1HE3rTPmDsGSDqUN7p20wW9MIWQrbSTpNcaGHCWXHlmI",
+
+  // Tab names in the sheet. Change only if you renamed the tabs.
+  // "stats" is the Player Stats tab. It is optional: when the page can't read
+  // it, the Stats tab simply doesn't appear and nothing else is affected.
+  // "rinks" is the Rinks tab. Also optional: give a rink a street address there
+  // and the page shows a Directions link for its games.
+  // "sponsors" is the Sponsors tab (Sponsor / Tier / Website). Also optional:
+  // without it, the sponsors block at the foot of the page simply isn't there.
+  tabs: { settings: "Settings", teams: "Teams", schedule: "Schedule", stats: "Player Stats", rinks: "Rinks", sponsors: "Sponsors" },
+
+  // Optional but worth 60 seconds. Click each tab in the sheet and copy the
+  // number after "gid=" in the address bar. With these filled in the page uses
+  // Google's raw export, which never re-types a column and so never throws away
+  // text that shares a column with numbers. Left blank, it reads by tab name.
+  gids: { settings: "1160090892", teams: "239776309", schedule: "1739208952", stats: "703037060", rinks: "1202177208", sponsors: "95128319" },
+
+  // How often the page re-checks the sheet, in seconds, while it's on screen.
+  refreshSeconds: 120,
+
+  // Feature switches. Every one is on unless you set it to false. A switch
+  // you delete from this list counts as on, so an older index.html keeps
+  // working. Turning a switch off hides that piece of the page; nothing else
+  // moves. Standings and the schedule are the page and have no switch.
+  features: {
+    nextGame:       true,   // the gold "Next game" card at the top
+    sponsors:       true,   // the "Our sponsors" block (needs the Sponsors tab)
+    stats:          true,   // the Stats tab (needs the Player Stats tab)
+    events:         true,   // tournament and showcase views: the featured event button, the Events tab, and the pre-season event lines. Off = league play only.
+    preseason:      true,   // the "League play starts ..." card before the first league score (off = the table of zeros)
+    directions:     true,   // Directions links on the next-game card and rink names (needs addresses on the Rinks tab)
+    calendar:       true,   // "Add to calendar" and "Google Calendar" links on the next-game card
+    seasonCalendar: true,   // "Add our remaining N games to your calendar" under the schedule
+    mhrLinks:       true    // team names link to MyHockey Rankings (needs the MyHockey link column on the Teams tab)
+  }
+};
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- ============================================================
+     The page itself lives in js/ — one module per responsibility.
+     Start at js/app.js; the map is in ../ARCHITECTURE.md.
+     Served as native ES modules: no build step, no bundler. Open it
+     through a web server (python3 -m http.server), not as a file://.
+     ============================================================ -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

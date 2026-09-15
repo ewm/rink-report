@@ -1,0 +1,525 @@
+# Rink Report: how the code is put together
+
+One page, no build step, no backend. A Google Sheet is the database and the
+page is a reader that runs on a parent's phone. This document is the map and
+the design notes. Start here, then open `site/js/app.js`.
+
+Code comments in `js/` say what a function does and the one rule you need to
+change it safely. The reasoning behind those rules lives here, under the
+section each comment names.
+
+## Module map
+
+```
+site/
+  index.html          the shell: fonts, the CONFIG block (the only thing a
+                      manager edits), an empty #app, and one module script
+  css/rink.css        every style
+  js/
+    app.js            entry point: boot, load(), the poll, the cache, clicks
+    state.js          RINK_CONFIG, the feature switches, the store, notify()
+    render.js         composes components into one innerHTML write
+    util/             text.js  dates.js  csv.js        no app knowledge
+    sheet/routes.js   read one tab: raw export, tab name, then the saved copy
+    shape/            settings.js  teams.js  games.js  stats.js  rinks.js
+                      sponsors.js
+                      CSV rows -> objects, plus manager warnings
+    model/            game.js  standings.js  views.js  links.js
+                      what the data means: records, tiebreaks, tabs,
+                      and the directions / calendar links built from a game
+    ui/               frame.js (masthead, bar, banners, status, footer) and
+                      one component per card, each (state) -> HTML string
+  data/               the saved copy of the sheet, written by the Action
+  .github/workflows/  snapshot.yml, the job that writes data/
+tests/                Playwright suite + fixtures; see tests/README.md
+```
+
+Modules are native ES modules (`<script type="module">`). Every phone that
+can open a Google Sheet can run them. The one consequence: the page has to
+come from a web server, not a `file://` double-click. Use
+`python3 -m http.server 8000` in `site/` for local preview.
+
+### Data flow
+
+```
+  Google Sheet --(sheet/routes.js)--> rows --(shape/*.js)--> state.data
+                                                              |
+                     clicks / poll / visibility --> state ----+
+                                                              v
+                      ui/*.js components --(render.js)--> #app.innerHTML
+```
+
+1. **Read.** `getCSV("schedule")` tries up to three routes with retries and
+   hands back parsed rows. It knows nothing about hockey.
+2. **Shape.** `shapeGames(rows, teams, aliases)` turns rows into game objects
+   and pushes a plain-English warning onto `state.problems` for every row that
+   looks wrong, naming the row and saying what to type.
+3. **Model.** `views.js` decides what tabs the data implies; `standings.js`
+   turns games into a ranked table under the event's own tiebreak sequence.
+   Pure functions of `state.data`.
+4. **Draw.** `render()` picks the components a view needs, joins their HTML,
+   and skips the DOM write when nothing changed since the last poll.
+
+`load()` in `app.js` is the one place steps 1 to 3 are wired together. The
+six tabs are fetched in parallel. Player Stats, Rinks and Sponsors are
+optional (`OPTIONAL_TABS`): each has its own `catch`, so a broken one costs
+only its own block. A fetch that fails outright keeps the last good copy of
+that tab; a tab that was read but held nothing is dropped. `OPTIONAL` in
+`sheet/routes.js` lists the same three; a tab on that list never pushes onto
+`routeTrouble`, because a tab that does not exist yet says nothing about
+whether the other tab IDs are right.
+
+After the Teams tab is shaped, `snapTeamName()` snaps the Settings tab's
+"Our team" onto the Teams list the same way schedule names are snapped
+(case, spacing, aliases). Every "ours" feature compares names exactly, so
+without this a lower-case entry silently dropped the record chip, the Ours
+switch, the W/L tags and the season calendar. A name that matches nothing
+gets a warning on the page.
+
+A Schedule tab that comes back with no games keeps the previous copy and
+says so, whatever else went wrong in that read. The guard used to require
+that no warning had been raised, and a garbled read always raises one first.
+
+The crest (`logo.png`) is probed once at start-up rather than inserted and
+removed on every render, which used to shove the masthead text sideways.
+
+## The store
+
+`state.js` is one plain object. Modules read and write it directly
+(`state.data.games`, `state.problems.push(...)`). A shared object is the
+honest size of this problem; a framework would be more code than the page.
+
+Two rules keep it sane:
+
+- **Nothing in `state.js` renders.** Code that changes state and wants the
+  page to follow calls `notify()`. `app.js` registers `render()` as the one
+  listener. That keeps the dependency graph one-way: `sheet` and `shape`
+  never import from `ui`, and `ui` never imports from `app`.
+- **Reset per load, not per render.** `load()` clears `problems`,
+  `routeUsed`, `headerMap`, `routeTrouble` and the three `*Note` fields before
+  refetching, so a warning from the last read cannot outlive the sheet edit
+  that fixed it.
+
+`sponsorsOpen` is the one reader preference in the store. It defaults to open
+(the sponsors paid to be seen) and a reader who folds the block keeps it
+folded on that phone only, via `rinkreport.sponsorsOpen` in localStorage.
+That key is separate from the data cache key on purpose: it must survive a
+cache-key bump.
+
+`render()` skips the DOM write when the new markup equals `state.lastHtml`.
+The two-minute poll usually finds nothing new, and rewriting identical markup
+costs a repaint for nothing.
+
+## Components
+
+A component is a function that takes what it needs from the store (or as
+arguments) and returns an HTML string. No classes, no DOM diffing, no
+lifecycle. `render()` is the only thing that touches the DOM, once.
+
+| Component | Draws | Reads |
+|---|---|---|
+| `frame.js` | masthead, view bar, banners, status line, footer | the view, our standings row, fetch status, `state.problems` |
+| `nextgame.js` | the gold next-game card, with Directions / calendar links | `state.data.games`, `model/links.js` |
+| `standings.js` | standings table, pooled or flat; the pre-season card | the view, precomputed rows, rules |
+| `results.js` | schedule and results by day; rink links; season .ics | the view, `state.filterOurs` |
+| `events.js` | Events page and the crumb back | `dataViews()` |
+| `stats.js` | skater and goalie tables | `state.data.stats` |
+| `sponsors.js` | the folding sponsors block | `state.data.sponsors` |
+| `diagnostics.js` | the `?check` page | all of it |
+
+Interaction is one delegated click handler in `app.js` keyed on `data-act`
+attributes (`view`, `filter`, `sponsors`, `refresh`). A component that needs
+a control renders a `<button data-act="...">`; it never attaches listeners.
+
+Two rules that are not stylistic:
+
+1. **Anything from the sheet goes through `esc()` before it reaches HTML.**
+   The page is public and anyone with edit rights on the sheet can type
+   anything into a team name.
+2. **Anything keyed by sheet text uses `bare()`, not `{}`.** A team called
+   `__proto__` or `constructor` is a legal team name, and a plain object
+   would walk the prototype and corrupt every lookup.
+
+`safeUrl()` in `util/text.js` is the one gate between sheet text and an
+`href`. Only `http` and `https` get through; a bare domain is promoted to
+`https`; `javascript:`, `mailto:` and `data:` become nothing. The Sponsors
+"Website" column and the Teams "MyHockey link" column both go through it.
+
+## Feature switches
+
+The CONFIG block in `index.html` ends with a `features` object, one boolean
+per optional card or data-driven piece of the page: `nextGame`, `sponsors`,
+`stats`, `events`, `preseason`, `directions`, `calendar`, `seasonCalendar`,
+`mhrLinks`. `on(name)` in `state.js` is true unless the block says `false`;
+a name missing from the block counts as on, so an `index.html` written
+before a switch existed keeps every feature it had. Small controls (the
+Refresh button, the Setup check link, the record chip, the All/Ours switch,
+the crest, the warnings banner) have no switch on purpose: nobody flips
+them, and each one was a config line, a check in the code and a test.
+
+A switch is checked at the one place the feature enters the page, never
+spread through the model. `render()` skips the next-game card and the
+sponsors block; `buildViews()` drops the featured event, the Events tab and
+the Stats view; each component checks its own link or control. `load()` also
+skips fetching a tab whose feature is off (stats, rinks, sponsors), so an off
+switch saves a request as well as a paint. `events` off means league play
+only: event games stay in the data but never reach a view. Standings and the
+schedule are the page and have no switch. `?check` prints which switches are
+off.
+
+## Why two read routes
+
+Google offers two anonymous CSV endpoints (a third route, the site's own saved copy, is for when neither answers; see "The saved copy"). The raw export by tab ID returns
+cells exactly as typed. The tab-name reader (`gviz`) infers one type per
+column and silently blanks every cell that does not match, including the
+header cell of a numeric column. That is how "Away goals" and "Home goals"
+once vanished and the page rendered a full standings table of zeros with no
+warning. Three defenses, all covered by tests:
+
+1. The export route is primary; gviz is a fallback. Each route gets three
+   tries with a short backoff before the next route, because Google hands
+   back the odd transient 404 and a single blip used to leave the page on an
+   error banner. Each try is limited to 15 seconds (`TRY_LIMIT`, via an
+   `AbortController`): a connection that Google accepts and then stalls,
+   which rink wifi captive portals do, used to hang the page forever with no
+   message. `routeTrouble` (the "wrong tab IDs" warning) is set only when the
+   raw export route is given up on, not on its first failed try.
+2. `recoverByPosition()` in `util/csv.js` rebuilds a blanked header from the
+   columns around it: roles sitting between two columns that were identified
+   must occupy the unclaimed columns between them, in order, and only when
+   the counts match exactly. Columns to the left of the first recognised one
+   are handled the same way; that is where the Date header lands, blanked
+   because the column is date-typed. The stats parser does the same thing
+   anchored on its two text headers, "Player" and "Goalie".
+3. Goal columns unidentified, or many played games with no score, raises a
+   manager warning instead of drawing zeros.
+
+If you find yourself simplifying this back to one route, read
+`tests/README.md` first.
+
+## The saved copy
+
+`.github/workflows/snapshot.yml` runs every six hours on GitHub, fetches the
+six tabs through the same raw-export URLs the page uses, and commits them to
+`data/<tab>.csv` plus `data/updated.txt` (the UTC time of the copy) when a
+tab changed. A tab that comes back as a web page or fails to fetch keeps its
+old file.
+
+`routesFor()` lists `data/<tab>.csv` as the last route, after both Google
+routes. It is only reached when Google cannot be reached at all, so a parent
+on a new phone gets standings instead of an error, with a banner naming the
+copy's date (`noteSnapshot()` in `app.js` reads `updated.txt` when any tab
+came from the snapshot). `?check` shows `site snapshot` in the Read via line.
+The files are also the backup: if the sheet is lost, they paste straight
+back into a fresh one.
+
+The test suite stubs `data/` to 404 by default, so a local `data/` folder
+never masks a failing route; section [22] serves the fixtures from it.
+
+## Setup check
+
+`?check` renders `ui/diagnostics.js` instead of the page: sheet ID, tabs,
+what loaded, which route read each tab, which column served which field, the
+warnings in full, the Features line, and whether the saved copy is showing.
+A `?check` link sits in the footer of every view.
+
+There used to be a tab-ID lookup here that read Google's `htmlview` page and
+matched headers to work out the gids. It was 200 lines to save a manager
+sixty seconds once a season, and it could never find `gid=0`. The warning
+now says to copy the numbers from the sheet's address bar.
+
+## Polling
+
+The poll lives at the bottom of `app.js` and has three rules: the fast pace
+(`refreshSeconds`, at least 60 s) while a game is being played, eight times
+that otherwise; +/- 25% jitter on every delay so phones never line up; no
+fetch while the tab is hidden. "Being played" means a game dated today, not
+yet scored, from 20 minutes before face-off to 200 minutes after, using
+`timeKey()` from `util/dates.js` for the time. The poll once had its own
+time parser that ignored "pm", so an evening game was "live" in the morning
+and the fast pace never ran during the game. It also had a game-day
+multiplier and a quiet-poll stretch that no recorded failure called for;
+both are gone.
+
+`tickFresh()` in `ui/frame.js` patches the "updated N ago" line in place
+every 30 seconds. Repainting the whole page to re-word one line was the
+flash people were seeing. The `.ics` links stamp `DTSTAMP` from the fetch
+time, not the current minute, so a quiet poll produces identical markup and
+`render()` skips the DOM write.
+
+## Settings tab
+
+`shape/settings.js` matches row labels by prefix, and the order of
+`SETTINGS_ROWS` disambiguates. Matching on "contains" read the readiness
+panel below the settings block as more settings ("Your team is filled in"
+contains "our team", so the team name came out as the word OK). Anchoring at
+the start of the label kills that whole family of collision. "tiebreak
+rules" starts with "tie" too, so the tiebreak row sits above the points rows.
+Adding a setting means adding a row there, in the right place.
+
+The settings block ends at the first empty Field cell. On the tab-name route
+entirely-empty rows are dropped, so the block also stops at the readiness
+panel's own headings (`PANEL_HEADINGS`).
+
+The answer column is read by position, not by collapsing non-empty cells,
+because collapsing would slide the Notes column into an unanswered row. When
+Google types that column numeric its header is blanked too, so the fallback
+is "the column just right of Field". When the answer column holds both words
+and the points numbers, gviz decides it is numeric and returns the words as
+blank; the parser detects that exact shape and names the fix in a warning.
+
+## Teams tab
+
+A team name on the Schedule tab is text, not a reference, so renaming a club
+on the Teams tab leaves every game it played pointing at the old name. The
+"Also known as" column is the fix: list the old spelling there and both
+names resolve to the current one. It also covers the league and a tournament
+spelling a club differently ("Jr Terriers" against "Junior Terriers").
+Separate several with commas.
+
+The "MyHockey link" column takes a whole MHR address or just the numeric
+team ID. A number becomes the address for the current season, where the
+season year is this year from September on and last year before that, which
+is how MHR counts it. Anything that is not an MHR address is dropped with a
+note in the log. `ui/standings.js` `teamHtml()` reads the resulting map and
+draws the name as a link that opens in a new tab so the Rink Report is still
+there when the reader comes back.
+
+## Schedule tab
+
+Every warning names the sheet row and says what to type. "A row is wrong" is
+useless when you are standing in a rink with fifteen rows to check.
+
+Team names snap to the Teams list within two edits (`nearestName()`), so a
+rename that leaves two near-identical names gets a warning that says which
+Teams-tab name it nearly matched.
+
+A forgotten Event cell: a sheet that runs a season and a showcase always has
+both kinds of row, so the mix proves nothing. What does prove something is a
+row with a blank Event sitting on a day that belongs to an event. That row
+drops into League play on its own, and the parser says so.
+
+Missing scores: at the start of a season every game is in the future and
+every score is legitimately blank. Only a game whose date has passed is
+evidence of a reading problem.
+
+Dates accept `2026-11-14`, `11/14/2026`, `14 Nov 2026`, `Nov 14 2026`,
+`Date(2026,10,14)` (gviz, zero-based month) and Sheets serial numbers.
+
+## Player Stats tab
+
+The tab holds several blocks side by side: skater totals, goalie totals, then
+the game logs that feed them. The page reads the two totals blocks only, so
+the sheet's formulas do the adding and the page and sheet can never disagree.
+Each block is found by the one text header that survives every route:
+"Player" for skaters, "Goalie" for goalies. Numeric headers beside them are
+matched by name when present and by position when Google blanked them. Each
+block runs from its anchor to the next block's anchor; the game logs further
+right start with a Date column, which is where the goalie block ends. A row
+is a player until the name cell goes blank.
+
+"SV%" loses its % in `norm()` and reads as "sv", which once claimed the Saves
+column when Google had blanked the real Saves header. A percent sign now
+means a percentage and nothing else.
+
+Names come out as first name and last initial (`shortName()` at shape time),
+so a full name never reaches the model, the cache or the DOM. The page is
+public.
+
+## Game types
+
+Not every game counts toward anything. `Game type = Bracket` is decided by
+the pool standings rather than feeding them, so it stays on the schedule and
+leaves the table. A scrimmage counts toward nothing at all, and putting one
+in a qualifying record would be a real error. Clubs word the second kind
+differently, so `EXHIBITION_WORDS` matches the words managers actually type.
+The schedule row says BRACKET or the manager's own word in a tag, so nobody
+has to work out why a 6-1 win did not move the record.
+
+## Standings and tiebreaks
+
+Real events publish real tiebreak sequences and they disagree with each
+other, so `RULESETS` in `model/standings.js` is data, not code. Two-team and
+three-or-more paths are separate because most rulebooks separate them:
+head-to-head settles a pair and is meaningless across three clubs who did not
+all play each other.
+
+`orderTable()` sorts by points, then settles each level group with the
+event's own sequence. A group of exactly two uses the pair path; three or
+more use the other path, and any pair still level afterwards gets the pair
+sequence applied to just those two (`resettlePairs`). Teams a ruleset cannot
+separate keep the same rank number rather than being put in an invented
+order. `allEqual()` decides that, and for a pair it also looks at
+head-to-head: a pair the sequence split on head-to-head used to be flagged
+level and shown with one rank number. Do not add a special case to the
+comparator; add a sequence.
+
+## Views
+
+The Event column drives everything. Blank means league play; a name means
+that showcase or tournament. `dataViews()` returns every view the schedule
+implies, league plus one per event, derived and never configured.
+
+The bar is deliberately smaller than the data. By February a season carries
+the pre-season showcase, two tournaments and a playoff, and a bar that names
+every one of them is a bar nobody can read. So `buildViews()` shows League,
+the one featured event (being played this weekend, else the next one on the
+calendar, else none, because the bar should not advertise a tournament that
+already happened), an Events tab when any event is not the featured one, and
+Stats when the stats tab read. A past event opened from the Events list
+renders in full and lights the Events button; `barKeyFor()` decides which
+button lights for which view.
+
+Landing view, in order: an event with a game within a day of today; the
+Settings tab's "which view opens first"; league.
+
+`teamsInView()` lists the clubs you actually play in that competition. A club
+that only turns up in scrimmages, or only at a showcase, has no business
+sitting at 0-0-0 in the league table all season. Pool membership belongs to
+the event, not the team: `poolsInView()` reads it from the games.
+
+## Next game
+
+`nextgame.js` prefers our next unplayed game, else the next game on the
+schedule. A past game with no score shows as "Waiting on a score" instead of
+sitting there as next all week, and gets no directions or calendar links:
+nobody needs directions to last Tuesday.
+
+## Standings
+
+Ranking a table where nobody has played yet puts a "1" beside every club,
+which is technically true and reads as broken. Until a score is in, the
+table is a team list and gets no numbers. On the League view before the
+first league score, the table is replaced by the pre-season card: when play
+starts, one line per past event with our record there, and the division as a
+list. Event views keep their table even at 0-0.
+
+A single pool needs no heading above its own table, so it names the section
+instead; otherwise the Pool column would never reach the page.
+
+## Results order
+
+A season is a results feed: newest first, because the game you care about
+just finished. A showcase weekend is a schedule: you read it forward. The
+order is decided per view, not per game, so it cannot flip halfway through a
+weekend as scores come in. Before the first score of the season the League
+view is also a schedule, oldest first; it flips once, the day the first game
+is scored.
+
+Time and rink stay on the row after a score goes in, because a finished game
+still gets asked about.
+
+## Stats
+
+Saves and save percentage are not shown. Most youth scoresheets never record
+shots, so a save total is a count of whichever games someone happened to
+tally, and a percentage built on it looks exact and is not. GAA needs only
+goals against and minutes, which every sheet has, and is computed on the page
+from those two totals so it stays right whether the sheet's fifth goalie
+column says SV% (older tabs) or GAA.
+
+## Directions and calendar links
+
+`model/links.js` builds both on the phone from data already on the page. No
+server, no calendar service, nothing to keep in sync.
+
+- **Directions.** The Rinks tab (`Rink name`, `Address`) is optional. A rink
+  whose address is on the sheet becomes a link on the next-game card and on
+  unplayed schedule rows; a rink without one stays plain text. Rink names
+  snap within two edits, the same rule as team names ("Wlland JBM" against
+  "Welland JBM" was seen on the live sheet). Apple devices get a
+  `maps.apple.com` link, which opens the Maps app; a Google Maps link there
+  lands on a page asking you to install the app. Everyone else gets Google
+  Maps. `?check` lists the rinks still waiting on an address.
+- **Calendar.** The next-game card offers an `.ics` file (a `data:` URL) and
+  a Google Calendar link. The bottom of the schedule offers one `.ics` with
+  every unplayed game of ours, scrimmages included, because they are still a
+  drive to a rink. Times are floating local time (no Z, no TZID) with a
+  90-minute slot (`GAME_MINUTES`): a game in Buffalo is at 7:10 wherever the
+  phone happens to be. No face-off time means an all-day entry. The location
+  is rink plus address when known, and the description links back to the
+  page.
+
+## Sponsors
+
+The businesses paying for the season sit high on every view: masthead,
+next-game card, sponsors, then the bar. The block started at the foot of the
+page, where a printed program puts it, and that turned out to be where nobody
+scrolls. Folding is what bought the higher slot. Anything that walks `#app`'s
+children by position has the sponsors card sitting third; the QA suite
+selects content sections with `.card:not(.sponsors)` for that reason.
+
+- The Sponsors tab is `Sponsor` / `Tier` / `Website`. Only `Sponsor` is
+  required. Gold, silver and bronze sort in that order however the rows are
+  typed; an unknown tier still shows, after those three, in the order it
+  first appears; rows with no tier come last under no label.
+- Names in boxes, not logos. Logo files would need re-cropping every time a
+  sponsor changed; the outlined box is what the paper banner already does.
+  The tier is said three times: by its label, by the size of the box, and by
+  the colour of its outline. `tierClass()` derives that class from the tier's
+  own rank, never from the row's position, so a team with gold and bronze
+  sponsors and no silver does not paint its bronze row silver.
+- A linked sponsor is underlined, because on a phone there is no hover to
+  discover a link with.
+- The header is a `<button data-act="sponsors">` with `aria-expanded` and
+  `aria-controls`; the body is always in the markup and `hidden` is what
+  folds it, which keeps screen readers in step. Folded, the eyebrow still
+  reads "9 sponsors", so a sponsor is never entirely invisible.
+- The contact line under the names is the "Sponsor contact" row on the
+  Settings tab. Blank hides the line.
+
+## Cache key
+
+`CACHE_KEY` in `state.js` is bumped whenever the stored shape of
+`state.data` changes (v3 added stats, v4 rinks, v5 sponsors). An old cache
+with a new key is simply ignored.
+
+## Adding things
+
+**A new feature switch.** Only for a whole card or a data-driven piece.
+Add the name to the `features` block in `index.html` with a one-line
+comment, to `FEATURES` in `state.js`, and one `on("name")` test where the
+feature enters the page. Section [20] of `tests/qa.js` already proves the
+mechanism; add a check only if the new switch touches something the
+existing ones do not.
+
+**A new page or tab.** Add a component in `ui/` that returns HTML. Give the
+view a key in `buildViews()` (`{key:"stats", tab:"Stats", stats:true}` is
+the pattern) and a branch in `render()`. Give it a line in `diagnostics.js`.
+Write the test before the component.
+
+**A new sheet tab.** Add its name and gid to the CONFIG block in
+`index.html`, a `shape/<tab>.js` that turns rows into objects and warnings,
+and one entry in `OPTIONAL_TABS` in `app.js` (or a `getCSV()` call beside
+the required three). Add it to the tab list in `snapshot.yml`.
+
+**A new setting.** One row in `SETTINGS_ROWS` in `shape/settings.js`, in the
+right place: labels match by prefix and order disambiguates.
+
+**A new tiebreak sequence.** One entry in `RULESETS` in `model/standings.js`.
+
+## Conventions
+
+- Plain functions, `var`, no classes, no dependencies, no transpiling.
+- One statement per line, blank lines between logical steps, a JSDoc
+  docblock on every function. Comments carry the one rule a reader needs;
+  the reasoning lives in this document.
+- No em-dashes in comments or docs.
+- The CSP in `site/_headers` allows scripts only from the site itself and
+  connections only to Google. A CDN import will be blocked.
+
+## Testing
+
+`tests/qa.js` boots the real page in headless Chromium with every Google
+request answered from `tests/fixtures/`, drives it, and checks the DOM: 205
+checks across the read routes, the Events tab in three calendar situations,
+the Stats tab, directions and calendar links, sponsors, MyHockey links, the
+feature switches, the September 2026 review fixes (PM face-off, team-name
+snap, garbled schedule, transient 404, head-to-head rank, DTSTAMP) and the
+saved copy. `npm install` once, `npm test` after any change. Screenshots
+land in `tests/out/`. The number of checks is not a target; add one when a
+fix would otherwise be unprotected.
+
+## Deploying
+
+See `DEPLOY.md`. Scores never require a deploy; only a code change does.

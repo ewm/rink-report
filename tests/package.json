@@ -1,0 +1,12 @@
+{
+  "name": "rink-report-tests",
+  "private": true,
+  "description": "End-to-end checks for the Rink Report page, run against fixture CSVs in headless Chromium.",
+  "scripts": {
+    "test": "node qa.js",
+    "postinstall": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

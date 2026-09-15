@@ -170,6 +170,10 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
   text-transform:uppercase; color:var(--ink-3); font-weight:600; padding:18px 0 7px;
   border-bottom:1px solid var(--hair)}
 .daygroup:first-child .dayhead{padding-top:0}
+/* Where the card stops looking forward and starts looking back. */
+.listsplit{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:700; margin-top:24px;
+  padding-top:16px; border-top:2px solid var(--hair)}
 .game{display:grid; grid-template-columns:1fr auto; gap:3px 14px; align-items:start;
   padding:11px 0; border-bottom:1px solid var(--hair)}
 /* The score is right-aligned against the end of the teams block so the two

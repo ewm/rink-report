@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (~205 checks, ~2 minutes)
+//   npm test         (214 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -44,6 +44,20 @@ const FIX = {
   rinks:    fx('rinks.csv'),
   sponsors: fx('sponsors.csv'),
 };
+// A league season part-way through: puts a score on the first n league rows
+// (rows with a blank Event), so the card has finished games as well as
+// upcoming ones. Used by the schedule-order checks.
+function scoreLeague(csv, n){
+  let done = 0;
+  return csv.split(/\r?\n/).map(l=>{
+    const c = l.split(',');
+    if(done>=n || !/^20\d\d-/.test(c[0]||'') || (c[9]||'')!=='') return l;
+    c[4]='4'; c[5]='1'; done++;
+    return c.join(',');
+  }).join('\r\n');
+}
+ALT.scored = scoreLeague(FIX.schedule, 2);
+
 const GIDS = { '1160090892':'settings', '239776309':'teams', '1739208952':'schedule', '703037060':'stats', '1202177208':'rinks', '95128319':'sponsors' };
 const TABS = { 'Settings':'settings', 'Teams':'teams', 'Schedule':'schedule', 'Player Stats':'stats', 'Rinks':'rinks', 'Sponsors':'sponsors' };
 
@@ -849,6 +863,41 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','site');
     const diag = await r.page.$eval('#app', e=>e.textContent);
     ok(/Saved copy/.test(diag) && /schedule=site snapshot/.test(diag), '?check names the snapshot route');
     await r.ctx.close();
+  }
+
+  // 23. Schedule order: what is coming sits above what is finished
+  console.log('\n[23] schedule order');
+  {
+    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {schedule:'scored'});
+    ok(errors.length===0, 'no page errors');
+    // Each day in the card, in the order it is painted, plus the divider.
+    const read = () => page.evaluate(()=>{
+      const card = [...document.querySelectorAll('.card')].find(c=>/Schedule & results/.test(((c.querySelector('h2')||{}).textContent)||''));
+      return [...card.querySelector('.card-b').children].map(el=>{
+        if(el.classList.contains('listsplit')) return {split:el.textContent};
+        if(!el.classList.contains('daygroup')) return null;
+        const scores = [...el.querySelectorAll('.game .sc')].map(x=>x.textContent);
+        return {date:((el.querySelector('.dayhead')||{}).textContent)||'', scored:scores.some(t=>t!=='')};
+      }).filter(Boolean);
+    });
+    const rows = await read();
+    const at = rows.findIndex(r=>r.split);
+    const ahead = at<0 ? rows : rows.slice(0,at);
+    const behind = at<0 ? [] : rows.slice(at+1);
+    ok(at>0 && rows[at].split==='Final scores', 'a "Final scores" divider separates the two halves (day '+at+')');
+    ok(ahead.length>0 && ahead.every(r=>!r.scored), 'every day above the divider is still to be played ('+ahead.length+' days)');
+    ok(behind.length>0 && behind.every(r=>r.scored), 'every day below it has a score ('+behind.length+' days)');
+    ok(ahead[0].date==='Mon Sep 28', 'the card opens on the next game, not the furthest one: '+ahead[0].date);
+    ok(ahead[ahead.length-1].date==='Sun Feb 14', 'upcoming days run nearest to furthest: '+ahead[0].date+' ... '+ahead[ahead.length-1].date);
+    ok(behind.map(r=>r.date).join(' / ')==='Fri Sep 25 / Sun Sep 13', 'finished days run most recent first: '+behind.map(r=>r.date).join(' / '));
+    // An event weekend is read standing in the rink, so it stays in plain date
+    // order with played and unplayed games together.
+    await page.click('.viewbar button[data-v="events"]'); await page.waitForTimeout(100);
+    await page.click('.evrow'); await page.waitForTimeout(150);
+    const ev = await read();
+    ok(!ev.some(r=>r.split), 'an event gets no divider');
+    ok(ev.map(r=>r.date).join(' / ')==='Fri Aug 28 / Sat Aug 29 / Sun Aug 30', 'the showcase still reads forward: '+ev.map(r=>r.date).join(' / '));
+    await ctx.close();
   }
 
   await browser.close(); sNew.close();

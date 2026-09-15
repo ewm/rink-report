@@ -399,12 +399,17 @@ instead; otherwise the Pool column would never reach the page.
 
 ## Results order
 
-A season is a results feed: newest first, because the game you care about
-just finished. A showcase weekend is a schedule: you read it forward. The
-order is decided per view, not per game, so it cannot flip halfway through a
-weekend as scores come in. Before the first score of the season the League
-view is also a schedule, oldest first; it flips once, the day the first game
-is scored.
+A season leads with what is coming: every game still to be played, nearest
+first, so the next one sits at the top of the card in September and in
+February alike. The finished games follow under a "Final scores" divider,
+most recent first, because the score people ask about is the one from the
+game that just ended. Before the first score of the season there is no
+divider and the card is simply a schedule.
+
+A showcase weekend is a different animal and reads straight forward, played
+and unplayed together: you are standing in the rink all weekend and what you
+want is the next thing on the sheet. The order is decided per view, not per
+game, so it cannot flip halfway through a weekend as scores come in.
 
 Time and rink stay on the row after a score goes in, because a finished game
 still gets asked about.

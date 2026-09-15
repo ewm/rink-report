@@ -1,10 +1,11 @@
 /**
  * Component: schedule and results, grouped by day.
  *
- * resultsHtml(view) lists league play newest first once a score is in; an
- * event reads forward like a schedule. The order is decided per view, not per
- * game, so it never flips halfway through a weekend. Honors state.filterOurs.
- * See ARCHITECTURE.md, "Results order".
+ * resultsHtml(view) leads a season with the games still to come, nearest
+ * first, and lists the finished ones underneath, most recent first. An event
+ * reads straight forward like a schedule. The order is decided per view, not
+ * per game, so it never flips halfway through a weekend. Honors
+ * state.filterOurs. See ARCHITECTURE.md, "Results order".
  */
 import { bySlot, isBracket, isExhibition, isOurs, played } from "../model/game.js";
 import { directionsFor, icsUrl, ourSeasonGames } from "../model/links.js";
@@ -20,15 +21,12 @@ import { esc } from "../util/text.js";
  * @returns {string} HTML.
  */
 function resultsHtml(v) {
-  var all = v.games.slice().sort(bySlot);
-
-  // A season is a schedule until its first score is in, then a results feed.
-  if (!v.event && all.some(played)) {
-    all.reverse();
-  }
-
+  var all = orderedGames(v);
   var filt = state.filterOurs;
   var shown = filt ? all.filter(isOurs) : all;
+
+  // Where the schedule turns into the results feed, in the list as shown.
+  var splitAt = v.event ? -1 : firstPlayedIndex(shown);
   var h = '<section class="card"><div class="card-h"><h2>Schedule &amp; results</h2>';
 
   h +=
@@ -45,7 +43,16 @@ function resultsHtml(v) {
   } else {
     var last = null;
 
-    shown.forEach(function (g) {
+    shown.forEach(function (g, i) {
+      if (i === splitAt) {
+        if (last !== null) {
+          h += "</div>";
+        }
+
+        h += '<div class="listsplit">Final scores</div>';
+        last = null;
+      }
+
       if (g.date !== last) {
         if (last !== null) {
           h += "</div>";
@@ -78,6 +85,61 @@ function resultsHtml(v) {
   }
 
   return h + "</div></section>";
+}
+
+/**
+ * The games of a view in the order the card lists them.
+ *
+ * An event reads straight forward: you are in the rink all weekend and what
+ * you want is the next thing on the sheet. A season leads with the games
+ * still to come, nearest first, so the next one is always at the top of the
+ * card, then the finished games underneath.
+ *
+ * @param {Object} v - The view.
+ * @returns {Object[]} The games, in display order.
+ */
+function orderedGames(v) {
+  var all = v.games.slice().sort(bySlot);
+
+  if (v.event) {
+    return all;
+  }
+
+  var ahead = [];
+  var done = [];
+
+  all.forEach(function (g) {
+    if (played(g)) {
+      done.push(g);
+      return;
+    }
+
+    ahead.push(g);
+  });
+
+  // Finished games read backwards: the score people ask about is the one from
+  // the game that just ended.
+  done.reverse();
+
+  return ahead.concat(done);
+}
+
+/**
+ * Where the finished games start in a list already in display order. Returns
+ * -1 when there is nothing to divide: no finished games, or no upcoming ones
+ * sitting above them.
+ *
+ * @param {Object[]} games - The games, in display order.
+ * @returns {number} Index of the first finished game, or -1.
+ */
+function firstPlayedIndex(games) {
+  for (var i = 0; i < games.length; i++) {
+    if (played(games[i])) {
+      return i > 0 ? i : -1;
+    }
+  }
+
+  return -1;
 }
 
 /**

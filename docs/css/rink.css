@@ -65,7 +65,7 @@ h1,h2{margin:0; font-family:var(--f-display); font-weight:700; letter-spacing:.0
 .masthead .crest{height:44px; width:auto; max-width:84px; flex:0 0 auto; object-fit:contain; display:block}
 .masthead .txt{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto}
 .masthead .eyebrow{color:var(--gold)}
-.masthead h1{font-size:27px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
+.masthead h1{font-size:31px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
 .record{font-variant-numeric:tabular-nums; font-size:12px;
   font-weight:600; white-space:nowrap; color:var(--gold); align-self:center;
   border:1px solid rgba(252,213,30,.5); padding:5px 8px}
@@ -78,9 +78,9 @@ h1,h2{margin:0; font-family:var(--f-display); font-weight:700; letter-spacing:.0
 .countdown{font-size:10px; font-weight:700;
   letter-spacing:.14em; color:var(--on-gold)}
 .next .body{padding:6px 18px 18px}
-.matchup{font-family:var(--f-display); font-weight:700; font-size:30px; line-height:1.02;
+.matchup{font-family:var(--f-display); font-weight:700; font-size:34px; line-height:1.02;
   text-transform:uppercase; letter-spacing:.01em; color:var(--on-gold); margin:0 0 10px}
-.matchup .vs{font-size:16px; letter-spacing:.08em; opacity:.62; padding-right:3px}
+.matchup .vs{font-size:18px; letter-spacing:.08em; opacity:.62; padding-right:3px}
 .when{font-size:13px; display:flex; flex-wrap:wrap; gap:2px 14px; color:var(--on-gold-2);
   font-variant-numeric:tabular-nums}
 .when b{font-weight:700; color:var(--on-gold)}
@@ -300,8 +300,8 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
 }
 
 @media (max-width:420px){
-  .masthead h1{font-size:23px}
-  .matchup{font-size:26px}
+  .masthead h1{font-size:26px}
+  .matchup{font-size:29px}
   tbody td+td,thead th+th{padding-left:7px}
   table{font-size:13px}
   tbody td:first-child{font-size:14px}

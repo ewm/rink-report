@@ -1,6 +1,9 @@
 /* ------------------------------------------------------------------
    West Seneca Wings — royal blue #003087 and jersey gold #FCD51E,
    sampled from the club site.
+   Type: Barlow Condensed for names, Barlow for everything else. Barlow
+   carries the numbers too, on its tabular figures, so the columns line up
+   without a second family.
    Treatment: a printed game program, not an app. No floating cards,
    no drop shadows, no rounded panels. Sections are divided by full
    width rules with their name set into the rule; the numbers are the
@@ -15,6 +18,9 @@
   --us-ink:#003087; --us-bg:rgba(252,213,30,.16);
   --m-gold:#B58B00; --m-silver:#78849A; --m-bronze:#A2662F;
   --win:#116B45; --warn:#7A4E00; --warn-bg:#FFF6DC; --warn-rule:#E0B354;
+
+  --f-display:"Barlow Condensed","Arial Narrow",Helvetica,sans-serif;
+  --f-text:"Barlow",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,sans-serif;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -41,16 +47,15 @@
 *{box-sizing:border-box}
 html{background:var(--ground)}
 body{margin:0; background:var(--ground); color:var(--ink);
-  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-family:var(--f-text);
   font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;}
 /* 640 was a phone column pasted onto a laptop: the standings numbers bunched
    at the right while 750px of nothing sat either side. 780 gives the table
    room without stretching a line of prose past comfortable reading length.
    Below 780 nothing changes at all — a max-width only binds above itself. */
 #app{max-width:780px; margin:0 auto; padding:0 0 56px}
-h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacing:.01em; text-wrap:balance}
+h1,h2{margin:0; font-family:var(--f-display); font-weight:700; letter-spacing:.01em; text-wrap:balance}
 .eyebrow{font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; color:var(--ink-3)}
-.mono,.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
 
 /* ---- masthead: the club's navy bar, with the gold rule under it ---- */
 .masthead{background:var(--navy); padding:19px 18px 16px; display:flex; align-items:center; gap:13px;
@@ -61,7 +66,7 @@ h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacin
 .masthead .txt{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto}
 .masthead .eyebrow{color:var(--gold)}
 .masthead h1{font-size:27px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
-.record{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:12px;
+.record{font-variant-numeric:tabular-nums; font-size:12px;
   font-weight:600; white-space:nowrap; color:var(--gold); align-self:center;
   border:1px solid rgba(252,213,30,.5); padding:5px 8px}
 
@@ -70,19 +75,19 @@ h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacin
 .next .strip{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
   padding:13px 18px 0}
 .next .strip .eyebrow{color:var(--on-gold)}
-.countdown{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
+.countdown{font-size:10px; font-weight:700;
   letter-spacing:.14em; color:var(--on-gold)}
 .next .body{padding:6px 18px 18px}
-.matchup{font-family:Bitter,Georgia,serif; font-weight:800; font-size:30px; line-height:1.02;
-  text-transform:uppercase; letter-spacing:-.005em; color:var(--on-gold); margin:0 0 10px}
+.matchup{font-family:var(--f-display); font-weight:700; font-size:30px; line-height:1.02;
+  text-transform:uppercase; letter-spacing:.01em; color:var(--on-gold); margin:0 0 10px}
 .matchup .vs{font-size:16px; letter-spacing:.08em; opacity:.62; padding-right:3px}
 .when{font-size:13px; display:flex; flex-wrap:wrap; gap:2px 14px; color:var(--on-gold-2);
-  font-family:"IBM Plex Mono",monospace}
+  font-variant-numeric:tabular-nums}
 .when b{font-weight:700; color:var(--on-gold)}
 .empty{color:var(--ink-2); font-size:14px; margin:0; padding:2px 0}
 /* the row of things to tap under the next game: directions, calendar */
 .actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
-.actions .act{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700; letter-spacing:.1em;
+.actions .act{font-size:10px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; color:var(--on-gold); text-decoration:none; border:1px solid var(--on-gold);
   padding:6px 10px; background:rgba(255,255,255,.28)}
 .actions .act:hover{background:rgba(255,255,255,.55)}
@@ -104,7 +109,7 @@ h1,h2{margin:0; font-family:Bitter,Georgia,serif; font-weight:800; letter-spacin
 .viewbar button[aria-pressed="true"]{background:var(--navy); color:#fff;
   box-shadow:inset 0 -4px 0 var(--gold)}
 
-.evtag{margin-top:9px; display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px;
+.evtag{margin-top:9px; display:inline-block; font-size:10px;
   font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--on-gold);
   border:1px solid currentColor; opacity:.85; padding:3px 7px}
 
@@ -123,10 +128,10 @@ thead th{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:va
 thead th+th{padding-left:9px}
 thead th:first-child{text-align:left; padding-left:32px}
 tbody td{padding:9px 0; border-top:1px solid var(--hair); text-align:right; white-space:nowrap;
-  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink-2)}
+  font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink-2)}
 tbody td+td{padding-left:9px}
 tbody td:first-child{text-align:left; padding-left:32px; text-indent:-24px;
-  font-family:"IBM Plex Sans",sans-serif; color:var(--ink); width:99%;
+  color:var(--ink); width:99%;
   white-space:normal; overflow-wrap:anywhere; font-size:15px}
 tbody td.pts{color:var(--ink); font-weight:600; font-size:15px}
 tr.us td{background:var(--us-bg)}
@@ -135,7 +140,7 @@ tr.us td.pts{color:var(--us-ink); font-weight:700}
 /* text-indent is inherited, and this inline-block would re-apply the cell's
    negative indent to its own digit and push it out of view. */
 .rank{display:inline-block; width:24px; text-indent:0; color:var(--ink-2);
-  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600}
+  font-variant-numeric:tabular-nums; font-size:12px; font-weight:600}
 /* ---- team names that open the club's MyHockey Rankings page ----
    Set by the "MyHockey link" column on the Teams tab. The name keeps its own
    colour and weight (our gold row stays gold); a hairline underline and a
@@ -149,15 +154,15 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
   width:100%; text-align:left; font:inherit; color:var(--ink); background:transparent; border:0;
   border-bottom:1px solid var(--hair); padding:12px 0; cursor:pointer}
 .evrow .evname{font-size:15px; font-weight:600; grid-column:1; grid-row:1; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-.evrow .evdates{grid-column:1; grid-row:2; font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2); padding-top:2px}
-.evrow .evrec{grid-column:2; grid-row:1/3; align-self:center; font-family:"IBM Plex Mono",monospace;
+.evrow .evdates{grid-column:1; grid-row:2; font-size:12px; color:var(--ink-2); padding-top:2px}
+.evrow .evrec{grid-column:2; grid-row:1/3; align-self:center;
   font-variant-numeric:tabular-nums; font-size:16px; font-weight:600; color:var(--ink)}
 .evrow .evrec.muted{color:var(--ink-3); font-weight:500; font-size:12px}
 /* the way back from an event opened off the list */
 .crumb{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 18px 2px}
-.crumb button{font:inherit; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700; letter-spacing:.1em;
+.crumb button{font:inherit; font-size:10px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; background:transparent; border:1px solid var(--hair); color:var(--ink-2); padding:5px 10px; cursor:pointer}
-.crumb .evdates{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3); white-space:nowrap}
+.crumb .evdates{font-size:11px; color:var(--ink-3); white-space:nowrap}
 /* Five number columns instead of the standings' nine, so the skater table can
    afford air between them on a phone. */
 .skaters tbody td+td,.skaters thead th+th{padding-left:14px}
@@ -166,12 +171,12 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .poolname:first-child{padding-top:0}
 
 /* ---- results ---- */
-.dayhead{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+.dayhead{font-size:10px; letter-spacing:.16em;
   text-transform:uppercase; color:var(--ink-3); font-weight:600; padding:18px 0 7px;
   border-bottom:1px solid var(--hair)}
 .daygroup:first-child .dayhead{padding-top:0}
 /* Where the card stops looking forward and starts looking back. */
-.listsplit{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+.listsplit{font-size:10px; letter-spacing:.16em;
   text-transform:uppercase; color:var(--ink-3); font-weight:700; margin-top:24px;
   padding-top:16px; border-top:2px solid var(--hair)}
 .game{display:grid; grid-template-columns:1fr auto; gap:3px 14px; align-items:start;
@@ -184,13 +189,13 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .game .teams{display:flex; flex-direction:column; gap:3px; min-width:0; max-width:330px}
 .game .side{display:flex; justify-content:space-between; gap:12px; font-size:15px; align-items:baseline}
 .game .side .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.game .side .sc{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+.game .side .sc{font-variant-numeric:tabular-nums;
   font-weight:600; font-size:17px}
 .game .side.lost .nm,.game .side.lost .sc{color:var(--ink-3); font-weight:400}
 .game .side.ours .nm{font-weight:700}
 .game .meta{font-size:11px; color:var(--ink-3); text-align:right; white-space:nowrap; line-height:1.6; padding-top:1px}
 .game .meta .tag{margin-bottom:2px}
-.game .meta .tm{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+.game .meta .tm{font-variant-numeric:tabular-nums;
   color:var(--ink-2); font-size:12px}
 .game .meta .rinklink{color:var(--navy-ink); text-decoration:underline; text-decoration-color:var(--hair); text-underline-offset:2px}
 .card .foot .seasoncal{color:var(--navy-ink); font-weight:600}
@@ -203,7 +208,7 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .division li{font-size:15px; padding:6px 0; border-bottom:1px solid var(--hair); break-inside:avoid; color:var(--ink)}
 .division li.us{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--gold); padding-left:10px}
 @media (max-width:420px){ .division ul{columns:1} }
-.tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:700;
+.tag{display:inline-block; font-size:10px; font-weight:700;
   letter-spacing:.1em; padding:2px 6px; border:1px solid var(--hair); color:var(--ink-3)}
 .tag.w{background:var(--gold); border-color:var(--gold); color:var(--on-gold)}
 .tag.l{color:var(--ink-3)}
@@ -217,7 +222,7 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
 
 .status{display:flex; align-items:center; justify-content:space-between; gap:10px;
-  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  font-size:10px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--ink-3); padding:16px 18px 0; border-top:2px solid var(--rule); margin-top:0}
 .status button{font:inherit; font-size:10px; letter-spacing:.1em; background:transparent;
   border:1px solid var(--hair); color:var(--ink-2); padding:5px 10px; cursor:pointer}
@@ -255,12 +260,12 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offs
 .sponsors .sp0{--tier:var(--m-gold)}
 .sponsors .sp1{--tier:var(--m-silver)}
 .sponsors .sp2{--tier:var(--m-bronze)}
-.sponsors .sptl{display:block; font-family:"IBM Plex Mono",monospace; font-size:9px; font-weight:700;
+.sponsors .sptl{display:block; font-size:9px; font-weight:700;
   letter-spacing:.18em; text-transform:uppercase; color:var(--tier); padding-bottom:7px}
 /* A row of boxes that wraps. gap, not margins, so a name never trails a stray
    half-gap at the end of a line. */
 .sponsors .sprail{display:flex; flex-wrap:wrap; gap:6px}
-.sponsors .sprail a,.sponsors .sprail span{font-family:"IBM Plex Sans",sans-serif; font-weight:600;
+.sponsors .sprail a,.sponsors .sprail span{font-weight:600;
   font-size:13px; line-height:1.25; color:var(--ink); text-decoration:none;
   border:1px solid var(--tier); padding:6px 10px; max-width:100%}
 .sponsors .sp0 .sprail a,.sponsors .sp0 .sprail span{font-size:15px; font-weight:700; padding:8px 12px}
@@ -279,7 +284,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offs
 @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 
 pre.diag{background:var(--tint); border-left:4px solid var(--navy); padding:14px 16px;
-  font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.65; overflow-x:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:12px; line-height:1.65; overflow-x:auto;
   white-space:pre-wrap; word-break:break-word; color:var(--ink-2); margin:18px}
 pre.diag b{color:var(--ink)}
 pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color:var(--warn)}

@@ -397,6 +397,25 @@ list. Event views keep their table even at 0-0.
 A single pool needs no heading above its own table, so it names the section
 instead; otherwise the Pool column would never reach the page.
 
+## Type
+
+Two faces, one family. Barlow Condensed 700 sets the team names and the
+section heads. Barlow sets everything else, including every number: it has
+tabular figures, so the standings columns line up on their own and the page
+does not need a monospace to keep them square.
+
+That is the rule worth keeping. Before this, small text of every kind was set
+in a monospace, which is right for a score and wrong for the word
+"Directions", and the page as a whole read like a developer tool. A monospace
+survives in exactly one place, the ?check readout, where the columns are the
+point and the reader is whoever is fixing the sheet. That one uses whatever
+monospace the machine already has, so it costs nothing to download.
+
+Both faces come from Google Fonts, non-blocking, so the page paints in a
+system font and swaps when they arrive. The two stacks are `--f-display` and
+`--f-text` at the top of rink.css. Changing the whole look of the page is
+changing those two lines.
+
 ## Results order
 
 A season leads with what is coming: every game still to be played, nearest

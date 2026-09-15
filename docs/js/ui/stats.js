@@ -2,11 +2,18 @@
  * Component: the Stats page.
  *
  * statsHtml() renders the skater table (points, goals, number) and the
- * goalie table from state.data.stats. The sheet does the adding; the one
+ * goalie table, either from the sheet's own season totals or, when the
+ * League switch is on, from the game log restricted to league play. The sheet does the adding; the one
  * thing figured here is GAA, from the sheet's own GA and minutes and the
  * league's game length. See ARCHITECTURE.md, "Stats".
  */
-import { gaaFromLog, goalieLogFor } from "../model/gamelog.js";
+import {
+  canSplitByScope,
+  gaaFromLog,
+  goalieLogFor,
+  leagueGoalies,
+  leagueSkaters
+} from "../model/gamelog.js";
 import { state } from "../state.js";
 import { esc } from "../util/text.js";
 
@@ -91,6 +98,32 @@ function mixedLengths() {
 }
 
 /**
+ * The League / All games switch, or "" when the sheet cannot answer it.
+ *
+ * It takes a game log with at least one league game in it. Without that
+ * there is nothing to filter and the switch would be a button that does
+ * nothing.
+ *
+ * @returns {string} HTML.
+ */
+function scopeSeg() {
+  if (!canSplitByScope()) {
+    return "";
+  }
+
+  var lg = state.statsScope === "league";
+
+  return (
+    '<span class="seg"><button type="button" data-act="statsscope" data-v="league" aria-pressed="' +
+    lg +
+    '">League</button>' +
+    '<button type="button" data-act="statsscope" data-v="all" aria-pressed="' +
+    !lg +
+    '">All games</button></span>'
+  );
+}
+
+/**
  * The Skaters and In net cards, or "" when there are no stats.
  *
  * @returns {string} HTML.
@@ -105,24 +138,57 @@ function statsHtml() {
     return "";
   }
 
-  for (i = 0; i < s.skaters.length; i++) {
-    if (s.skaters[i].gp > gp) {
-      gp = s.skaters[i].gp;
+  // League play is figured from the game log; everything else is the sheet's
+  // own totals, which is what a manager sees in the spreadsheet.
+  var seg = scopeSeg();
+  var league = seg !== "" && state.statsScope === "league";
+  var skaters = league ? leagueSkaters() : s.skaters;
+  var goalies = league ? leagueGoalies() : s.goalies;
+
+  if (league) {
+    skaters.sort(function (x, y) {
+      if ((y.pts || 0) !== (x.pts || 0)) {
+        return (y.pts || 0) - (x.pts || 0);
+      }
+
+      if ((y.g || 0) !== (x.g || 0)) {
+        return (y.g || 0) - (x.g || 0);
+      }
+
+      return (x.no || 999) - (y.no || 999);
+    });
+
+    goalies.sort(function (x, y) {
+      if ((y.gp || 0) !== (x.gp || 0)) {
+        return (y.gp || 0) - (x.gp || 0);
+      }
+
+      return (x.no || 999) - (y.no || 999);
+    });
+  }
+
+  for (i = 0; i < skaters.length; i++) {
+    if (skaters[i].gp > gp) {
+      gp = skaters[i].gp;
     }
   }
 
-  var through = gp ? "Through " + gp + " game" + (gp === 1 ? "" : "s") : "Season";
+  // With the switch on screen the header is already carrying two things, so
+  // the game count drops the word "through" rather than crowding a phone.
+  var through = gp ? (seg ? "" : "Through ") + gp + " game" + (gp === 1 ? "" : "s") : "Season";
 
-  if (s.skaters.length) {
+  if (skaters.length) {
     h +=
       '<section class="card skaters"><div class="card-h"><h2>Skaters</h2><span class="eyebrow">' +
       esc(through) +
-      '</span></div><div class="card-b">';
+      "</span>" +
+      seg +
+      '</div><div class="card-b">';
     h +=
       '<div class="tablewrap"><table><thead><tr><th scope="col">Player</th><th scope="col">GP</th>' +
       '<th scope="col">G</th><th scope="col">A</th><th scope="col">Pts</th><th scope="col">PIM</th></tr></thead><tbody>';
 
-    s.skaters.forEach(function (p) {
+    skaters.forEach(function (p) {
       h +=
         '<tr><td><span class="rank">' +
         (p.no !== null ? esc(fmtNum(p.no)) : "") +
@@ -143,22 +209,29 @@ function statsHtml() {
     });
 
     h += "</tbody></table></div>";
-    h += '<p class="foot">Sorted by points, then goals. PIM counts each 1:30 minor as 1.5.</p>';
+    h +=
+      '<p class="foot">' +
+      (league ? "League play only, from the game log. " : "") +
+      "Sorted by points, then goals. PIM counts each 1:30 minor as 1.5." +
+      (league ? " GP is the team's league games, so a missed game is not taken off." : "") +
+      "</p>";
     h += "</div></section>";
   }
 
-  if (s.goalies.length) {
+  if (goalies.length) {
     h +=
       '<section class="card"><div class="card-h"><h2>In net</h2><span class="eyebrow">' +
       esc(through) +
-      '</span></div><div class="card-b">';
+      "</span>" +
+      seg +
+      '</div><div class="card-b">';
     h +=
       '<div class="tablewrap"><table><thead><tr><th scope="col">Goalie</th><th scope="col">GP</th><th scope="col">Min</th>' +
       '<th scope="col">GA</th><th scope="col">GAA</th><th scope="col">SO</th><th scope="col">W</th><th scope="col">L</th></tr></thead><tbody>';
 
     // Saves and save percentage are left out on purpose: most youth scoresheets never record
     // shots. See ARCHITECTURE.md, "Stats".
-    s.goalies.forEach(function (g) {
+    goalies.forEach(function (g) {
       h +=
         '<tr><td><span class="rank">' +
         (g.no !== null ? esc(fmtNum(g.no)) : "") +
@@ -172,7 +245,7 @@ function statsHtml() {
         "</td><td>" +
         fmtNum(g.ga) +
         '</td><td class="pts">' +
-        fmtGaa(gaaFor(g)) +
+        fmtGaa(league ? g.gaa : gaaFor(g)) +
         "</td><td>" +
         fmtNum(g.so) +
         "</td><td>" +
@@ -184,7 +257,9 @@ function statsHtml() {
 
     h += "</tbody></table></div>";
     h +=
-      '<p class="foot">GAA is goals against per full game of ' +
+      '<p class="foot">' +
+      (league ? "League play only, from the game log. " : "") +
+      'GAA is goals against per full game of ' +
       fmtNum(state.data.config.gameMinutes) +
       " minutes" +
       (mixedLengths() ? ", and of whatever the Schedule tab says for an event that runs a different clock" : "") +

@@ -332,6 +332,11 @@ document.addEventListener("click", function (e) {
     render();
   }
 
+  if (a === "statsscope") {
+    state.statsScope = el.getAttribute("data-v");
+    render();
+  }
+
   if (a === "view") {
     state.viewKey = el.getAttribute("data-v");
     render();

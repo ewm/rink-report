@@ -13,6 +13,7 @@
  * same event and, in practice, run the same length, so the date is enough.
  * See ARCHITECTURE.md, "The game log".
  */
+import { isExhibition, isOurs, played } from "./game.js";
 import { state } from "../state.js";
 
 /**
@@ -79,4 +80,152 @@ function goalieLogFor(name) {
   });
 }
 
-export { fullGameMinutes, gaaFromLog, goalieLogFor };
+/**
+ * Whether a date belongs to league play.
+ *
+ * League play is what feeds the standings: our game, no Event on the row,
+ * and not a scrimmage. A date carrying both a league game and a scrimmage
+ * would count both, which the date-only matching above cannot separate; two
+ * games in a day are almost always the same kind, so this is left alone
+ * rather than guessed at.
+ *
+ * @param {string} iso - The date, YYYY-MM-DD.
+ * @returns {boolean}
+ */
+function isLeagueDate(iso) {
+  var games = state.data.games || [];
+
+  for (var i = 0; i < games.length; i++) {
+    var g = games[i];
+
+    if (g.date === iso && !g.event && isOurs(g) && !isExhibition(g)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * How many league games the team has actually played.
+ *
+ * This is a skater's GP in the league-only table. A skater's log row only
+ * exists when they put up a point or took a penalty, so their own games
+ * cannot be counted from the log; the team's count is the same rule the
+ * sheet uses by default. A kid who missed a league game reads one high, and
+ * the typed-over GP on the sheet cannot help here because it is a season
+ * total with no way to split it by event.
+ *
+ * @returns {number}
+ */
+function leagueGamesPlayed() {
+  var games = state.data.games || [];
+  var n = 0;
+
+  games.forEach(function (g) {
+    if (!g.event && isOurs(g) && !isExhibition(g) && played(g)) {
+      n += 1;
+    }
+  });
+
+  return n;
+}
+
+/**
+ * The roster's league-only skater line, in the same shape the totals table
+ * uses, so the component does not care which scope it is drawing.
+ *
+ * @returns {Object[]}
+ */
+function leagueSkaters() {
+  var rows = (state.data.stats && state.data.stats.logSkaters) || [];
+  var gp = leagueGamesPlayed();
+
+  return ((state.data.stats && state.data.stats.skaters) || []).map(function (p) {
+    var o = { name: p.name, no: p.no, gp: gp, g: 0, a: 0, pts: 0, pim: 0 };
+
+    rows.forEach(function (r) {
+      if (r.name === p.name && isLeagueDate(r.date)) {
+        o.g += r.g || 0;
+        o.a += r.a || 0;
+        o.pim += r.pim || 0;
+      }
+    });
+
+    o.pts = o.g + o.a;
+
+    return o;
+  });
+}
+
+/**
+ * The roster's league-only goalie line. Everything here is countable from
+ * the log, because a goalie gets a row every game they dress for.
+ *
+ * @returns {Object[]}
+ */
+function leagueGoalies() {
+  var rows = (state.data.stats && state.data.stats.logGoalies) || [];
+
+  return ((state.data.stats && state.data.stats.goalies) || []).map(function (k) {
+    var mine = rows.filter(function (r) {
+      return r.name === k.name && isLeagueDate(r.date);
+    });
+
+    var o = { name: k.name, no: k.no, gp: mine.length, min: 0, ga: 0, so: 0, w: 0, l: 0 };
+
+    mine.forEach(function (r) {
+      o.min += r.min || 0;
+      o.ga += r.ga || 0;
+
+      if ((r.ga || 0) === 0) {
+        o.so += 1;
+      }
+
+      if (r.result === "w") {
+        o.w += 1;
+      } else if (r.result === "l") {
+        o.l += 1;
+      }
+    });
+
+    o.gaa = gaaFromLog(mine);
+
+    return o;
+  });
+}
+
+/**
+ * Whether the league-only view can be offered at all: there has to be a log
+ * to read and a league game in it.
+ *
+ * @returns {boolean}
+ */
+function canSplitByScope() {
+  var st = state.data.stats;
+
+  if (!st || (!(st.logSkaters || []).length && !(st.logGoalies || []).length)) {
+    return false;
+  }
+
+  var rows = (st.logSkaters || []).concat(st.logGoalies || []);
+
+  for (var i = 0; i < rows.length; i++) {
+    if (isLeagueDate(rows[i].date)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export {
+  canSplitByScope,
+  fullGameMinutes,
+  gaaFromLog,
+  goalieLogFor,
+  isLeagueDate,
+  leagueGamesPlayed,
+  leagueGoalies,
+  leagueSkaters
+};

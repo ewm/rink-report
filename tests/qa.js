@@ -119,6 +119,10 @@ async function openPage(browser, url, opts){
     let body=FIX[which];
     if(which==='schedule' && opts.schedule) body=ALT[opts.schedule];
     if(which==='settings' && opts.settingsTeam) body=body.replace(/(Our team,)West Seneca Wings/, '$1'+opts.settingsTeam);
+    if(which==='schedule' && opts.leagueLog)
+      body = body.replace('2026-09-13,11:00 AM,West Seneca Wings,Southtown Stars,,,',
+                          '2026-09-13,11:00 AM,West Seneca Wings,Southtown Stars,6,2,');
+    if(which==='stats' && opts.leagueLog) body = body.split('8/30/2026').join('9/13/2026');
     if(which==='schedule' && opts.eventPeriods){
       // Adds a Period length column and fills it for rows of a given event.
       body = body.split(/\r?\n/).map((l,i,all)=>{
@@ -944,6 +948,61 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
       'a 36 minute showcase is counted as less than a full game: '+mixed.gaa.join('/'));
     ok(/different clock/.test(mixed.foot), 'the note says the schedule can override: '+mixed.foot.slice(0,90));
     ok(!/different clock/.test(dflt.foot), 'and stays quiet when nothing overrides');
+  }
+
+  // 25. League only / All games on the Stats page
+  console.log('\n[25] stats scope switch');
+  {
+    const open = async (opts) => {
+      const r = await openPage(browser, 'http://localhost:8811/', opts);
+      await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+      return r;
+    };
+    const table = (page, head) => page.evaluate((head)=>{
+      const card=[...document.querySelectorAll('.card')].find(c=>((c.querySelector('h2')||{}).textContent)===head);
+      if(!card) return null;
+      return {
+        rows:[...card.querySelectorAll('tbody tr')].map(t=>[...t.children].map(td=>td.textContent)),
+        foot:((card.querySelector('.foot')||{}).textContent)||'',
+        seg:!!card.querySelector('.seg [data-act="statsscope"]'),
+        eyebrow:((card.querySelector('.eyebrow')||{}).textContent)||''
+      };
+    }, head);
+
+    // Nothing in the fixture's log is a league game, so there is nothing to split.
+    let r = await open({});
+    let sk = await table(r.page, 'Skaters');
+    ok(!sk.seg, 'no switch when the log holds no league game');
+    ok(/Through 5 games/.test(sk.eyebrow), 'the header keeps the long game count: '+sk.eyebrow);
+    await r.ctx.close();
+
+    // One league game played, with the log rows to match.
+    r = await open({leagueLog:true});
+    sk = await table(r.page, 'Skaters');
+    let gk = await table(r.page, 'In net');
+    ok(sk.seg && gk.seg, 'both tables get the switch once a league game is logged');
+    ok(sk.rows[0][0]==='15Luke G.' && sk.rows[0][4]==='7', 'it opens on the season totals: '+JSON.stringify(sk.rows[0]));
+    ok(!/League play only/.test(sk.foot), 'it opens on all games: '+sk.foot.slice(0,40));
+
+    await r.page.click('.seg [data-act="statsscope"][data-v="league"]');
+    await r.page.waitForTimeout(150);
+    sk = await table(r.page, 'Skaters');
+    gk = await table(r.page, 'In net');
+    ok(sk.rows[0][0]==='17Evan C.' && sk.rows[0][2]==='1' && sk.rows[0][3]==='3' && sk.rows[0][4]==='4',
+      'league skater leader is Carter 1G 3A 4P: '+JSON.stringify(sk.rows[0]));
+    ok(sk.rows.every(t=>t[1]==='1'), "every skater's GP is the team's one league game");
+    ok(/League play only/.test(sk.foot) && /not taken off/.test(sk.foot), 'the note explains GP: '+sk.foot.slice(0,70));
+    const mal = gk.rows.find(t=>/Andrew/.test(t[0]));
+    ok(mal && mal[1]==='2' && mal[2]==='84' && mal[3]==='4' && mal[4]==='2.14',
+      'Malicki league line is 2 GP, 84 min, 4 GA, 2.14: '+JSON.stringify(mal));
+    const doe = gk.rows.find(t=>/Stephen/.test(t[0]));
+    ok(doe && doe[1]==='0' && doe[3]==='0', 'a goalie who played no league game reads zero: '+JSON.stringify(doe));
+
+    await r.page.click('.seg [data-act="statsscope"][data-v="all"]');
+    await r.page.waitForTimeout(150);
+    gk = await table(r.page, 'In net');
+    ok(gk.rows[0][3]==='9' && gk.rows[0][4]==='2.41', 'switching back restores the season totals: '+JSON.stringify(gk.rows[0]));
+    await r.ctx.close();
   }
 
   await browser.close(); sNew.close();

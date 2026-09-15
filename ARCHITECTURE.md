@@ -327,6 +327,27 @@ Stars". Those two will never match and the code does not try. Two games on
 one date belong to the same event and run the same clock, so the date is
 enough to answer both questions.
 
+### League only, or all games
+
+The Stats page carries a League / All games switch whenever the log holds at
+least one league game. Without that there is nothing to split and the switch
+would be a button that does nothing, so it is not drawn.
+
+All games is the sheet's own totals table, untouched. That matters: those
+totals are what a manager sees in the spreadsheet, and they honour the GP a
+manager typed over the formula for a kid who missed a game. League only is
+summed from the log instead, because the totals table cannot be split after
+the fact.
+
+One thing does not survive the split. A skater only gets a log row when they
+put up a point or took a penalty, so their league GP cannot be counted from
+the log. It falls back to the team's own count of league games played, which
+is the rule the sheet uses by default, and a kid who missed a league game
+reads one game high. The note under the table says so rather than leaving a
+parent to work it out. Goalies have no such problem: a goalie gets a row
+every game they dress for, so every column in their league line is counted,
+GAA included.
+
 ## Player Stats tab
 
 The tab holds several blocks side by side: skater totals, goalie totals, then

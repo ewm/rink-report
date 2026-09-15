@@ -67,6 +67,7 @@ function offList() {
  * snapshotAt: when the site's own saved copy was taken, if that is what loaded.
  * viewKey: the tab the reader chose (null lets the calendar decide).
  * filterOurs: the All / Ours switch on results.
+ * statsScope: "all" or "league", the switch on the Stats page.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
  * statsNote / rinksNote / sponsorsNote: why an optional tab is missing, for ?check.
@@ -76,7 +77,15 @@ function offList() {
  */
 var state = {
   data: {
-    config: { leagueName: "", teamName: "", mode: "season", ptsWin: 2, ptsTie: 1, ptsLoss: 0 },
+    config: {
+      leagueName: "",
+      teamName: "",
+      mode: "season",
+      ptsWin: 2,
+      ptsTie: 1,
+      ptsLoss: 0,
+      gameMinutes: 45
+    },
     teams: [],
     pools: {},
     mhr: {},
@@ -92,6 +101,7 @@ var state = {
   snapshotAt: null,
   viewKey: null,
   filterOurs: false,
+  statsScope: "all",
   // Open by default. A reader who folds it keeps it folded on that phone only.
   sponsorsOpen: (function () {
     try {

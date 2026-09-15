@@ -119,6 +119,7 @@ async function openPage(browser, url, opts){
     let body=FIX[which];
     if(which==='schedule' && opts.schedule) body=ALT[opts.schedule];
     if(which==='settings' && opts.settingsTeam) body=body.replace(/(Our team,)West Seneca Wings/, '$1'+opts.settingsTeam);
+    if(which==='settings' && opts.periods) body=body.replace(/\n,Points for a win,/, '\n,Period length,"'+opts.periods+'",the periods the league plays,,,\n,Points for a win,');
     if(how==='gviz') body=coerceNumericHeaders(body, !!opts.harsh);
     route.fulfill({status:200, contentType:'text/csv', body});
   });
@@ -181,8 +182,8 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(totalG===22 && totalA===22, 'team totals G=22 A=22 ('+totalG+'/'+totalA+')');
     const goalies = await page.$$eval('table', ts=>[...ts[1].querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent)));
     ok(goalies.length===2, '2 goalie rows');
-    ok(goalies[0][0]==='29Andrew M.' && goalies[0][3]==='9' && goalies[0][4]==='3.21' && goalies[0][5]==='1', 'Malicki first, 9 GA in 168 min = 3.21 GAA, 1 SO: '+JSON.stringify(goalies[0]));
-    ok(goalies[1][0]==='32Stephen D.' && goalies[1][4]==='7.14' && goalies[1].length===8, 'Doering 5 GA in 42 min = 7.14 GAA; no saves or SV% columns: '+JSON.stringify(goalies[1]));
+    ok(goalies[0][0]==='29Andrew M.' && goalies[0][3]==='9' && goalies[0][4]==='2.41' && goalies[0][5]==='1', 'Malicki first, 9 GA in 168 min over a 45 min game = 2.41 GAA, 1 SO: '+JSON.stringify(goalies[0]));
+    ok(goalies[1][0]==='32Stephen D.' && goalies[1][4]==='5.36' && goalies[1].length===8, 'Doering 5 GA in 42 min over a 45 min game = 5.36 GAA; no saves or SV% columns: '+JSON.stringify(goalies[1]));
     const goalieHead = await page.$$eval('table', ts=>[...ts[1].querySelectorAll('thead th')].map(t=>t.textContent).join('/'));
     ok(goalieHead==='Goalie/GP/Min/GA/GAA/SO/W/L', 'goalie columns: '+goalieHead);
     const body = await page.$eval('#app', e=>e.textContent);
@@ -217,7 +218,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     const skaters = await page.$$eval('table', ts=>[...ts[0].querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent)));
     const goalies = await page.$$eval('table', ts=>[...ts[1].querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent)));
     ok(skaters.length===13 && skaters[0][0]==='15Luke G.' && skaters[0][4]==='7' && skaters[0][5]==='0', 'same skater result by position: '+JSON.stringify(skaters[0]));
-    ok(goalies[0][4]==='3.21' && goalies[0][7]==='1', 'same goalie result by position (GAA 3.21, 1 L): '+JSON.stringify(goalies[0]));
+    ok(goalies[0][4]==='2.41' && goalies[0][7]==='1', 'same goalie result by position (GAA 2.41, 1 L): '+JSON.stringify(goalies[0]));
     const banner = await page.$eval('#app', e=>e.textContent);
     ok(!/tab IDs in index.html belong to a different sheet/.test(banner), 'a failing stats export does not accuse the other tab IDs');
     await ctx.close();
@@ -234,7 +235,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     const skaters = await page.$$eval('table', ts=>[...ts[0].querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent)));
     const goalies = await page.$$eval('table', ts=>[...ts[1].querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent)));
     ok(skaters.length===13 && skaters[0][0]==='15Luke G.' && skaters[0][4]==='7' && skaters[0][5]==='0', 'same skater result by position: '+JSON.stringify(skaters[0]));
-    ok(goalies[0][4]==='3.21' && goalies[0][7]==='1', 'same goalie result by position (GAA 3.21, 1 L): '+JSON.stringify(goalies[0]));
+    ok(goalies[0][4]==='2.41' && goalies[0][7]==='1', 'same goalie result by position (GAA 2.41, 1 L): '+JSON.stringify(goalies[0]));
     const banner = await page.$eval('#app', e=>e.textContent);
     ok(!/tab IDs in index.html belong to a different sheet/.test(banner), 'a failing stats export does not accuse the other tab IDs');
     await ctx.close();
@@ -898,6 +899,35 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(!ev.some(r=>r.split), 'an event gets no divider');
     ok(ev.map(r=>r.date).join(' / ')==='Fri Aug 28 / Sat Aug 29 / Sun Aug 30', 'the showcase still reads forward: '+ev.map(r=>r.date).join(' / '));
     await ctx.close();
+  }
+
+  // 24. Period length drives GAA
+  console.log('\n[24] period length -> GAA');
+  {
+    const read = async (opts) => {
+      const r = await openPage(browser, 'http://localhost:8811/', opts);
+      await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+      const out = await r.page.evaluate(()=>{
+        const card=[...document.querySelectorAll('.card')].find(c=>/In net/.test(((c.querySelector('h2')||{}).textContent)||''));
+        return {
+          gaa:[...card.querySelectorAll('tbody tr')].map(t=>t.children[4].textContent),
+          foot:((card.querySelector('.foot')||{}).textContent)||''
+        };
+      });
+      await r.ctx.close();
+      return out;
+    };
+    // No row on the Settings tab: three 15 minute periods, the common case.
+    const dflt = await read({});
+    ok(dflt.gaa[0]==='2.41' && dflt.gaa[1]==='5.36', 'with no setting, GAA is figured over 45 minutes: '+dflt.gaa.join('/'));
+    ok(/full game of 45 minutes/.test(dflt.foot), 'the note names the game length: '+dflt.foot.slice(0,58));
+    // A league whose third period is shorter.
+    const short = await read({periods:'15, 15, 12'});
+    ok(short.gaa[0]==='2.25' && short.gaa[1]==='5.00', '15, 15, 12 is a 42 minute game: '+short.gaa.join('/'));
+    ok(/full game of 42 minutes/.test(short.foot), 'the note follows the setting: '+short.foot.slice(0,58));
+    // One number is the whole game, not one period.
+    const flat = await read({periods:'60'});
+    ok(flat.gaa[0]==='3.21', 'a single number is taken as the whole game: '+flat.gaa[0]);
   }
 
   await browser.close(); sNew.close();

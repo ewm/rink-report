@@ -3,7 +3,8 @@
  *
  * statsHtml() renders the skater table (points, goals, number) and the
  * goalie table from state.data.stats. The sheet does the adding; the one
- * thing figured here is GAA, from the sheet's own GA and minutes.
+ * thing figured here is GAA, from the sheet's own GA and minutes and the
+ * league's game length. See ARCHITECTURE.md, "Stats".
  */
 import { state } from "../state.js";
 import { esc } from "../util/text.js";
@@ -35,6 +36,28 @@ function fmtGaa(n) {
   }
 
   return (Math.round(n * 100) / 100).toFixed(2);
+}
+
+/**
+ * A goalie's GAA: goals against per full game, not per 60 minutes.
+ *
+ * Sixty is the pro number and it is wrong for a youth game. Three 15 minute
+ * periods is a 45 minute game, so a goalie who gives up two in a full game
+ * reads 2.00, which is what a parent expects. The length comes from the
+ * Settings tab; the sheet's own GAA column is used only when minutes are
+ * missing.
+ *
+ * @param {Object} g - A goalie row.
+ * @returns {number|null} GAA, or null when it cannot be figured.
+ */
+function gaaFor(g) {
+  var full = state.data.config.gameMinutes;
+
+  if (g.min > 0 && g.ga !== null && g.ga !== undefined && full > 0) {
+    return (g.ga * full) / g.min;
+  }
+
+  return g.gaa === undefined ? null : g.gaa;
 }
 
 /**
@@ -119,7 +142,7 @@ function statsHtml() {
         "</td><td>" +
         fmtNum(g.ga) +
         '</td><td class="pts">' +
-        fmtGaa(g.gaa) +
+        fmtGaa(gaaFor(g)) +
         "</td><td>" +
         fmtNum(g.so) +
         "</td><td>" +
@@ -131,7 +154,9 @@ function statsHtml() {
 
     h += "</tbody></table></div>";
     h +=
-      '<p class="foot">GAA is goals against per 60 minutes, the standard way it is figured. Saves are not listed because most scoresheets do not record shots.</p>';
+      '<p class="foot">GAA is goals against per full game of ' +
+      fmtNum(state.data.config.gameMinutes) +
+      ' minutes. Saves are not listed because most scoresheets do not record shots.</p>';
     h += "</div></section>";
   }
 

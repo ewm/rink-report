@@ -395,6 +395,22 @@ many sponsors are in there.
 
 `?check` tells you how many it read and how they split by tier.
 
+## Period length: what GAA is figured against
+
+GAA is goals against per full game. A 60 minute game is the pro number and
+using it on a youth game makes every goalie look worse than they are.
+
+Fill in **Period length** on the Settings tab with the periods your league
+plays, written the way the league states them: `15, 15, 12`. The page adds
+them up. One number works too, so `42` means the same thing. Leave it blank
+and the page assumes three 15 minute periods.
+
+One thing to keep straight: the minutes you record in the goalie game log
+have to be minutes of the same game. If a full game is 45 minutes by the
+setting but you log 42 for a goalie who played the whole thing, the page
+reads that as a goalie who sat for 3 minutes, and the GAA comes out high.
+Pick the number the clock actually runs and use it in both places.
+
 ## Tiebreak rules: copy the event's, don't accept a default
 
 Events publish genuinely different tiebreakers and they produce different tables. Set **Tiebreak rules** on the Settings tab to whichever the event actually publishes:

@@ -69,12 +69,49 @@ var SETTINGS_ROWS = [
     }
   },
   {
+    match: ["periodlength", "periodlengths", "periods", "gamelength"],
+    apply: function (c, v) {
+      var mins = periodMinutes(v);
+
+      if (mins !== null) {
+        c.gameMinutes = mins;
+      }
+    }
+  },
+  {
     match: ["sponsorcontact", "sponsorship"],
     apply: function (c, v) {
       c.sponsorContact = v;
     }
   }
 ];
+
+/**
+ * Total regulation minutes from a period-length answer.
+ *
+ * A manager types the periods the way the league states them, "15, 15, 12",
+ * and the total is what GAA is figured against. A single number is taken as
+ * the whole game, so "42" and "15/15/12" mean the same thing. Separators are
+ * anything that is not a digit or a decimal point, so commas, slashes,
+ * hyphens and the word "and" all work.
+ *
+ * @param {string} v - The Your answer cell.
+ * @returns {number|null} Total minutes, or null when nothing usable is there.
+ */
+function periodMinutes(v) {
+  var parts = String(v || "").split(/[^0-9.]+/);
+  var total = 0;
+
+  parts.forEach(function (p) {
+    var n = parseFloat(p);
+
+    if (!isNaN(n) && n > 0) {
+      total += n;
+    }
+  });
+
+  return total > 0 ? total : null;
+}
 
 /**
  * Applies one settings row to the config: the first SETTINGS_ROWS entry
@@ -138,6 +175,7 @@ function shapeSettings(rows) {
     ptsWin: 2,
     ptsTie: 1,
     ptsLoss: 0,
+    gameMinutes: 45,
     rules: "",
     sponsorContact: ""
   };

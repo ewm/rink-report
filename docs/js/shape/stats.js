@@ -181,7 +181,8 @@ function blockColumns(row, anchor, end, canonical, spec) {
  *
  * Each block runs from its anchor to the next block's anchor; the game logs
  * further right start with a Date column, which ends the goalie block. GAA
- * is figured from GA and minutes per 60 whenever both are present.
+ * is not figured here: it depends on how long a game is, which is a setting,
+ * so the page works it out at render time from ga and min.
  *
  * @param {string[][]} rows
  * @returns {{skaters: Object[], goalies: Object[]}|null}
@@ -326,12 +327,10 @@ function shapeStats(rows) {
     return (x.no || 999) - (y.no || 999);
   });
 
-  // GAA from the sheet's own GA and minutes, so the page is right whether the
-  // fifth goalie column says SV% (older tabs) or GAA.
+  // Whatever the fifth goalie column says, SV% on older tabs or GAA on newer
+  // ones, ga and min are what the page figures GAA from. See ui/stats.js.
   out.goalies.forEach(function (g) {
-    if (g.min > 0 && g.ga !== null && g.ga !== undefined) {
-      g.gaa = Math.round(((g.ga * 60) / g.min) * 100) / 100;
-    } else if (g.gaa === undefined) {
+    if (g.gaa === undefined) {
       g.gaa = null;
     }
   });

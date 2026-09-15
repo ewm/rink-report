@@ -442,6 +442,19 @@ goals against and minutes, which every sheet has, and is computed on the page
 from those two totals so it stays right whether the sheet's fifth goalie
 column says SV% (older tabs) or GAA.
 
+GAA is per full game, not per 60 minutes. Sixty is the pro number: a youth
+game is shorter, so dividing by 60 inflates every goalie on the page. The
+length comes from the Period length row on the Settings tab, where a manager
+types the periods the league states, "15, 15, 12", and the page adds them up.
+A single number is taken as the whole game, so "42" means the same thing.
+With no row at all the page assumes three 15 minute periods, which is the
+common youth format. The note under the table always names the number it
+used, so a parent can see what the figure is per.
+
+The minutes in the sheet and the Period length have to describe the same
+game. If the goalie log records 42 minutes for a full game while the setting
+says 45, every GAA comes out about 7 percent high.
+
 ## Directions and calendar links
 
 `model/links.js` builds both on the phone from data already on the page. No

@@ -17,6 +17,16 @@ var CACHE_KEY = "rinkreport.v5";
 /** Whether the page was opened with ?check. */
 var DIAG = /[?&]check\b/.test(location.search);
 
+/**
+ * Whether the page was opened with ?admin.
+ *
+ * Shows the manager's own controls, currently just the gameday post button
+ * on our upcoming games. This is tidiness, not security: everything the page
+ * holds is public either way, and the flag only keeps a button out of a
+ * parent's way.
+ */
+var ADMIN = /[?&]admin\b/.test(location.search);
+
 /** Every feature switch the page knows, in the order index.html lists them. */
 var FEATURES = [
   "nextGame",
@@ -153,4 +163,4 @@ function notify() {
   }
 }
 
-export { CFG, CACHE_KEY, DIAG, on, offList, state, log, onChange, notify };
+export { CFG, CACHE_KEY, ADMIN, DIAG, on, offList, state, log, onChange, notify };

@@ -153,6 +153,11 @@ where it was.
 | `mhrLinks` | MyHockey Rankings links on team names |
 | `monoNumbers` | Chivo Mono on the figures (they go back to Barlow) |
 
+Add `?admin` to the address for one more thing: a "Gameday post" button on
+every game of ours still to be played, which makes a 1080 x 1080 Instagram
+square for that game. On a phone it opens the share sheet; on a laptop it
+downloads a PNG. Parents never see the button.
+
 Standings, the schedule, the record chip, the All/Ours switch, the Refresh
 button, the Setup check link and the warnings banner are the page and have no
 switch.

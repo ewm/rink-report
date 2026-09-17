@@ -1078,6 +1078,62 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await r.ctx.close();
   }
 
+  // 27. The gameday post card
+  console.log('\n[27] gameday post card');
+  {
+    const plain = await openPage(browser, 'http://localhost:8811/', {schedule:'scored'});
+    ok((await plain.page.$$eval('.postbtn', b=>b.length))===0, 'no post button without ?admin');
+    await plain.ctx.close();
+
+    const r = await openPage(browser, 'http://localhost:8811/?admin', {schedule:'scored'});
+    ok(r.errors.length===0, 'no page errors in admin mode: '+r.errors.join(' | '));
+
+    const rows = await r.page.evaluate(()=>[...document.querySelectorAll('.game')].map(g=>({
+      btn:!!g.querySelector('.postbtn'),
+      ours:/West Seneca Wings/.test(g.textContent),
+      done:[...g.querySelectorAll('.sc')].some(s=>s.textContent.trim()!=='')})));
+    ok(rows.length>0 && rows.filter(x=>x.btn).length>0, 'admin mode puts buttons on the card ('+rows.filter(x=>x.btn).length+' of '+rows.length+' rows)');
+    ok(rows.every(x=>x.btn === (x.ours && !x.done)), 'a button on every unplayed game of ours, and on nothing else');
+
+    await r.page.click('.postbtn');
+    await r.page.waitForFunction(()=>{
+      const n=document.querySelector('.postnote');
+      return n && !/Drawing/.test(n.textContent);
+    }, null, {timeout:8000});
+
+    const card = await r.page.evaluate(()=>{
+      const c = document.querySelector('.postcanvas');
+      const ctx = c.getContext('2d');
+      const at = (x,y)=>{ const d=ctx.getImageData(x,y,1,1).data; return d[0]+','+d[1]+','+d[2]; };
+      // A quarter of the square, sampled, to prove it is not one flat colour.
+      const seen = new Set();
+      for (let x=20; x<1080; x+=60) for (let y=20; y<1080; y+=60) seen.add(at(x,y));
+      return {w:c.width, h:c.height, band:at(540,40), foot:at(540,1050), colours:seen.size,
+              outside:!document.querySelector('#app .postwrap')};
+    });
+    ok(card.w===1080 && card.h===1080, 'the canvas is a 1080 square: '+card.w+'x'+card.h);
+    ok(card.band==='252,213,30' && card.foot==='252,213,30', 'gold bands top and bottom: '+card.band+' / '+card.foot);
+    ok(card.colours>3, 'the card actually drew something ('+card.colours+' distinct sampled colours)');
+    ok(card.outside, 'the panel is a sibling of #app, so a poll cannot wipe the canvas mid-draw');
+
+    // A PNG really comes out of it.
+    const png = await r.page.evaluate(()=>new Promise(res=>{
+      document.querySelector('.postcanvas').toBlob(b=>res(b ? b.size : 0), 'image/png');
+    }));
+    ok(png>5000, 'toBlob returns a real PNG, so logo.png did not taint the canvas ('+png+' bytes)');
+
+    await r.page.keyboard.press('Escape');
+    await r.page.waitForTimeout(120);
+    ok((await r.page.$$eval('.postwrap', n=>n.length))===0, 'Escape closes the panel');
+
+    await r.page.click('.postbtn');
+    await r.page.waitForTimeout(250);
+    await r.page.click('[data-act="postclose"]');
+    await r.page.waitForTimeout(120);
+    ok((await r.page.$$eval('.postwrap', n=>n.length))===0, 'and so does the Close button');
+    await r.ctx.close();
+  }
+
   await browser.close(); sNew.close();
   console.log('\n'+passes+' passed, '+failures+' failed');
   process.exit(failures?1:0);

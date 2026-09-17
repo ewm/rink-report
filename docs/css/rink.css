@@ -337,3 +337,34 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
   font-family:var(--f-mono);
   font-variant-numeric:normal;
 }
+
+/* ---- gameday post card (?admin only) ----
+   The button sits in a schedule row's meta block; the panel it opens is a
+   sibling of #app, not a child, because render() rewrites #app wholesale and
+   would throw away a canvas mid-draw on the next poll. */
+.postbtn{font:inherit; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; margin-top:4px; padding:4px 8px; cursor:pointer;
+  color:var(--navy-ink); background:transparent; border:1px solid var(--hair)}
+.postbtn:hover,.postbtn:focus-visible{border-color:var(--navy-ink); outline:none}
+
+body.post-open{overflow:hidden}
+
+.postwrap{position:fixed; inset:0; z-index:50; display:flex; align-items:flex-start;
+  justify-content:center; padding:24px 16px; overflow-y:auto;
+  background:rgba(11,18,32,.72)}
+.postcard{width:100%; max-width:520px; background:var(--paper); border:1px solid var(--hair)}
+.posthead{display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:12px 16px; background:var(--navy); color:var(--on-navy)}
+.posthead .eyebrow{color:var(--gold)}
+.posthead button{font:inherit; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:6px 10px; cursor:pointer;
+  color:var(--on-navy); background:transparent; border:1px solid rgba(255,255,255,.5)}
+.posthead button:hover,.posthead button:focus-visible{background:rgba(255,255,255,.16); outline:none}
+/* The canvas is 1080 square whatever it is shown at; only the export size matters. */
+.postcanvas{display:block; width:100%; height:auto; background:var(--navy)}
+.postacts{display:flex; gap:8px; padding:14px 16px 0}
+.postacts button{flex:1; font:inherit; font-size:12px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:12px 10px; cursor:pointer;
+  color:var(--on-gold); background:var(--gold); border:1px solid var(--gold)}
+.postacts button:hover,.postacts button:focus-visible{filter:brightness(1.06); outline:none}
+.postnote{margin:10px 16px 16px; font-size:12px; color:var(--ink-2)}

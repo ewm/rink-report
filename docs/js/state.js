@@ -67,7 +67,9 @@ function offList() {
  * fetchedAt / loading / loadError: fetch status, for the status line.
  * snapshotAt: when the site's own saved copy was taken, if that is what loaded.
  * viewKey: the tab the reader chose (null lets the calendar decide).
- * filterOurs: the All / Ours switch on results.
+ * filterOurs: the All / Ours switch on results. Starts on Ours: a parent
+ *   opens the page to find out when their own kid plays next, and the
+ *   division's other games are one tap away.
  * statsScope: "all" or "league", the switch on the Stats page.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
@@ -101,7 +103,7 @@ var state = {
   loadError: "",
   snapshotAt: null,
   viewKey: null,
-  filterOurs: false,
+  filterOurs: true,
   statsScope: "all",
   // Open by default. A reader who folds it keeps it folded on that phone only.
   sponsorsOpen: (function () {

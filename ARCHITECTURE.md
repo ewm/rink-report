@@ -466,6 +466,13 @@ changing those two lines.
 
 ## Results order
 
+The card opens on **Ours**, not All. A parent opens the page to find out
+when their own kid plays next. On the Wings' own Schedule tab that changes
+nothing, because the tab only lists Wings games; it matters at a showcase,
+where the pool's other games are on the tab too. All is one tap away, and
+when Ours empties a card that has games in it the card says so and names
+the button rather than going blank.
+
 A season leads with what is coming: every game still to be played, nearest
 first, so the next one sits at the top of the card in September and in
 February alike. The finished games follow under a "Final scores" divider,

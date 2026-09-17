@@ -150,12 +150,18 @@ Two rules that are not stylistic:
 The CONFIG block in `index.html` ends with a `features` object, one boolean
 per optional card or data-driven piece of the page: `nextGame`, `sponsors`,
 `stats`, `events`, `preseason`, `directions`, `calendar`, `seasonCalendar`,
-`mhrLinks`. `on(name)` in `state.js` is true unless the block says `false`;
+`mhrLinks`, `monoNumbers`. `on(name)` in `state.js` is true unless the block says `false`;
 a name missing from the block counts as on, so an `index.html` written
 before a switch existed keeps every feature it had. Small controls (the
 Refresh button, the Setup check link, the record chip, the All/Ours switch,
 the crest, the warnings banner) have no switch on purpose: nobody flips
 them, and each one was a config line, a check in the code and a test.
+
+`monoNumbers` is the exception to everything below: it adds and removes no
+markup at all, only the font the figures are set in. So `app.js` puts a
+`mono-nums` class on `<html>` once at boot and `rink.css` does the rest.
+Checking it inside a component would mean threading a class through every
+number on the page for no gain.
 
 A switch is checked at the one place the feature enters the page, never
 spread through the model. `render()` skips the next-game card and the

@@ -151,6 +151,7 @@ where it was.
 | `calendar` | the two calendar links on the next-game card |
 | `seasonCalendar` | the whole-season calendar link under the schedule |
 | `mhrLinks` | MyHockey Rankings links on team names |
+| `monoNumbers` | Chivo Mono on the figures (they go back to Barlow) |
 
 Standings, the schedule, the record chip, the All/Ours switch, the Refresh
 button, the Setup check link and the warnings banner are the page and have no

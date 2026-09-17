@@ -27,7 +27,8 @@ var FEATURES = [
   "directions",
   "calendar",
   "seasonCalendar",
-  "mhrLinks"
+  "mhrLinks",
+  "monoNumbers"
 ];
 
 /**

@@ -725,7 +725,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   }
   {
     // the whole list off at once
-    const off = {nextGame:false,sponsors:false,stats:false,events:false,preseason:false,directions:false,calendar:false,seasonCalendar:false,mhrLinks:false};
+    const off = {nextGame:false,sponsors:false,stats:false,events:false,preseason:false,directions:false,calendar:false,seasonCalendar:false,mhrLinks:false,monoNumbers:false};
     const {page, ctx, errors, asked} = await openPage(browser, 'http://localhost:8811/', {features:off});
     ok(errors.length===0, 'no page errors with every switch off');
     const gone = await page.evaluate(()=>({
@@ -748,7 +748,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     // and ?check names them
     await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(600);
     const diag = await page.$eval('#app', e=>e.textContent);
-    ok(/Features\s+off: nextGame, sponsors, stats, events, preseason, directions, calendar, seasonCalendar, mhrLinks/.test(diag), '?check lists every switched-off feature');
+    ok(/Features\s+off: nextGame, sponsors, stats, events, preseason, directions, calendar, seasonCalendar, mhrLinks, monoNumbers/.test(diag), '?check lists every switched-off feature');
     await ctx.close();
   }
   {
@@ -773,6 +773,33 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     r = await openPage(browser, 'http://localhost:8811/', {features:{sponsors:'no', stats:0}});
     const on2 = await r.page.evaluate(()=>({sp:!!document.querySelector('.sponsors'), tabs:[...document.querySelectorAll('.viewbar button')].map(b=>b.textContent).join('/')}));
     ok(on2.sp && on2.tabs==='League/Events/Stats', 'only the word false switches a feature off: '+JSON.stringify(on2));
+    await r.ctx.close();
+
+    // monoNumbers is the one switch that changes no markup, only the face the
+    // figures are set in, so it is checked on the computed style. preseason is
+    // switched off here purely to put a standings table on the page to read.
+    r = await openPage(browser, 'http://localhost:8811/', {features:{preseason:false}});
+    let mono = await r.page.evaluate(()=>{
+      const ff = sel => { const el = document.querySelector(sel); return el ? getComputedStyle(el).fontFamily : 'MISSING'; };
+      return {
+        cls:document.documentElement.classList.contains('mono-nums'),
+        pts:ff('tbody td.pts'),
+        rank:ff('.rank'),
+        time:ff('.game .meta .tm'),
+        name:ff('tbody td:first-child'),
+        head:ff('thead th')};
+    });
+    ok(mono.cls && /Chivo Mono/.test(mono.pts) && /Chivo Mono/.test(mono.rank) && /Chivo Mono/.test(mono.time), 'monoNumbers on by default: points, rank numerals and face-off times are Chivo Mono');
+    ok(!/Chivo Mono/.test(mono.name) && !/Chivo Mono/.test(mono.head), 'monoNumbers leaves team names and column headings in Barlow: '+mono.name.split(',')[0]+' / '+mono.head.split(',')[0]);
+    await r.ctx.close();
+
+    r = await openPage(browser, 'http://localhost:8811/', {features:{preseason:false, monoNumbers:false}});
+    mono = await r.page.evaluate(()=>({
+      cls:document.documentElement.classList.contains('mono-nums'),
+      pts:getComputedStyle(document.querySelector('tbody td.pts')).fontFamily,
+      tab:getComputedStyle(document.querySelector('tbody td.pts')).fontVariantNumeric}));
+    ok(!mono.cls && !/Chivo Mono/.test(mono.pts), 'monoNumbers off: no mono-nums class, figures back to Barlow');
+    ok(/tabular-nums/.test(mono.tab), 'and Barlow gets its tabular figures back, so the columns still line up: '+mono.tab);
     await r.ctx.close();
   }
 

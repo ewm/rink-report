@@ -402,6 +402,20 @@ setInterval(function () {
   }
 })();
 
+/**
+ * The one feature switch that is purely a stylesheet change.
+ *
+ * Every other switch is checked where its feature enters the page, because
+ * every other switch adds or removes markup. This one only changes which
+ * font the figures are set in, so it goes on as a class on <html> once at
+ * boot and the stylesheet does the rest. The config never changes after
+ * load, so there is nothing to re-check on a render.
+ */
+function applyMonoNumbers() {
+  document.documentElement.classList.toggle("mono-nums", on("monoNumbers"));
+}
+
+applyMonoNumbers();
 loadCache();
 render();
 load();

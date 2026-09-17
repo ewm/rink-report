@@ -1,9 +1,12 @@
 /* ------------------------------------------------------------------
    West Seneca Wings — royal blue #003087 and jersey gold #FCD51E,
    sampled from the club site.
-   Type: Barlow Condensed for names, Barlow for everything else. Barlow
-   carries the numbers too, on its tabular figures, so the columns line up
-   without a second family.
+   Type: Barlow Condensed for names, Barlow for the words. The figures are
+   Chivo Mono, a monospaced face built on the same skeleton, so the score is
+   the loudest thing on the page and every column lines up by construction
+   rather than by a font feature. The monoNumbers switch in index.html turns
+   that off and gives the figures back to Barlow, which has tabular figures
+   of its own and lines up just as well.
    Treatment: a printed game program, not an app. No floating cards,
    no drop shadows, no rounded panels. Sections are divided by full
    width rules with their name set into the rule; the numbers are the
@@ -21,6 +24,7 @@
 
   --f-display:"Barlow Condensed","Arial Narrow",Helvetica,sans-serif;
   --f-text:"Barlow",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,sans-serif;
+  --f-mono:"Chivo Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -307,3 +311,29 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
   tbody td:first-child{font-size:14px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+/* ---- the figures, when monoNumbers is on ----
+   app.js puts .mono-nums on <html> at boot. Only the numbers move: team
+   names, column headings, the matchup line and every heading stay Barlow,
+   because a monospaced face is worse at words and this page is mostly
+   words.
+
+   No font-size change goes with this. Measured against the live sheet at
+   320, 360 and 390px and on a laptop, Chivo Mono at the size the figures
+   already are costs 4px of the team-name column and does not change a
+   single row's height. Set smaller "to be safe" and the numbers just get
+   harder to read from the stands, which is the opposite of the point.
+
+   font-variant-numeric goes back to normal here: tabular figures are what
+   you ask a proportional face for, and a monospaced one has nothing else
+   to give. */
+.mono-nums .record,
+.mono-nums .rank,
+.mono-nums tbody td+td,
+.mono-nums .game .side .sc,
+.mono-nums .game .meta .tm,
+.mono-nums .evrow .evrec,
+.mono-nums .when{
+  font-family:var(--f-mono);
+  font-variant-numeric:normal;
+}

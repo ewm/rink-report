@@ -11,7 +11,7 @@
  * See ARCHITECTURE.md, "Gameday post card".
  */
 import { state } from "../state.js";
-import { dateObj } from "../util/dates.js";
+import { countdownText, daysUntil, dateObj } from "../util/dates.js";
 
 /** The square Instagram wants. Everything below is in these pixels. */
 var SIZE = 1080;
@@ -258,14 +258,14 @@ function drawGround(ctx) {
  * @param {CanvasRenderingContext2D} ctx
  * @param {HTMLImageElement|null} crest
  * @param {string} club
- * @returns {number} The y the rule sits on.
+ * @returns {number} Where the header ends, which is where the bar starts.
  */
 function drawHeader(ctx, crest, club) {
-  var ruleY = 190;
+  var ruleY = 176;
   var left = PAD;
 
   if (crest && crest.naturalWidth) {
-    var h = 116;
+    var h = 108;
     var w = (crest.naturalWidth / crest.naturalHeight) * h;
 
     ctx.drawImage(crest, PAD, (ruleY - h) / 2, w, h);
@@ -276,17 +276,75 @@ function drawHeader(ctx, crest, club) {
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  var size = fitSize(ctx, club, SIZE - left - PAD, 58, 26, function (s) {
+  var size = fitSize(ctx, club, SIZE - left - PAD, 54, 24, function (s) {
     return '700 ' + s + 'px "Barlow Condensed", sans-serif';
   });
 
   setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', "0.12em");
   ctx.fillText(club, left, ruleY / 2);
 
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, ruleY, SIZE, 6);
-
   return ruleY;
+}
+
+/**
+ * The line across the top of the hype bar.
+ *
+ * "GAMEDAY TODAY" reads badly, and "GAMEDAY" on its own is wrong for a game
+ * three weeks out, so the wording follows how far off the game is.
+ *
+ * @param {Object} g - The game.
+ * @returns {string}
+ */
+function hypeText(g) {
+  var n = daysUntil(g.date);
+
+  if (n === null || n < 0 || n === 0) {
+    return "GAMEDAY";
+  }
+
+  if (n === 1) {
+    return "GAMEDAY TOMORROW";
+  }
+
+  return "GAMEDAY " + countdownText(g.date);
+}
+
+/**
+ * The sheared gold bar under the header, carrying the hype line.
+ *
+ * Full bleed and tilted. A level band would just be a second header; the
+ * tilt is what makes the square read as a poster instead of a notice.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} text
+ * @returns {number} The lowest y the bar reaches.
+ */
+function drawHypeBar(ctx, text) {
+  var lift = 26;
+  var top = 176;
+  var height = 124;
+
+  ctx.fillStyle = GOLD;
+  ctx.beginPath();
+  ctx.moveTo(0, top);
+  ctx.lineTo(SIZE, top - lift);
+  ctx.lineTo(SIZE, top - lift + height);
+  ctx.lineTo(0, top + height);
+  ctx.closePath();
+  ctx.fill();
+
+  var size = fitSize(ctx, text, SIZE - PAD * 2, 76, 34, function (s) {
+    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
+  });
+  var tracking = 0.16;
+
+  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
+  ctx.fillStyle = NAVY;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, SIZE / 2 + (size * tracking) / 2, top + height / 2 - lift / 2);
+
+  return top + height;
 }
 
 /**
@@ -297,46 +355,57 @@ function drawHeader(ctx, crest, club) {
  * @param {number} y - Middle of the tag.
  */
 function drawTag(ctx, text, y) {
-  setFont(ctx, '700 26px "Barlow", sans-serif', "0.18em");
+  var tracking = 0.18;
 
-  var w = ctx.measureText(text).width + 40;
+  setFont(ctx, '700 26px "Barlow", sans-serif', tracking + "em");
+
+  var trail = 26 * tracking;
+  var w = ctx.measureText(text).width - trail + 44;
   var h = 50;
 
-  ctx.strokeStyle = "rgba(252,213,30,0.75)";
+  ctx.strokeStyle = "rgba(252,213,30,0.8)";
   ctx.lineWidth = 2;
   ctx.strokeRect((SIZE - w) / 2, y - h / 2, w, h);
 
   ctx.fillStyle = GOLD;
   ctx.textAlign = "center";
-  ctx.fillText(text, SIZE / 2 + 9, y + 1);
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, SIZE / 2 + trail / 2, y + 1);
 }
 
+/** How tall drawDivider draws, for the layout to budget with. */
+var DIVIDER_H = 156;
+
 /**
- * The VS or AT divider: the word in gold with a rule running out either side.
+ * The VS or AT divider: a gold diamond between two rules.
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {string} word
- * @param {number} y
+ * @param {number} y - Middle of the diamond.
  */
 function drawDivider(ctx, word, y) {
-  var size = 58;
-  var tracking = 0.18;
-
-  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
-
-  // Letter spacing adds a gap after the last letter that measureText counts,
-  // so centred tracked text drifts left by half of it. Take it off the width
-  // used for the rules, and nudge the word back by the same half.
-  var trail = size * tracking;
-  var visible = Math.max(0, ctx.measureText(word).width - trail);
-  var gap = visible / 2 + 42;
+  var half = 55;
+  var reach = half * Math.SQRT2 + 30;
 
   ctx.fillStyle = GOLD;
-  ctx.fillRect(PAD, y - 3, SIZE / 2 - gap - PAD, 5);
-  ctx.fillRect(SIZE / 2 + gap, y - 3, SIZE - PAD - (SIZE / 2 + gap), 5);
+  ctx.fillRect(PAD, y - 3, SIZE / 2 - reach - PAD, 6);
+  ctx.fillRect(SIZE / 2 + reach, y - 3, SIZE - PAD - (SIZE / 2 + reach), 6);
 
+  ctx.save();
+  ctx.translate(SIZE / 2, y);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(-half, -half, half * 2, half * 2);
+  ctx.restore();
+
+  var size = 62;
+  var tracking = 0.1;
+
+  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
+  ctx.fillStyle = NAVY;
   ctx.textAlign = "center";
-  ctx.fillText(word, SIZE / 2 + trail / 2, y);
+  ctx.textBaseline = "middle";
+  ctx.fillText(word, SIZE / 2 + (size * tracking) / 2, y + 2);
 }
 
 /**
@@ -408,10 +477,10 @@ function paintTeam(ctx, m, top, colour) {
  */
 function drawMatchup(ctx, us, them, word, top, bottom) {
   var room = bottom - top;
-  var dividerH = 62;
-  var gap = 34;
-  var ourMax = 112;
-  var theirMax = 126;
+  var dividerH = DIVIDER_H;
+  var gap = 26;
+  var ourMax = 116;
+  var theirMax = 132;
   var a;
   var b;
   var total;
@@ -477,7 +546,17 @@ function drawFoot(ctx, g) {
   setFont(ctx, '700 ' + dateSize + 'px "Barlow Condensed", sans-serif', "0.04em");
   ctx.fillText(dateText, SIZE / 2, 945);
 
-  var detail = [g.time || "", g.rink || ""].filter(Boolean).join("  \u00b7  ").toUpperCase();
+  var bits = [];
+
+  if (g.time) {
+    bits.push("PUCK DROP " + g.time);
+  }
+
+  if (g.rink) {
+    bits.push(g.rink);
+  }
+
+  var detail = bits.join("  \u00b7  ").toUpperCase();
 
   if (!detail) {
     return;
@@ -510,24 +589,15 @@ function draw(canvas, g, crest) {
   drawGround(ctx);
   drawHeader(ctx, crest, us.toUpperCase());
 
+  var barBottom = drawHypeBar(ctx, hypeText(g));
+  var heroTop = barBottom + 34;
+
   if (g.event) {
-    drawTag(ctx, g.event.toUpperCase(), 244);
+    drawTag(ctx, g.event.toUpperCase(), barBottom + 54);
+    heroTop = barBottom + 108;
   }
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = GOLD;
-  setFont(ctx, '700 42px "Barlow", sans-serif', "0.38em");
-  ctx.fillText("GAMEDAY", SIZE / 2 + 16, g.event ? 330 : 300);
-
-  drawMatchup(
-    ctx,
-    us.toUpperCase(),
-    opponent.toUpperCase(),
-    atHome ? "VS" : "AT",
-    g.event ? 390 : 356,
-    762
-  );
+  drawMatchup(ctx, us.toUpperCase(), opponent.toUpperCase(), atHome ? "VS" : "AT", heroTop, 766);
 
   drawFoot(ctx, g);
 }

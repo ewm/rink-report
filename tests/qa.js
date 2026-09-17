@@ -1112,7 +1112,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
               colours:seen.size, outside:!document.querySelector('#app .postwrap')};
     });
     ok(card.w===1080 && card.h===1080, 'the canvas is a 1080 square: '+card.w+'x'+card.h);
-    ok(card.rule==='252,213,30' && card.foot==='252,213,30', 'gold rule under the header and gold slab at the foot: '+card.rule+' / '+card.foot);
+    ok(card.rule==='252,213,30' && card.foot==='252,213,30', 'gold bar under the header and gold slab at the foot: '+card.rule+' / '+card.foot);
     ok(card.head!=='252,213,30', 'the header itself is navy, not a gold band: '+card.head);
     ok(card.colours>3, 'the card actually drew something ('+card.colours+' distinct sampled colours)');
     ok(card.outside, 'the panel is a sibling of #app, so a poll cannot wipe the canvas mid-draw');

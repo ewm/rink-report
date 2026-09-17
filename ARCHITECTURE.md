@@ -468,10 +468,16 @@ changing those two lines.
 
 Add `?admin` to the URL and every unplayed game of ours grows a "Gameday
 post" button. It opens a panel that draws a 1080 x 1080 PNG for Instagram:
-crest and club name over a gold rule, GAMEDAY, then the matchup with both
-clubs set the same weight either side of a VS or AT divider, and the date,
-face-off and rink on an angled gold slab across the foot. No web address on
-it. `ui/postcard.js` owns it end to end, canvas only, no library and no
+crest and club name, a tilted full-bleed gold bar carrying the hype line,
+the matchup with both clubs set the same weight either side of a gold VS or
+AT diamond, and the date and puck drop on an angled gold slab across the
+foot. Nothing is level except the header, which is what separates a poster
+from a notice. No web address on it.
+
+The hype line follows how far off the game is: "GAMEDAY" today, "GAMEDAY
+TOMORROW", then "GAMEDAY IN 3 DAYS" or "GAMEDAY IN 2 WEEKS" from
+`countdownText()`. "GAMEDAY" alone on a game three weeks out would be a
+lie, and "GAMEDAY TODAY" reads badly. `ui/postcard.js` owns it end to end, canvas only, no library and no
 build step.
 
 The matchup is measured before anything is painted. Both names step down in

@@ -17,6 +17,7 @@ import { shapeRinks } from "./shape/rinks.js";
 import { shapeSponsors } from "./shape/sponsors.js";
 import { played } from "./model/game.js";
 import { tickFresh } from "./ui/frame.js";
+import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
 import { ago, timeKey, todayISO } from "./util/dates.js";
 import { bare, norm } from "./util/text.js";
 
@@ -356,8 +357,27 @@ document.addEventListener("click", function (e) {
     render();
   }
 
+  if (a === "post") {
+    openPost(el.getAttribute("data-g"));
+  }
+
+  if (a === "postclose") {
+    closePost();
+  }
+
+  if (a === "postsave") {
+    saveOpenPost();
+  }
+
   if (a === "refresh") {
     load();
+  }
+});
+
+/** Escape closes the gameday post panel. The panel has its own Close button too. */
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    closePost();
   }
 });
 

@@ -464,6 +464,36 @@ system font and swaps when they arrive. The two stacks are `--f-display` and
 `--f-text` at the top of rink.css. Changing the whole look of the page is
 changing those two lines.
 
+## Gameday post card
+
+Add `?admin` to the URL and every unplayed game of ours grows a "Gameday
+post" button. It opens a panel that draws a 1080 x 1080 PNG for Instagram:
+the crest and club name on a gold band, GAMEDAY, VS or AT, the opponent as
+loud as it fits, then the date, face-off and rink. `ui/postcard.js` owns it
+end to end, canvas only, no library and no build step.
+
+Three things about that file are deliberate:
+
+The panel is appended to `<body>`, not to `#app`. `render()` rewrites `#app`
+in one innerHTML write, so a poll landing mid-draw would throw the canvas
+away.
+
+It waits on `document.fonts.load` before drawing. Canvas does not hold off
+for a webfont the way the DOM does, and a card drawn too early comes out in
+Times.
+
+`logo.png` is same-origin, so drawing the crest leaves the canvas
+exportable. A crest served from another host would taint it and `toBlob`
+would throw.
+
+Saving splits by what the browser can do. Where `navigator.canShare` takes
+files, the button opens the share sheet, which is the only route that ends
+in Instagram on an iPhone; a download link for a generated image does
+nothing useful there. Everywhere else it downloads a PNG.
+
+`?admin` is tidiness, not security. Everything the page holds is public
+either way; the flag only keeps a button out of a parent's way.
+
 ## Results order
 
 The card opens on **Ours**, not All. A parent opens the page to find out

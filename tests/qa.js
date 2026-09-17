@@ -1032,6 +1032,52 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await r.ctx.close();
   }
 
+  // 26. The schedule opens on Ours
+  console.log('\n[26] schedule opens on Ours');
+  {
+    const r = await openPage(browser, 'http://localhost:8811/', {schedule:'scored'});
+    const seg = () => r.page.$$eval('.seg [data-act="filter"]', b=>b.map(x=>x.textContent+':'+x.getAttribute('aria-pressed')).join(' '));
+    const games = () => r.page.$$eval('.game', gs=>gs.map(g=>g.textContent));
+
+    ok((await seg())==='All:false Ours:true', 'the Ours button is the pressed one on arrival: '+(await seg()));
+
+    const mine = await games();
+    ok(mine.length>0 && mine.every(t=>/West Seneca Wings/.test(t)), 'every game on the card is one of ours ('+mine.length+' games)');
+
+    await r.page.click('.seg [data-act="filter"][data-v="all"]');
+    await r.page.waitForTimeout(150);
+    ok((await seg())==='All:true Ours:false', 'tapping All flips the buttons: '+(await seg()));
+
+    // A league Schedule tab that only lists our own games looks the same either
+    // way, which is the case for this fixture and for the Wings' own sheet. The
+    // filter earns its keep on an event, where the pool's other games are on
+    // the tab too.
+    ok((await games()).length===mine.length, 'a league tab holding only our games looks the same under All: '+mine.length+' games');
+
+    await r.page.click('.viewbar button[data-v="events"]'); await r.page.waitForTimeout(120);
+    await r.page.click('.evrow'); await r.page.waitForTimeout(180);
+    const evAll = await games();
+    await r.page.click('.seg [data-act="filter"][data-v="ours"]');
+    await r.page.waitForTimeout(150);
+    const evMine = await games();
+    ok(evAll.length>evMine.length && evAll.some(t=>!/West Seneca Wings/.test(t)), 'at a showcase Ours drops the pool games we are not in: '+evAll.length+' -> '+evMine.length+' games');
+    ok(evMine.length>0 && evMine.every(t=>/West Seneca Wings/.test(t)), 'and what is left is all ours ('+evMine.length+' games)');
+    await r.ctx.close();
+  }
+  {
+    // Ours with a team name that matches nothing would be a blank card, which
+    // reads as a broken page rather than a filter. It has to say which it is.
+    const r = await openPage(browser, 'http://localhost:8811/', {schedule:'scored', settingsTeam:'Nobody FC'});
+    const empty = await r.page.$eval('.card .empty', e=>e.textContent).catch(()=>'');
+    ok(/Nobody FC/.test(empty) && /Tap All/.test(empty), 'an unmatched team name explains the empty card and points at All: '+empty);
+    const filled = await r.page.$$eval('.game', g=>g.length);
+    ok(filled===0, 'and it really is empty until All is tapped');
+    await r.page.click('.seg [data-act="filter"][data-v="all"]');
+    await r.page.waitForTimeout(150);
+    ok((await r.page.$$eval('.game', g=>g.length))>0, 'All still shows the whole schedule');
+    await r.ctx.close();
+  }
+
   await browser.close(); sNew.close();
   console.log('\n'+passes+' passed, '+failures+' failed');
   process.exit(failures?1:0);

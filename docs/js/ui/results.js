@@ -39,7 +39,14 @@ function resultsHtml(v) {
   h += '</div><div class="card-b">';
 
   if (!shown.length) {
-    h += '<p class="empty">Nothing here yet.</p>';
+    // Filtering to Ours can empty a card that has games in it: at a showcase
+    // we are not in, or when the Settings team name matches no team on the
+    // Teams tab. Say which it is rather than showing a parent a blank card.
+    h += all.length
+      ? '<p class="empty">No ' +
+        esc(state.data.config.teamName || "games of ours") +
+        ' games here. Tap All for the rest of the schedule.</p>'
+      : '<p class="empty">Nothing here yet.</p>';
   } else {
     var last = null;
 

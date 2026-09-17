@@ -8,7 +8,7 @@ and gives the same answer every time.
 
     cd tests
     npm install        # once — pulls Playwright and a headless Chromium
-    npm test           # 237 checks, about a minute
+    npm test           # 246 checks, about a minute
 
 Screenshots of the views land in `out/` after a run (light and dark, phone
 width) — worth a glance when a change is visual.

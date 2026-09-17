@@ -227,6 +227,271 @@ function longDate(iso) {
 }
 
 /**
+ * Paints the ground: navy, with a faint diagonal hatch.
+ *
+ * Flat navy across 1080 square reads as a placeholder. The hatch is barely
+ * there at full size and gives the square some weave in a feed.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ */
+function drawGround(ctx) {
+  ctx.fillStyle = NAVY;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.lineWidth = 3;
+
+  for (var x = -SIZE; x < SIZE * 2; x += 28) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + SIZE, SIZE);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * The header: crest on the left, club name beside it, gold rule under.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {HTMLImageElement|null} crest
+ * @param {string} club
+ * @returns {number} The y the rule sits on.
+ */
+function drawHeader(ctx, crest, club) {
+  var ruleY = 190;
+  var left = PAD;
+
+  if (crest && crest.naturalWidth) {
+    var h = 116;
+    var w = (crest.naturalWidth / crest.naturalHeight) * h;
+
+    ctx.drawImage(crest, PAD, (ruleY - h) / 2, w, h);
+    left = PAD + w + 30;
+  }
+
+  ctx.fillStyle = GOLD;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+
+  var size = fitSize(ctx, club, SIZE - left - PAD, 58, 26, function (s) {
+    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
+  });
+
+  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', "0.12em");
+  ctx.fillText(club, left, ruleY / 2);
+
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(0, ruleY, SIZE, 6);
+
+  return ruleY;
+}
+
+/**
+ * A small outlined tag, centered. Used for the showcase or tournament name.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} text
+ * @param {number} y - Middle of the tag.
+ */
+function drawTag(ctx, text, y) {
+  setFont(ctx, '700 26px "Barlow", sans-serif', "0.18em");
+
+  var w = ctx.measureText(text).width + 40;
+  var h = 50;
+
+  ctx.strokeStyle = "rgba(252,213,30,0.75)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect((SIZE - w) / 2, y - h / 2, w, h);
+
+  ctx.fillStyle = GOLD;
+  ctx.textAlign = "center";
+  ctx.fillText(text, SIZE / 2 + 9, y + 1);
+}
+
+/**
+ * The VS or AT divider: the word in gold with a rule running out either side.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} word
+ * @param {number} y
+ */
+function drawDivider(ctx, word, y) {
+  var size = 58;
+  var tracking = 0.18;
+
+  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
+
+  // Letter spacing adds a gap after the last letter that measureText counts,
+  // so centred tracked text drifts left by half of it. Take it off the width
+  // used for the rules, and nudge the word back by the same half.
+  var trail = size * tracking;
+  var visible = Math.max(0, ctx.measureText(word).width - trail);
+  var gap = visible / 2 + 42;
+
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(PAD, y - 3, SIZE / 2 - gap - PAD, 5);
+  ctx.fillRect(SIZE / 2 + gap, y - 3, SIZE - PAD - (SIZE / 2 + gap), 5);
+
+  ctx.textAlign = "center";
+  ctx.fillText(word, SIZE / 2 + trail / 2, y);
+}
+
+/**
+ * Works out how a team name wants to be set, without drawing it.
+ *
+ * Layout has to be measured before anything is painted. The first version of
+ * this file drew each name at a fixed y, and a name that wrapped to two lines
+ * ran straight through the VS divider.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} name - Already uppercased.
+ * @param {number} maxSize - Largest size to try.
+ * @returns {{lines: string[], size: number, lineH: number, height: number}}
+ */
+function measureTeam(ctx, name, maxSize) {
+  var inner = SIZE - PAD * 2;
+
+  setFont(ctx, '700 ' + maxSize + 'px "Barlow Condensed", sans-serif', "0.01em");
+
+  var lines = twoLines(ctx, name, inner);
+  var size = maxSize;
+
+  lines.forEach(function (l) {
+    size = Math.min(
+      size,
+      fitSize(ctx, l, inner, maxSize, 40, function (s) {
+        return '700 ' + s + 'px "Barlow Condensed", sans-serif';
+      })
+    );
+  });
+
+  var lineH = size * 0.92;
+
+  return { lines: lines, size: size, lineH: lineH, height: lines.length * lineH };
+}
+
+/**
+ * Paints a measured team name, from the top of its block down.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Object} m - A measureTeam result.
+ * @param {number} top
+ * @param {string} colour
+ */
+function paintTeam(ctx, m, top, colour) {
+  setFont(ctx, '700 ' + m.size + 'px "Barlow Condensed", sans-serif', "0.01em");
+  ctx.fillStyle = colour;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  m.lines.forEach(function (l, i) {
+    ctx.fillText(l, SIZE / 2, top + m.lineH * (i + 0.5));
+  });
+}
+
+/**
+ * Sets the matchup between two y bounds: our name, the divider, theirs.
+ *
+ * Both names are stepped down together until the stack fits the space the
+ * header and the foot slab leave. Stepping them together keeps the two teams
+ * the same weight, which is the point of a matchup graphic.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} us - Our club, uppercased.
+ * @param {string} them - The opponent, uppercased.
+ * @param {string} word - "VS" or "AT".
+ * @param {number} top - Highest y the stack may use.
+ * @param {number} bottom - Lowest y the stack may use.
+ */
+function drawMatchup(ctx, us, them, word, top, bottom) {
+  var room = bottom - top;
+  var dividerH = 62;
+  var gap = 34;
+  var ourMax = 112;
+  var theirMax = 126;
+  var a;
+  var b;
+  var total;
+
+  // Step down until it fits, or until shrinking further would not help.
+  while (true) {
+    a = measureTeam(ctx, us, ourMax);
+    b = measureTeam(ctx, them, theirMax);
+    total = a.height + b.height + dividerH + gap * 2;
+
+    if (total <= room || ourMax <= 46) {
+      break;
+    }
+
+    ourMax -= 6;
+    theirMax -= 6;
+  }
+
+  var y = top + Math.max(0, (room - total) / 2);
+
+  paintTeam(ctx, a, y, WHITE);
+  y += a.height + gap;
+
+  drawDivider(ctx, word, y + dividerH / 2);
+  y += dividerH + gap;
+
+  paintTeam(ctx, b, y, WHITE);
+}
+
+/**
+ * The angled gold slab across the foot, and the when and where on it.
+ *
+ * The slope is the one piece of movement on the square. Straight edges
+ * everywhere read as a table; one angle reads as a jersey stripe.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Object} g - The game.
+ */
+function drawFoot(ctx, g) {
+  var leftY = 838;
+  var rightY = 778;
+
+  ctx.fillStyle = GOLD;
+  ctx.beginPath();
+  ctx.moveTo(0, leftY);
+  ctx.lineTo(SIZE, rightY);
+  ctx.lineTo(SIZE, SIZE);
+  ctx.lineTo(0, SIZE);
+  ctx.closePath();
+  ctx.fill();
+
+  var inner = SIZE - PAD * 2;
+
+  ctx.fillStyle = NAVY;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  var dateText = longDate(g.date);
+  var dateSize = fitSize(ctx, dateText, inner, 78, 34, function (s) {
+    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
+  });
+
+  setFont(ctx, '700 ' + dateSize + 'px "Barlow Condensed", sans-serif', "0.04em");
+  ctx.fillText(dateText, SIZE / 2, 945);
+
+  var detail = [g.time || "", g.rink || ""].filter(Boolean).join("  \u00b7  ").toUpperCase();
+
+  if (!detail) {
+    return;
+  }
+
+  var detailSize = fitSize(ctx, detail, inner, 44, 22, function (s) {
+    return '600 ' + s + 'px "Chivo Mono", monospace';
+  });
+
+  setFont(ctx, '600 ' + detailSize + 'px "Chivo Mono", monospace', "0.02em");
+  ctx.fillText(detail, SIZE / 2, 1022);
+}
+
+/**
  * Draws the whole card onto a canvas.
  *
  * @param {HTMLCanvasElement} canvas
@@ -235,125 +500,36 @@ function longDate(iso) {
  */
 function draw(canvas, g, crest) {
   var ctx = canvas.getContext("2d");
-  var us = state.data.config.teamName;
+  var us = state.data.config.teamName || "";
   var atHome = g.home === us;
   var opponent = (atHome ? g.away : g.home) || "TBD";
-  var inner = SIZE - PAD * 2;
 
   canvas.width = SIZE;
   canvas.height = SIZE;
 
-  ctx.fillStyle = NAVY;
-  ctx.fillRect(0, 0, SIZE, SIZE);
+  drawGround(ctx);
+  drawHeader(ctx, crest, us.toUpperCase());
 
-  // ---- top gold band: the crest and who we are ----
-  var bandH = 168;
-
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, 0, SIZE, bandH);
-
-  var textLeft = PAD;
-
-  if (crest && crest.naturalWidth) {
-    var crestH = 112;
-    var crestW = (crest.naturalWidth / crest.naturalHeight) * crestH;
-
-    ctx.drawImage(crest, PAD, (bandH - crestH) / 2, crestW, crestH);
-    textLeft = PAD + crestW + 28;
+  if (g.event) {
+    drawTag(ctx, g.event.toUpperCase(), 244);
   }
 
-  ctx.fillStyle = NAVY;
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-
-  var nameSize = fitSize(ctx, (us || "").toUpperCase(), SIZE - textLeft - PAD, 68, 30, function (s) {
-    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-  });
-
-  setFont(ctx, '700 ' + nameSize + 'px "Barlow Condensed", sans-serif', "0.02em");
-  ctx.fillText((us || "").toUpperCase(), textLeft, bandH / 2);
-
-  // ---- the eyebrow ----
   ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillStyle = GOLD;
-  setFont(ctx, '700 46px "Barlow", sans-serif', "0.32em");
-  ctx.fillText("GAMEDAY", SIZE / 2 + 12, 300);
+  setFont(ctx, '700 42px "Barlow", sans-serif', "0.38em");
+  ctx.fillText("GAMEDAY", SIZE / 2 + 16, g.event ? 330 : 300);
 
-  // ---- home or away, then the opponent, as loud as it fits ----
-  ctx.fillStyle = GOLD;
-  setFont(ctx, '700 62px "Barlow Condensed", sans-serif', "0.14em");
-  ctx.fillText(atHome ? "VS" : "AT", SIZE / 2 + 6, 396);
-
-  var name = opponent.toUpperCase();
-
-  setFont(ctx, '700 150px "Barlow Condensed", sans-serif', "0.01em");
-
-  var lines = twoLines(ctx, name, inner);
-  var lineSize = 150;
-
-  lines.forEach(function (l) {
-    lineSize = Math.min(
-      lineSize,
-      fitSize(ctx, l, inner, 150, 56, function (s) {
-        return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-      })
-    );
-  });
-
-  setFont(ctx, '700 ' + lineSize + 'px "Barlow Condensed", sans-serif', "0.01em");
-  ctx.fillStyle = WHITE;
-
-  var lineH = lineSize * 0.94;
-  var blockTop = 500 + (lines.length === 1 ? lineH / 2 : 0);
-
-  lines.forEach(function (l, i) {
-    ctx.fillText(l, SIZE / 2, blockTop + i * lineH);
-  });
-
-  // ---- the rule, then when and where ----
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(PAD, 700, inner, 7);
-
-  ctx.fillStyle = WHITE;
-
-  var dateText = longDate(g.date);
-  var dateSize = fitSize(ctx, dateText, inner, 78, 34, function (s) {
-    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-  });
-
-  setFont(ctx, '700 ' + dateSize + 'px "Barlow Condensed", sans-serif', "0.03em");
-  ctx.fillText(dateText, SIZE / 2, 776);
-
-  if (g.time) {
-    ctx.fillStyle = GOLD;
-    setFont(ctx, '600 62px "Chivo Mono", monospace', "0.02em");
-    ctx.fillText(g.time.toUpperCase(), SIZE / 2, 862);
-  }
-
-  if (g.rink) {
-    ctx.fillStyle = WHITE;
-
-    var rinkSize = fitSize(ctx, g.rink, inner, 42, 24, function (s) {
-      return '600 ' + s + 'px "Barlow", sans-serif';
-    });
-
-    setFont(ctx, '600 ' + rinkSize + 'px "Barlow", sans-serif', "0.06em");
-    ctx.fillText(g.rink, SIZE / 2, 934);
-  }
-
-  // ---- bottom gold band: where to find the rest ----
-  var footH = 82;
-
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, SIZE - footH, SIZE, footH);
-
-  ctx.fillStyle = NAVY;
-  setFont(ctx, '700 30px "Barlow", sans-serif', "0.18em");
-  ctx.fillText(
-    (location.host + location.pathname).replace(/\/$/, "").toUpperCase(),
-    SIZE / 2,
-    SIZE - footH / 2
+  drawMatchup(
+    ctx,
+    us.toUpperCase(),
+    opponent.toUpperCase(),
+    atHome ? "VS" : "AT",
+    g.event ? 390 : 356,
+    762
   );
+
+  drawFoot(ctx, g);
 }
 
 /**

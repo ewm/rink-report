@@ -468,9 +468,16 @@ changing those two lines.
 
 Add `?admin` to the URL and every unplayed game of ours grows a "Gameday
 post" button. It opens a panel that draws a 1080 x 1080 PNG for Instagram:
-the crest and club name on a gold band, GAMEDAY, VS or AT, the opponent as
-loud as it fits, then the date, face-off and rink. `ui/postcard.js` owns it
-end to end, canvas only, no library and no build step.
+crest and club name over a gold rule, GAMEDAY, then the matchup with both
+clubs set the same weight either side of a VS or AT divider, and the date,
+face-off and rink on an angled gold slab across the foot. No web address on
+it. `ui/postcard.js` owns it end to end, canvas only, no library and no
+build step.
+
+The matchup is measured before anything is painted. Both names step down in
+size together until the stack fits between the header and the slab. The
+first cut drew each name at a fixed y and a name that wrapped to two lines
+ran straight through the divider.
 
 Three things about that file are deliberate:
 

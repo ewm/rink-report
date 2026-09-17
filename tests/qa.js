@@ -1108,11 +1108,12 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
       // A quarter of the square, sampled, to prove it is not one flat colour.
       const seen = new Set();
       for (let x=20; x<1080; x+=60) for (let y=20; y<1080; y+=60) seen.add(at(x,y));
-      return {w:c.width, h:c.height, band:at(540,40), foot:at(540,1050), colours:seen.size,
-              outside:!document.querySelector('#app .postwrap')};
+      return {w:c.width, h:c.height, rule:at(540,192), head:at(700,40), foot:at(540,1050),
+              colours:seen.size, outside:!document.querySelector('#app .postwrap')};
     });
     ok(card.w===1080 && card.h===1080, 'the canvas is a 1080 square: '+card.w+'x'+card.h);
-    ok(card.band==='252,213,30' && card.foot==='252,213,30', 'gold bands top and bottom: '+card.band+' / '+card.foot);
+    ok(card.rule==='252,213,30' && card.foot==='252,213,30', 'gold rule under the header and gold slab at the foot: '+card.rule+' / '+card.foot);
+    ok(card.head!=='252,213,30', 'the header itself is navy, not a gold band: '+card.head);
     ok(card.colours>3, 'the card actually drew something ('+card.colours+' distinct sampled colours)');
     ok(card.outside, 'the panel is a sibling of #app, so a poll cannot wipe the canvas mid-draw');
 

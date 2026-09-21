@@ -28,7 +28,8 @@ var SPEC_GOALIE = {
   gaa: ["gaa", "goalsagainstaverage", "goalsagainstavg"],
   so: ["so", "shutouts"],
   w: ["w", "wins"],
-  l: ["l", "losses"]
+  l: ["l", "losses"],
+  t: ["t", "ties"]
 };
 
 /** Header spellings for the jersey number column, which sits left of the name. */
@@ -462,9 +463,17 @@ function shapeStats(rows) {
 
   // Whatever the fifth goalie column says, SV% on older tabs or GAA on newer
   // ones, ga and min are what the page figures GAA from. See ui/stats.js.
+  // Ties are read only when the tab names a T column of its own. They are not
+  // in the positional list above, because a tab written before this column
+  // existed must not have its ninth goalie column mistaken for one, and the
+  // page counts ties off the game log anyway. See ui/stats.js, recordFor().
   out.goalies.forEach(function (g) {
     if (g.gaa === undefined) {
       g.gaa = null;
+    }
+
+    if (g.t === undefined) {
+      g.t = null;
     }
   });
 

@@ -126,9 +126,10 @@ businesses paying for the season appear under the next-game card, gold
 first. Tapping the heading folds the list for whoever tapped it.
 
 **Player stats.** A Stats tab appears when the sheet has a Player Stats
-tab. Skaters by points, and the goalie line with GAA computed on the page.
-Saves and save percentage are left off on purpose: most youth scoresheets
-never record shots.
+tab. Skaters by points, and the goalie line with GAA computed on the page
+and a wins-losses-ties record counted off the game log, so a tied game is
+not lost between the W and L columns on the tab. Saves and save percentage
+are left off on purpose: most youth scoresheets never record shots.
 
 **Pre-season.** Before the first league score, the standings card says when
 league play starts, shows the showcase record, and lists the division,

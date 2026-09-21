@@ -15,6 +15,7 @@
  */
 import { isExhibition, isOurs, played } from "./game.js";
 import { state } from "../state.js";
+import { norm } from "../util/text.js";
 
 /**
  * How long a full game was on a given date, in minutes.
@@ -64,6 +65,50 @@ function gaaFromLog(rows) {
   });
 
   return games > 0 ? ga / games : null;
+}
+
+/**
+ * What one Result cell says: "w", "l", "t", or "" when the row does not say.
+ *
+ * The column is typed by hand after a game, so "W", "Win", "T" and "Tie" all
+ * have to land in the same bucket. A value starting with none of those
+ * letters is left out of the record rather than guessed at.
+ *
+ * @param {Object} row - A row from the goalie log.
+ * @returns {string} "w", "l", "t", or "".
+ */
+function resultOf(row) {
+  var v = norm(row.result).charAt(0);
+
+  if (v === "w" || v === "l" || v === "t") {
+    return v;
+  }
+
+  return "";
+}
+
+/**
+ * A goalie's record from their own log rows: wins, losses, ties.
+ *
+ * Ties only live in the log. The totals table on the sheet counts wins and
+ * losses, so a game that ended level is missing from both of its columns and
+ * a record built from them reads a game short.
+ *
+ * @param {Object[]} rows - That goalie's rows from the log.
+ * @returns {{w: number, l: number, t: number}}
+ */
+function recordFromLog(rows) {
+  var rec = { w: 0, l: 0, t: 0 };
+
+  rows.forEach(function (r) {
+    var v = resultOf(r);
+
+    if (v) {
+      rec[v] += 1;
+    }
+  });
+
+  return rec;
 }
 
 /**
@@ -172,7 +217,19 @@ function leagueGoalies() {
       return r.name === k.name && isLeagueDate(r.date);
     });
 
-    var o = { name: k.name, no: k.no, gp: mine.length, min: 0, ga: 0, so: 0, w: 0, l: 0 };
+    var rec = recordFromLog(mine);
+
+    var o = {
+      name: k.name,
+      no: k.no,
+      gp: mine.length,
+      min: 0,
+      ga: 0,
+      so: 0,
+      w: rec.w,
+      l: rec.l,
+      t: rec.t
+    };
 
     mine.forEach(function (r) {
       o.min += r.min || 0;
@@ -180,12 +237,6 @@ function leagueGoalies() {
 
       if ((r.ga || 0) === 0) {
         o.so += 1;
-      }
-
-      if (r.result === "w") {
-        o.w += 1;
-      } else if (r.result === "l") {
-        o.l += 1;
       }
     });
 
@@ -227,5 +278,6 @@ export {
   isLeagueDate,
   leagueGamesPlayed,
   leagueGoalies,
-  leagueSkaters
+  leagueSkaters,
+  recordFromLog
 };

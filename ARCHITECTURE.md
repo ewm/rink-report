@@ -559,6 +559,23 @@ the season totals against the league's length.
 The note under the table always names the number it used, and says so when
 the schedule overrides it somewhere.
 
+### The record column
+
+Wins and losses are one column, "3-1-1", the same shape as the record chip on
+the masthead and the standings table.
+
+Ties are why it is not two columns read straight off the tab. The totals
+block counts wins and losses, so a game that ended level is missing from both
+of its columns and a record built from them is a game short. The goalie log
+has a Result cell for every game, so the record is counted there instead:
+"W", "Win", "T" and "Tie" all land in the right bucket, and anything else is
+left out rather than guessed at. This is the same rule GAA already follows,
+where the log beats the totals block because it knows more.
+
+A tab with no game log at all still prints the sheet's own wins and losses,
+and no tie count unless the tab carries a T column of its own. A zero there
+would be a claim the tab cannot make.
+
 The minutes in the sheet and the Period length have to describe the same
 game. If the goalie log records 42 minutes for a full game while the setting
 says 45, every GAA comes out about 7 percent high.

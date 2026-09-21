@@ -3,16 +3,19 @@
  *
  * statsHtml() renders the skater table (points, goals, number) and the
  * goalie table, either from the sheet's own season totals or, when the
- * League switch is on, from the game log restricted to league play. The sheet does the adding; the one
- * thing figured here is GAA, from the sheet's own GA and minutes and the
- * league's game length. See ARCHITECTURE.md, "Stats".
+ * League switch is on, from the game log restricted to league play. The sheet
+ * does the adding; the two things figured here are GAA, from the sheet's own
+ * GA and minutes and the league's game length, and the W-L-T record, which
+ * needs the log because the sheet counts no ties. See ARCHITECTURE.md,
+ * "Stats".
  */
 import {
   canSplitByScope,
   gaaFromLog,
   goalieLogFor,
   leagueGoalies,
-  leagueSkaters
+  leagueSkaters,
+  recordFromLog
 } from "../model/gamelog.js";
 import { state } from "../state.js";
 import { esc } from "../util/text.js";
@@ -75,6 +78,48 @@ function gaaFor(g) {
   }
 
   return g.gaa === undefined ? null : g.gaa;
+}
+
+/**
+ * A goalie's record: wins-losses-ties.
+ *
+ * Ties are why this is not two columns off the sheet. The totals table
+ * counts wins and losses, so a game that ended level is missing from both,
+ * and the log is the only place that says it happened. A goalie with log
+ * rows is counted from those, whichever scope is on screen.
+ *
+ * Without a log the sheet's own wins and losses are printed as they stand,
+ * with no tie count at all unless the tab carries a T column of its own. A
+ * zero there would be a claim the tab cannot make.
+ *
+ * @param {Object} g - A goalie row.
+ * @param {boolean} league - Whether the row was already summed from the log.
+ * @returns {string} "3-1-1", or "—" when the sheet carries no record.
+ */
+function recordFor(g, league) {
+  if (league) {
+    return g.w + "-" + g.l + "-" + g.t;
+  }
+
+  var rows = goalieLogFor(g.name);
+
+  if (rows.length) {
+    var rec = recordFromLog(rows);
+
+    return rec.w + "-" + rec.l + "-" + rec.t;
+  }
+
+  var missing = function (n) {
+    return n === null || n === undefined;
+  };
+
+  if (missing(g.w) && missing(g.l)) {
+    return "—";
+  }
+
+  var out = fmtNum(g.w || 0) + "-" + fmtNum(g.l || 0);
+
+  return missing(g.t) ? out : out + "-" + fmtNum(g.t);
 }
 
 /**
@@ -227,7 +272,7 @@ function statsHtml() {
       '</div><div class="card-b">';
     h +=
       '<div class="tablewrap"><table><thead><tr><th scope="col">Goalie</th><th scope="col">GP</th><th scope="col">Min</th>' +
-      '<th scope="col">GA</th><th scope="col">GAA</th><th scope="col">SO</th><th scope="col">W</th><th scope="col">L</th></tr></thead><tbody>';
+      '<th scope="col">GA</th><th scope="col">GAA</th><th scope="col">SO</th><th scope="col">Record</th></tr></thead><tbody>';
 
     // Saves and save percentage are left out on purpose: most youth scoresheets never record
     // shots. See ARCHITECTURE.md, "Stats".
@@ -249,9 +294,7 @@ function statsHtml() {
         "</td><td>" +
         fmtNum(g.so) +
         "</td><td>" +
-        fmtNum(g.w) +
-        "</td><td>" +
-        fmtNum(g.l) +
+        esc(recordFor(g, league)) +
         "</td></tr>";
     });
 
@@ -263,7 +306,7 @@ function statsHtml() {
       fmtNum(state.data.config.gameMinutes) +
       " minutes" +
       (mixedLengths() ? ", and of whatever the Schedule tab says for an event that runs a different clock" : "") +
-      '. Saves are not listed because most scoresheets do not record shots.</p>';
+      '. Record is wins-losses-ties. Saves are not listed because most scoresheets do not record shots.</p>';
     h += "</div></section>";
   }
 

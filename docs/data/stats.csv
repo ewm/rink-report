@@ -1,18 +1,18 @@
 SKATER TOTALS  (auto),,,,,,,,GOALIE TOTALS  (auto),,,,,,,,,,,GAME LOG — SKATERS  (add rows here after each game),,,,,,,,GAME LOG — GOALIES  (add rows here after each game),,,,,,,,,GAMES  (add a row after each game),,,,,,,HOW TO USE
 No,Player,GP,G,A,PTS,PIM,,No,Goalie,GP,Min,Saves,GA,SV%,SO,W,L,,Date,Opponent,No,Player,G,A,PIM,,Date,Opponent,No,Goalie,Min,Saves,GA,Result,,Date,Opponent,H/A,GF,GA,Result,,Blue cells are the ones you type in; the two totals tables fill themselves in.
-15,Luke Giglio,6,8,2,10,0.,,29,Andrew Malicki,4,168,19,9,0.679,1,3,1,,8/28/2026,Allegheny 2014,17,Evan Carter,1,1,1.5,,8/28/2026,Allegheny 2014,32,Stephen Doering,42,,5,L,,8/28/2026,Allegheny 2014,H,3,5,L,,"After each game: add a row to GAMES, one row per skater who got a goal/assist/penalty in GAME LOG - SKATERS, and one row per goalie in GAME LOG - GOALIES."
-17,Evan Carter,6,2,6,8,1.5,,32,Stephen Doering,2,84,0,7,,0,1,1,,8/28/2026,Allegheny 2014,15,Luke Giglio,1,,,,8/29/2026,Macomb Mavericks 2014,29,Andrew Malicki,42,19,0,W,,8/29/2026,Macomb Mavericks 2014,A,6,0,W,,"PIM: league minors are 1:30, so each minor = 1.5 PIM."
-14,Evan Burroughs,6,3,1,4,1.5,,,,,,,,,,,,,8/28/2026,Allegheny 2014,12,Dylan Musso,,1,,,8/29/2026,Sylvania N-Stars 2014,29,Andrew Malicki,42,,5,L,,8/29/2026,Sylvania N-Stars 2014,H,2,5,L,,"GP counts every game for every skater. If a kid misses a game, type his real GP number over the formula in the GP column."
-91,Chase Meyer,6,5,1,6,3.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,91,Chase Meyer,,1,,,8/30/2026,Middlesex 2014 (Islanders HC East),29,Andrew Malicki,42,,2,W,,8/30/2026,Middlesex 2014 (Islanders HC East),A,8,2,W,,SV% shows blank until a goalie has saves recorded (no saves box on WNYAHL scoresheets).
-12,Dylan Musso,6,2,3,5,4.5,,,,,,,,,,,,,8/28/2026,Allegheny 2014,22,Connor Stearns,1,,1.5,,8/30/2026,Stoney Creek 2014,29,Andrew Malicki,42,,2,W,,8/30/2026,Stoney Creek 2014,H,3,2,W,,Skater totals are listed by points through 8/30. To re-sort later: select the 13 player rows and use Data > Sort range > by column F (Z to A).
-22,Connor Stearns,6,3,2,5,3.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,14,Evan Burroughs,,,1.5,,9/13/2026,Southtowns 12U Martino,32,Stephen Doering,42,,2,W,,9/13/2026,Southtowns 12U Martino,A,6,2,W,,"Source: 8/28/26 WNYAHL scoresheet vs Allegheny 2014 (L 3-5); 8/29/26 USA Hockey scoresheets at Macomb (W 6-0) and vs Sylvania (L 2-5); 8/30/26 USA Hockey scoresheets at Middlesex/Islanders HC East (W 8-2) and vs Stoney Creek (W 3-2, showcase finale). Per Eric: the 'Guest #4' goal on the Middlesex sheet was Burroughs (14), and the Allegheny 3rd-period goal was Stearns (22) from Musso (12) and Carter, not the other way round as the sheet has it."
-9,Rory O'Connell,6,1,3,4,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,91,Chase Meyer,2,,,,,,,,,,,,,,,,,,,,
-8,Connor Pede,6,2,2,4,3.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,15,Luke Giglio,2,,,,,,,,,,,,,,,,,,,,
-44,Cameron Tuzzolino,6,1,4,5,6.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,9,Rory O'Connell,1,1,,,,,,,,,,,,,,,,,,,
-87,Alex Smith,6,1,2,3,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,14,Evan Burroughs,1,1,,,,,,,,,,,,,,,,,,,
-10,Gus Foster,6,0,1,1,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,17,Evan Carter,,1,,,,,,,,,,,,,,,,,,,
-25,Vincent Damiani,6,0,2,2,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,87,Alex Smith,,1,,,,,,,,,,,,,,,,,,,
-89,Sal Stewart,6,0,0,0,3.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,10,Gus Foster,,1,,,,,,,,,,,,,,,,,,,
+15,Luke Giglio,10,10,2,12,0.,,29,Andrew Malicki,6,238,19,12,0.613,2,3,1,,8/28/2026,Allegheny 2014,17,Evan Carter,1,1,1.5,,8/28/2026,Allegheny 2014,32,Stephen Doering,42,,5,L,,8/28/2026,Allegheny 2014,H,3,5,L,,"After each game: add a row to GAMES, one row per skater who got a goal/assist/penalty in GAME LOG - SKATERS, and one row per goalie in GAME LOG - GOALIES."
+17,Evan Carter,10,3,6,9,5.5,,32,Stephen Doering,4,157,0,9,,0,2,1,,8/28/2026,Allegheny 2014,15,Luke Giglio,1,,,,8/29/2026,Macomb Mavericks 2014,29,Andrew Malicki,42,19,0,W,,8/29/2026,Macomb Mavericks 2014,A,6,0,W,,"PIM: league minors are 1:30, so each minor = 1.5 PIM."
+14,Evan Burroughs,10,4,2,6,1.5,,,,,,,,,,,,,8/28/2026,Allegheny 2014,12,Dylan Musso,,1,,,8/29/2026,Sylvania N-Stars 2014,29,Andrew Malicki,42,,5,L,,8/29/2026,Sylvania N-Stars 2014,H,2,5,L,,"GP counts every game for every skater. If a kid misses a game, type his real GP number over the formula in the GP column."
+91,Chase Meyer,10,5,3,8,19.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,91,Chase Meyer,,1,,,8/30/2026,Middlesex 2014 (Islanders HC East),29,Andrew Malicki,42,,2,W,,8/30/2026,Middlesex 2014 (Islanders HC East),A,8,2,W,,SV% shows blank until a goalie has saves recorded (no saves box on WNYAHL scoresheets).
+12,Dylan Musso,10,2,5,7,8.5,,,,,,,,,,,,,8/28/2026,Allegheny 2014,22,Connor Stearns,1,,1.5,,8/30/2026,Stoney Creek 2014,29,Andrew Malicki,42,,2,W,,8/30/2026,Stoney Creek 2014,H,3,2,W,,Skater totals are listed by points through 8/30. To re-sort later: select the 13 player rows and use Data > Sort range > by column F (Z to A).
+22,Connor Stearns,10,6,3,9,3.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,14,Evan Burroughs,,,1.5,,9/13/2026,Southtowns 12U Martino,32,Stephen Doering,45,,2,W,,9/13/2026,Southtowns 12U Martino,A,6,2,W,,"Source: 8/28/26 WNYAHL scoresheet vs Allegheny 2014 (L 3-5); 8/29/26 USA Hockey scoresheets at Macomb (W 6-0) and vs Sylvania (L 2-5); 8/30/26 USA Hockey scoresheets at Middlesex/Islanders HC East (W 8-2) and vs Stoney Creek (W 3-2, showcase finale). Per Eric: the 'Guest #4' goal on the Middlesex sheet was Burroughs (14), and the Allegheny 3rd-period goal was Stearns (22) from Musso (12) and Carter, not the other way round as the sheet has it."
+9,Rory O'Connell,10,1,4,5,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,91,Chase Meyer,2,,,,9/18/2026,Norflok Knights,29,Andrew Malicki,35,,0,T,,9/18/2026,Norfolk Knights,A,0,0,T,,
+8,Connor Pede,10,2,2,4,9.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,15,Luke Giglio,2,,,,9/18/2026,Niagara Falls Canucks,32,Stephen Doering,35,,1,T,,9/18/2026,Niagara Falls Canucks,H,1,1,T,,
+44,Cameron Tuzzolino,10,1,5,6,10.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,9,Rory O'Connell,1,1,,,9/19/2026,Flamborough Sabres,29,Andrew Malicki,35,,3,T,,9/19/2026,Flamborough Sabres,A,3,3,T,,
+87,Alex Smith,10,1,2,3,2.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,14,Evan Burroughs,1,1,,,9/19/2026,Burlington Eagles,32,Stephen Doering,35,,1,W,,9/19/2026,Burlington Eagles,H,3,1,W,,
+10,Gus Foster,10,0,1,1,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,17,Evan Carter,,1,,,,,,,,,,,,,,,,,,,
+25,Vincent Damiani,10,0,2,2,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,87,Alex Smith,,1,,,,,,,,,,,,,,,,,,,
+89,Sal Stewart,10,0,0,0,5.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,10,Gus Foster,,1,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,44,Cameron Tuzzolino,,1,4.5,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,12,Dylan Musso,,,1.5,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,8/29/2026,Sylvania N-Stars 2014,15,Luke Giglio,1,,,,,,,,,,,,,,,,,,,,
@@ -45,3 +45,27 @@ No,Player,GP,G,A,PTS,PIM,,No,Goalie,GP,Min,Saves,GA,SV%,SO,W,L,,Date,Opponent,No
 ,,,,,,,,,,,,,,,,,,,9/13/2026,Southtowns 12U Martino,25,Vincent Damiani,,2,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,9/13/2026,Southtowns 12U Martino,17,Evan Carter,,1,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,9/13/2026,Southtowns 12U Martino,12,Dylan Musso,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Norfolk Knights,44,Cameron Tuzzolino,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Norfolk Knights,8,Connor Pede,,,4.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Norfolk Knights,89,Sal Stewart,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Niagara Falls Canucks,22,Connor Stearns,1,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Niagara Falls Canucks,91,Chase Meyer,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Niagara Falls Canucks,14,Evan Burroughs,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/18/2026,Niagara Falls Canucks,91,Chase Meyer,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,15,Luke Giglio,1,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,17,Evan Carter,1,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,14,Evan Burroughs,1,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,9,Rory O'Connell,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,44,Cameron Tuzzolino,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,22,Connor Stearns,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,91,Chase Meyer,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,17,Evan Carter,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Flamborough Sabres,12,Dylan Musso,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,22,Connor Stearns,2,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,15,Luke Giglio,1,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,12,Dylan Musso,,2,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,17,Evan Carter,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,44,Cameron Tuzzolino,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,91,Chase Meyer,,,14.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,87,Alex Smith,,,2.,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/19/2026,Burlington Eagles,8,Connor Pede,,,2.,,,,,,,,,,,,,,,,,,

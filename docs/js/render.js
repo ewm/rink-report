@@ -33,7 +33,7 @@ import { diagHtml } from "./ui/diagnostics.js";
  * @param {string} teamName
  */
 function setTitle(teamName) {
-  var title = teamName ? teamName + " | The One Timer" : "Rink Report";
+  var title = teamName ? teamName + " | Check The Rink" : "Rink Report";
 
   if (document.title !== title) {
     document.title = title;

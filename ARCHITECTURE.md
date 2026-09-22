@@ -12,7 +12,7 @@ section each comment names.
 
 ```
 docs/
-  index.html          The One Timer landing page (see "The One Timer" below)
+  index.html          Check The Rink landing page (see "Check The Rink" below)
   teams.js            every club (name + two colors) and team (folder, club)
   theme.js            a club's two colors -> every color slot, light and dark
   landing.js/.css     the landing page
@@ -48,21 +48,21 @@ come from a web server, not a `file://` double-click. Use
 `localhost:8000/` for the landing page or `localhost:8000/wswings12u/` for
 the Wings.
 
-## The One Timer: team folders and club colors
+## Check The Rink: team folders and club colors
 
 The site is one GitHub Pages repo on one address. The landing page sits at
-the root and every team gets a folder: `theonetimer.<tld>/wswings12u/`.
+the root and every team gets a folder: `checktherink.com/wswings12u/`.
 All teams run the same `js/` and `css/`; a team's folder holds only what is
 its own (config, crest, manifest, saved copy of its sheet). Adding a team is
 a folder plus an entry in `teams.js`.
 
 A team page's shell loads `../theme.js` and `../teams.js` in the head,
-before the page paints, and calls `OneTimerTheme.applyTeamPage()`. That
+before the page paints, and calls `CheckTheRinkTheme.applyTeamPage()`. That
 finds the team by its folder name (the last part of the address, or
 `RINK_CONFIG.folder` if a page sets one), looks up its club, and writes the
 club's color slots onto `:root`. `rink.css` still carries the Wings' values
 as a fallback, so a folder missing from `teams.js` looks like the Wings and
-shows no "All teams" row. `window.ONE_TIMER_CLUB` holds what was applied;
+shows no "All teams" row. `window.CHECK_THE_RINK_CLUB` holds what was applied;
 the footer and the gameday post read it.
 
 **The color slots.** A club gives a main color and an accent. `theme.js`
@@ -76,7 +76,7 @@ type on a panel, 3:1 for the focus ring), so a club's color changes as
 little as readability allows. When an accent can't do its job (white on a
 white page, black on a dark page, too close to the main color), the accent
 panel is filled with the main color and the thin marks are drawn in ink.
-`OneTimerTheme.check()` says so in plain words and the landing page logs it.
+`CheckTheRinkTheme.check()` says so in plain words and the landing page logs it.
 
 **Browser storage is per address, not per folder.** Every team shares one
 address, so every key the page stores carries its folder's path:
@@ -88,7 +88,7 @@ paint each other's standings. Test [30] covers it.
 name and teams by age (8U, Squirt, 12U...), and shows a search box once
 there are 8 or more teams. Search matches every word typed, against name,
 club, age group, league and a team's `aka` names. The teams a phone picked
-are remembered (`onetimer.recent`, newest first, up to three): the newest
+are remembered (`checktherink.recent`, newest first, up to three): the newest
 becomes the "Your team" panel in its club's accent, the others sit under it.
 
 ### Data flow

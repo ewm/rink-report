@@ -2,7 +2,7 @@
 
 About 20 minutes, once. After this you never touch the site again, only the sheet.
 
-> **The One Timer layout.** The site now holds more than one team. Each team
+> **Check The Rink layout.** The site now holds more than one team. Each team
 > has its own folder under `docs/` (the Wings are `docs/wswings12u/`), and
 > wherever this guide says `index.html` or `logo.png` it means the ones in
 > the team's folder. The landing page at `docs/index.html` lists every team

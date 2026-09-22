@@ -237,9 +237,9 @@ function statusHtml() {
 function footHtml() {
   var h = "";
 
-  // On The One Timer every team page sits in a folder under the landing
-  // page. theme.js sets ONE_TIMER_HOME once ../teams.js has loaded.
-  if (window.ONE_TIMER_HOME) {
+  // On Check The Rink every team page sits in a folder under the landing
+  // page. theme.js sets CHECK_THE_RINK_HOME once ../teams.js has loaded.
+  if (window.CHECK_THE_RINK_HOME) {
     h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span> All teams</a>';
   }
 

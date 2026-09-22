@@ -1,13 +1,13 @@
 /**
- * The One Timer: landing page.
+ * Check The Rink: landing page.
  *
  * Draws the masthead, the parent's own teams, the finder, and every club
  * with its teams, from the data in teams.js. Plain script; everything
- * hangs off window.OneTimerLanding.
+ * hangs off window.CheckTheRinkLanding.
  *
- *   OneTimerLanding.mount(element, site, options)
+ *   CheckTheRinkLanding.mount(element, site, options)
  *
- * site     window.ONE_TIMER from teams.js (orgs + teams)
+ * site     window.CHECK_THE_RINK from teams.js (orgs + teams)
  * options  onPick(folder, event)  optional; called when a team is tapped,
  *          after it is remembered, for a page that handles the tap itself.
  */
@@ -17,7 +17,7 @@
   var FIND_AT = 8;
 
   /** Browser storage key for the teams this phone picked, newest first. */
-  var RECENT_KEY = "onetimer.recent";
+  var RECENT_KEY = "checktherink.recent";
 
   /** How many picked teams to remember and show. */
   var RECENT_MAX = 3;
@@ -346,7 +346,7 @@
   /**
    * Draws the landing page into an element and wires it up.
    * @param {Element} el
-   * @param {object} site window.ONE_TIMER
+   * @param {object} site window.CHECK_THE_RINK
    * @param {{onPick?: function(string, Event)}} [options]
    */
   function mount(el, site, options) {
@@ -354,7 +354,7 @@
 
     var html = '<header class="mast">'
       + '<p class="eyebrow">Youth hockey standings</p>'
-      + "<h1>The One Timer</h1>"
+      + "<h1>Check The Rink</h1>"
       + '<p class="sub">Standings, scores and the next game. Pick your team.</p>'
       + "</header>";
 
@@ -435,7 +435,7 @@
   }
 
 
-  window.OneTimerLanding = {
+  window.CheckTheRinkLanding = {
     mount: mount,
     remember: remember,
     matches: matches,

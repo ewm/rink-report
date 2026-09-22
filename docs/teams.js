@@ -1,5 +1,5 @@
 /**
- * The One Timer: every club and team on the site.
+ * Check The Rink: every club and team on the site.
  *
  * This is the only file you edit to add a club or a team. The landing page
  * reads it, and each team page reads it for its club's colors.
@@ -23,7 +23,7 @@
  *
  * To pull a team, delete its entry (and its folder).
  */
-window.ONE_TIMER = {
+window.CHECK_THE_RINK = {
 
   orgs: {
     wsyha: {

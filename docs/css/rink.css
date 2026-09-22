@@ -263,7 +263,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus); outline-off
 .banner li+li{border-top:1px solid rgba(128,100,20,.22)}
 .banner b{font-weight:700}
 .foot{font-size:11px; color:var(--ink-3); text-align:center; line-height:1.8; margin:22px 0 0; padding:0 18px}
-/* The way back to every team on The One Timer: a full-width row, easy to hit. */
+/* The way back to every team on Check The Rink: a full-width row, easy to hit. */
 .home{display:flex; align-items:center; gap:10px; min-height:52px; margin-top:24px; padding:0 18px;
   border-top:2px solid var(--rule); border-bottom:1px solid var(--hair); color:var(--ink);
   font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; text-decoration:none}

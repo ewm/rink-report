@@ -37,7 +37,7 @@ var ACCENT_ON_GROUND = "#FCD51E";
  * teams.js. Otherwise the card keeps the Wings' navy and gold.
  */
 function useClubColors() {
-  var club = window.ONE_TIMER_CLUB;
+  var club = window.CHECK_THE_RINK_CLUB;
 
   if (!club || !club.card) {
     return;

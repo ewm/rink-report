@@ -1220,7 +1220,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await other.ctx.close();
   }
 
-  // 29. The One Timer: the team page in its folder, in its club's colors
+  // 29. Check The Rink: the team page in its folder, in its club's colors
   console.log('\n[29] team page in its folder, club colors from teams.js');
   {
     const r = await openPage(browser, BASE, {schedule:'scored'});
@@ -1236,13 +1236,13 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
         home: (document.querySelector('a.home')||{}).getAttribute ? document.querySelector('a.home').getAttribute('href') : null,
         record: (document.querySelector('.record b')||{}).textContent || '',
         recordLabel: (document.querySelector('.record .eyebrow')||{}).textContent || '',
-        club: !!window.ONE_TIMER_CLUB,
+        club: !!window.CHECK_THE_RINK_CLUB,
         tabH: Math.round(document.querySelector('.viewbar button').getBoundingClientRect().height)
       };
     });
     ok(look.club, 'theme.js found the team in teams.js by its folder');
     ok(look.mast==='rgb(0, 48, 135)' && look.rule==='rgb(252, 213, 30)', 'masthead is club navy with the gold rule: '+look.mast+' / '+look.rule);
-    ok(look.title==='West Seneca Wings | The One Timer', 'browser tab named after the team: '+look.title);
+    ok(look.title==='West Seneca Wings | Check The Rink', 'browser tab named after the team: '+look.title);
     ok(look.themeColor==='#003087', 'phone browser bar in the club main color: '+look.themeColor);
     ok(look.manifest, 'home-screen manifest linked');
     ok(look.home==='../', 'All teams row links back to the landing page: '+look.home);
@@ -1269,7 +1269,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(keys.indexOf('rinkreport.v5')===-1, 'nothing saved under the old shared key');
     const sp = await r.page.evaluate(()=>({there:!!document.querySelector('.sponsors'), shut:!!document.querySelector('.sponsors.shut')}));
     ok(sp.there && !sp.shut, 'folding sponsors on one team does not fold them on another: '+JSON.stringify(sp));
-    const other = await r.page.evaluate(()=>({club:!!window.ONE_TIMER_CLUB, home:!!document.querySelector('a.home')}));
+    const other = await r.page.evaluate(()=>({club:!!window.CHECK_THE_RINK_CLUB, home:!!document.querySelector('a.home')}));
     ok(!other.club && other.home, 'a folder missing from teams.js keeps the stylesheet colors but still has the way back to All teams: '+JSON.stringify(other));
     await r.ctx.close();
   }
@@ -1323,7 +1323,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
       wide: document.documentElement.scrollWidth
     }));
     ok(errors.length===0, 'no page errors: '+errors.join(' | '));
-    ok(land.h1==='The One Timer', 'masthead reads The One Timer');
+    ok(land.h1==='Check The Rink', 'masthead reads Check The Rink');
     ok(land.clubs.join('|')==='West Seneca Youth Hockey', 'one club band: '+land.clubs.join('|'));
     ok(land.links.join('|')==='wswings12u/', 'the Wings row links to their folder: '+land.links.join('|'));
     ok(land.band==='rgb(0, 48, 135)', 'the club band is in the club color: '+land.band);
@@ -1371,7 +1371,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await ctx.close();
 
     // A mistyped color on the first club does not strip the colors from the rest
-    const bad = fs.readFileSync(path.join(SITE_DIR,'teams.js'),'utf8').replace('orgs: {', 'orgs: {\n    aaa: { name: "Aaa Club", primary: "navy", accent: "#FFFFFF" },').replace('folder: "wswings12u",', 'folder: "wswings12u",') + '\nwindow.ONE_TIMER.teams.push({ folder: "x", name: "Bad Color Team", org: "aaa", program: "10U" });';
+    const bad = fs.readFileSync(path.join(SITE_DIR,'teams.js'),'utf8').replace('orgs: {', 'orgs: {\n    aaa: { name: "Aaa Club", primary: "navy", accent: "#FFFFFF" },').replace('folder: "wswings12u",', 'folder: "wswings12u",') + '\nwindow.CHECK_THE_RINK.teams.push({ folder: "x", name: "Bad Color Team", org: "aaa", program: "10U" });';
     const ctx3 = await browser.newContext();
     const p3 = await ctx3.newPage();
     const errs3=[]; p3.on('pageerror', e=>errs3.push(String(e)));

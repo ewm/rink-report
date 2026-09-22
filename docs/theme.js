@@ -1,5 +1,5 @@
 /**
- * The One Timer: club color themes.
+ * Check The Rink: club color themes.
  *
  * A club gives two colors, a main color and an accent (the Wings give
  * navy #003087 and gold #FCD51E). This file works out every other color
@@ -11,7 +11,7 @@
  * white does.
  *
  * Plain script, no modules, so it loads anywhere with one <script> tag
- * and runs before the page paints. Everything hangs off window.OneTimerTheme.
+ * and runs before the page paints. Everything hangs off window.CheckTheRinkTheme.
  */
 (function () {
 
@@ -557,11 +557,11 @@
    * whole page, and points the phone's browser bar at the club's main
    * color. With no match the page keeps the colors in rink.css.
    *
-   * @param {object} [site] window.ONE_TIMER from teams.js
+   * @param {object} [site] window.CHECK_THE_RINK from teams.js
    * @returns {{team: object, org: object}|null} what was applied
    */
   function applyTeamPage(site) {
-    site = site || window.ONE_TIMER;
+    site = site || window.CHECK_THE_RINK;
 
     var cfg = window.RINK_CONFIG || {};
     var folder = cfg.folder || currentFolder();
@@ -578,7 +578,7 @@
 
     // The "All teams" row only needs to know this page is part of The One
     // Timer, which teams.js loading already says, club or no club.
-    window.ONE_TIMER_HOME = true;
+    window.CHECK_THE_RINK_HOME = true;
 
     if (!org || !valid(org.primary, org.accent)) {
       return null;
@@ -592,7 +592,7 @@
       meta.setAttribute("content", normal(org.primary));
     }
 
-    window.ONE_TIMER_CLUB = {
+    window.CHECK_THE_RINK_CLUB = {
       team: team,
       org: org,
       light: tokens(org.primary, org.accent).light,
@@ -603,7 +603,7 @@
   }
 
 
-  window.OneTimerTheme = {
+  window.CheckTheRinkTheme = {
     tokens: tokens,
     check: check,
     css: css,

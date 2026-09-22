@@ -6,7 +6,7 @@ You type scores into a spreadsheet. Parents open a link and see the standings,
 the schedule, and when the next game is. No login, no app to install, and
 nothing to maintain in February when everyone has stopped caring.
 
-Live: [ewm.github.io/rink-report](https://ewm.github.io/rink-report/)
+Live: [checktherink.com](https://checktherink.com/)
 (West Seneca Wings 12U, 2026-27).
 
 ## How it works
@@ -51,13 +51,13 @@ The page lives in `docs/`, which is the folder GitHub Pages serves. Your
 working folder and the repository are the same thing, so a change is a
 normal commit and push.
 
-The site is The One Timer: a landing page at the root that lists every
+The site is Check The Rink: a landing page at the root that lists every
 club and team, and one folder per team. Each team's page is this Rink
 Report. All teams share the same `js/` and `css/`.
 
 | Path | What it is |
 |---|---|
-| `docs/index.html` | The One Timer landing page. Lists every club and team from `teams.js`. Nothing in it to edit. |
+| `docs/index.html` | Check The Rink landing page. Lists every club and team from `teams.js`. Nothing in it to edit. |
 | `docs/teams.js` | **Every club and team on the site.** A club is a name and two colors; a team is a folder, name, club and age group. The one file to edit to add a club or team. |
 | `docs/theme.js` | Works out every color a page needs from a club's two colors, for light and dark mode, and keeps them readable. Used by the landing page and every team page. |
 | `docs/landing.js`, `docs/landing.css` | The landing page's code and styles. |

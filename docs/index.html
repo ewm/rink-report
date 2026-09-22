@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A111C" media="(prefers-color-scheme: dark)">
-<title>The One Timer</title>
+<title>Check The Rink</title>
 <meta name="description" content="Standings, scores and the next game for youth hockey teams. Pick your team.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,8 +24,8 @@
 <script>
 /* Each club's colors go on before the page draws, scoped to data-org. */
 (function () {
-  var site = window.ONE_TIMER;
-  var theme = window.OneTimerTheme;
+  var site = window.CHECK_THE_RINK;
+  var theme = window.CheckTheRinkTheme;
 
   if (!site || !theme) {
     return;
@@ -37,14 +37,14 @@
     // A mistyped color skips that one club (it shows in plain ink) instead
     // of stopping the colors for every club after it.
     if (!theme.valid(org.primary, org.accent)) {
-      console.warn("The One Timer, " + org.name + ": both colors have to be hex codes, like #003087. Showing this club without its colors.");
+      console.warn("Check The Rink, " + org.name + ": both colors have to be hex codes, like #003087. Showing this club without its colors.");
       return;
     }
 
     theme.apply('[data-org="' + id + '"]', org.primary, org.accent);
 
     theme.check(org.primary, org.accent).forEach(function (note) {
-      console.info("The One Timer, " + org.name + ": " + note);
+      console.info("Check The Rink, " + org.name + ": " + note);
     });
   });
 })();
@@ -59,7 +59,7 @@
   // Old links to the site root with ?admin or ?check (from before teams had
   // folders) go to the team's own page when there is only one team.
   (function () {
-    var site = window.ONE_TIMER;
+    var site = window.CHECK_THE_RINK;
 
     if (/[?&](admin|check)\b/.test(location.search) && site && site.teams && site.teams.length === 1) {
       location.replace(site.teams[0].folder.replace(/^\/+|\/+$/g, "") + "/" + location.search);
@@ -67,8 +67,8 @@
       return;
     }
 
-    if (window.OneTimerLanding) {
-      window.OneTimerLanding.mount(document.getElementById("app"), site);
+    if (window.CheckTheRinkLanding) {
+      window.CheckTheRinkLanding.mount(document.getElementById("app"), site);
     }
   })();
 </script>

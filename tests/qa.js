@@ -132,7 +132,9 @@ async function openPage(browser, url, opts){
                           '2026-09-13,11:00 AM,West Seneca Wings,Southtown Stars,6,2,');
     if(which==='stats' && opts.leagueLog) body = body.split('8/30/2026').join('9/13/2026');
     // A tie in the goalie log: the Sylvania game, which the totals block still counts as a loss.
-    if(which==='stats' && opts.ties) body = body.replace('Andrew Malicki,42,,5,L', 'Andrew Malicki,42,,5,T');
+    if(which==='stats' && opts.ties) body = body.replace('Andrew M.,42,,5,L', 'Andrew M.,42,,5,T');
+    // A sheet that slipped back to a full name, which the page must still shorten.
+    if(which==='stats' && opts.fullName) body = body.split('Luke G.').join('Testy McTestface');
     if(which==='schedule' && opts.eventPeriods){
       // Adds a Period length column and fills it for rows of a given event.
       body = body.split(/\r?\n/).map((l,i,all)=>{
@@ -215,19 +217,20 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(totalG===22 && totalA===22, 'team totals G=22 A=22 ('+totalG+'/'+totalA+')');
     const goalies = await page.$$eval('table', ts=>[...ts[1].querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent)));
     ok(goalies.length===2, '2 goalie rows');
-    ok(goalies[0][0]==='29Andrew M.' && goalies[0][3]==='9' && goalies[0][4]==='2.41' && goalies[0][5]==='1', 'Malicki first, 9 GA in 168 min over a 45 min game = 2.41 GAA, 1 SO: '+JSON.stringify(goalies[0]));
-    ok(goalies[1][0]==='32Stephen D.' && goalies[1][4]==='5.36' && goalies[1].length===7, 'Doering 5 GA in 42 min over a 45 min game = 5.36 GAA; no saves or SV% columns: '+JSON.stringify(goalies[1]));
+    ok(goalies[0][0]==='29Andrew M.' && goalies[0][3]==='9' && goalies[0][4]==='2.41' && goalies[0][5]==='1', 'first goalie, 9 GA in 168 min over a 45 min game = 2.41 GAA, 1 SO: '+JSON.stringify(goalies[0]));
+    ok(goalies[1][0]==='32Stephen D.' && goalies[1][4]==='5.36' && goalies[1].length===7, 'second goalie, 5 GA in 42 min over a 45 min game = 5.36 GAA; no saves or SV% columns: '+JSON.stringify(goalies[1]));
     const goalieHead = await page.$$eval('table', ts=>[...ts[1].querySelectorAll('thead th')].map(t=>t.textContent).join('/'));
     ok(goalieHead==='Goalie/GP/Min/GA/GAA/SO/Record', 'goalie columns: '+goalieHead);
     const body = await page.$eval('#app', e=>e.textContent);
-    ok(!/Giglio|Malicki|Tuzzolino|O'Connell/.test(body), 'no full last names anywhere on the page');
+    const names = await page.$$eval('table', ts=>[...ts].slice(0,2).flatMap(t=>[...t.querySelectorAll('tbody tr td:first-child')].map(td=>td.textContent.replace(/^\d+/,''))));
+    ok(names.length>0 && names.every(n=>/^[A-Z][A-Za-z'\-]+ [A-Z]\.$/.test(n)), 'every player and goalie shows as first name + last initial: '+names.join(', '));
     ok(!/SV%|1\.000/.test(body), 'no save percentage anywhere on the page');
     ok(/Through 5 games/.test(body), '"Through 5 games" eyebrow');
     const cache = await page.evaluate(()=>JSON.parse(localStorage.getItem('rinkreport.v5:/wswings12u/')));
     ok(cache && cache.data && cache.data.stats && cache.data.stats.skaters.length===13, 'cache v5 carries stats');
     ok(cache && cache.data && cache.data.rinks && Object.keys(cache.data.rinks).length===18, 'cache v5 carries rinks');
     ok(cache && cache.data && cache.data.sponsors && cache.data.sponsors.count===9, 'cache v5 carries sponsors');
-    ok(!/Giglio/.test(JSON.stringify(cache)), 'cache holds shortened names only');
+    ok(cache.data.stats.skaters.every(k=>/^[A-Z][A-Za-z'\-]+ [A-Z]\.$/.test(k.name)), 'cache holds shortened names only');
     // back to league: standings still there
     await page.click('.viewbar button[data-v="league"]');
     await page.waitForTimeout(100);
@@ -1016,10 +1019,10 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
 
     const plain = await read({});
     ok(plain.head==='Goalie/GP/Min/GA/GAA/SO/Record', 'one Record column, no separate W and L: '+plain.head);
-    ok(plain.rows[0][6]==='3-1-0', 'Malicki reads 3-1-0 with nothing tied: '+plain.rows[0][6]);
-    // The fixture's totals block gives Doering two games but the log holds one
+    ok(plain.rows[0][6]==='3-1-0', 'first goalie reads 3-1-0 with nothing tied: '+plain.rows[0][6]);
+    // The fixture's totals block gives the second goalie two games but the log holds one
     // row for him, and the record is built from the log, the same way GAA is.
-    ok(plain.rows[1][6]==='0-1-0', 'Doering reads 0-1-0, one logged game: '+plain.rows[1][6]);
+    ok(plain.rows[1][6]==='0-1-0', 'second goalie reads 0-1-0, one logged game: '+plain.rows[1][6]);
     ok(/wins-losses-ties/.test(plain.foot), 'the note says what the record is: '+plain.foot.slice(0,120));
 
     // The totals block on the tab still counts this game as a loss. The log is
@@ -1027,6 +1030,17 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const tied = await read({ties:true});
     ok(tied.rows[0][6]==='3-0-1', 'a T in the log moves the Sylvania game out of the losses: '+tied.rows[0][6]);
     ok(tied.rows[0][3]==='9' && tied.rows[0][4]==='2.41', 'and leaves the goals against and GAA alone: '+JSON.stringify(tied.rows[0]));
+  }
+
+  // 24c. A full name that slips into the sheet is still shortened on screen
+  console.log('\n[24c] full name in the sheet');
+  {
+    const r = await openPage(browser, BASE, {fullName:true});
+    await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+    const text = await r.page.evaluate(()=>document.body.innerText);
+    ok(/Testy M\./.test(text), 'a full name in the sheet shows as first name and last initial');
+    ok(!/McTestface/.test(text), 'the surname never reaches the page');
+    await r.ctx.close();
   }
 
   // 25. League only / All games on the Stats page
@@ -1073,7 +1087,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(/League play only/.test(sk.foot) && /not taken off/.test(sk.foot), 'the note explains GP: '+sk.foot.slice(0,70));
     const mal = gk.rows.find(t=>/Andrew/.test(t[0]));
     ok(mal && mal[1]==='2' && mal[2]==='84' && mal[3]==='4' && mal[4]==='2.14',
-      'Malicki league line is 2 GP, 84 min, 4 GA, 2.14: '+JSON.stringify(mal));
+      'first goalie league line is 2 GP, 84 min, 4 GA, 2.14: '+JSON.stringify(mal));
     ok(mal && mal[6]==='2-0-0', 'and his league record counts the two league wins: '+(mal||[])[6]);
     const doe = gk.rows.find(t=>/Stephen/.test(t[0]));
     ok(doe && doe[1]==='0' && doe[3]==='0', 'a goalie who played no league game reads zero: '+JSON.stringify(doe));

@@ -9,6 +9,11 @@
 #
 # A folder counts as a team when its index.html has a sheetId in it. Only
 # folders are looked at, so the landing page at docs/index.html never is.
+#
+# Players' full names never get saved. Any Player or Goalie column holding
+# more than a first name and last initial ("Luke G.") makes the job keep the
+# old copy of that tab, commit the rest, and then go red so GitHub emails the
+# repo owners. The repo is public history: a name saved once stays there.
 name: Save a copy of the sheet
 
 on:
@@ -64,6 +69,10 @@ jobs:
                 if head -c 1 "$out.new" | grep -q '<'; then
                   echo "$team/$tab: got a web page, not data; keeping the old copy"
                   rm -f "$out.new"
+                elif ! python3 "$GITHUB_WORKSPACE/.github/workflows/check-names.py" "$out.new"; then
+                  echo "$team/$tab: has full player names; NOT saved, keeping the old copy"
+                  echo "$team/$tab" >> "$GITHUB_WORKSPACE/refused.txt"
+                  rm -f "$out.new"
                 else
                   mv "$out.new" "$out"
                   got=1
@@ -104,3 +113,12 @@ jobs:
 
           git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push
+
+      - name: Go red if a tab was refused for full names
+        run: |
+          if [ -f "$GITHUB_WORKSPACE/refused.txt" ]; then
+            echo "These tabs were not saved because they hold players' full names."
+            echo "Change the names in the sheet to first name + last initial (Luke G.)."
+            cat "$GITHUB_WORKSPACE/refused.txt"
+            exit 1
+          fi

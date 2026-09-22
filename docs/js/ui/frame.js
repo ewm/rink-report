@@ -49,17 +49,19 @@ function mastheadHtml(v, rec) {
   h += '<div class="txt"><div class="eyebrow">' + esc(kicker) + "</div>";
   h += "<h1>" + esc(headline) + "</h1></div>";
 
+  // The record is the loudest figure in the masthead: wins, losses and ties
+  // big, points under it as a label.
   if (rec && rec.gp) {
     h +=
-      '<div class="record">' +
+      '<div class="record"><b>' +
       rec.w +
       "-" +
       rec.l +
       "-" +
       rec.t +
-      " &middot; " +
+      '</b><span class="eyebrow">' +
       rec.pts +
-      " PTS</div>";
+      " PTS</span></div>";
   }
 
   return h + "</header>";
@@ -233,7 +235,15 @@ function statusHtml() {
  * @returns {string} HTML.
  */
 function footHtml() {
-  return '<p class="foot">Scores are entered by the team after each game.<br><a href="?check">Setup check</a></p>';
+  var h = "";
+
+  // On The One Timer every team page sits in a folder under the landing
+  // page. theme.js sets ONE_TIMER_HOME once ../teams.js has loaded.
+  if (window.ONE_TIMER_HOME) {
+    h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span> All teams</a>';
+  }
+
+  return h + '<p class="foot">Scores are entered by the team after each game.<br><a href="?check">Setup check</a></p>';
 }
 
 export {

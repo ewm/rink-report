@@ -27,6 +27,20 @@ import {
 import { diagHtml } from "./ui/diagnostics.js";
 
 /**
+ * Names the browser tab, the bookmark and the home-screen shortcut after the
+ * team, from the Settings tab, instead of the generic "Rink Report".
+ *
+ * @param {string} teamName
+ */
+function setTitle(teamName) {
+  var title = teamName ? teamName + " | The One Timer" : "Rink Report";
+
+  if (document.title !== title) {
+    document.title = title;
+  }
+}
+
+/**
  * Composes the page for the current view and writes it once. Identical
  * markup to the last write is skipped.
  */
@@ -38,6 +52,8 @@ function render() {
 
   var cfg = state.data.config;
   var h = "";
+
+  setTitle(cfg.teamName);
   var views = buildViews();
   var v = currentView();
 

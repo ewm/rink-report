@@ -51,16 +51,26 @@ The page lives in `docs/`, which is the folder GitHub Pages serves. Your
 working folder and the repository are the same thing, so a change is a
 normal commit and push.
 
+The site is The One Timer: a landing page at the root that lists every
+club and team, and one folder per team. Each team's page is this Rink
+Report. All teams share the same `js/` and `css/`.
+
 | Path | What it is |
 |---|---|
-| `docs/index.html` | The shell: the config block you edit, and one line that loads the page. |
-| `docs/js/` | The page itself, one module per responsibility. Native ES modules, no build step. `ARCHITECTURE.md` is the map. |
-| `docs/css/rink.css` | Every style. |
-| `docs/logo.png` | The crest in the masthead. Optional; delete it and the masthead is text only. |
+| `docs/index.html` | The One Timer landing page. Lists every club and team from `teams.js`. Nothing in it to edit. |
+| `docs/teams.js` | **Every club and team on the site.** A club is a name and two colors; a team is a folder, name, club and age group. The one file to edit to add a club or team. |
+| `docs/theme.js` | Works out every color a page needs from a club's two colors, for light and dark mode, and keeps them readable. Used by the landing page and every team page. |
+| `docs/landing.js`, `docs/landing.css` | The landing page's code and styles. |
+| `docs/wswings12u/` | The West Seneca Wings 12U page. One folder per team. |
+| `docs/wswings12u/index.html` | That team's shell: the config block you edit (sheet ID, tab IDs, feature switches), and the lines that load the shared code. |
+| `docs/wswings12u/logo.png` | That team's crest. Optional; delete it and the masthead is text only. |
+| `docs/wswings12u/manifest.json` | Names the home-screen shortcut a parent makes from that team's page. |
+| `docs/wswings12u/data/` | The saved copy of that team's sheet, one CSV per tab, written by the GitHub job. Do not edit by hand. |
+| `docs/js/` | The Rink Report itself, one module per responsibility, shared by every team. Native ES modules, no build step. `ARCHITECTURE.md` is the map. |
+| `docs/css/rink.css` | Every Rink Report style, shared by every team. |
 | `docs/_headers` | Security headers Netlify would read. Ignored by GitHub Pages; harmless. |
 | `docs/.nojekyll` | Tells GitHub Pages to serve the folder as-is. Keep it. |
-| `docs/data/` | The saved copy of the sheet, one CSV per tab, written by the GitHub job. Do not edit by hand. |
-| `.github/workflows/snapshot.yml` | The job that saves the copy. Runs every six hours; commits only when a tab changed. |
+| `.github/workflows/snapshot.yml` | The job that saves a copy of every team's sheet. Runs every six hours; commits only when a tab changed. |
 | `tests/` | The check suite and its fixture sheets. `npm install`, `npm test`. |
 | `ARCHITECTURE.md` | How the code is put together, the reasoning behind each rule, and how to add to it. |
 | `DEPLOY.md` | Click-by-click setup, about 20 minutes, once. Also the sheet's rules, the Rinks, Sponsors and MyHockey columns, and troubleshooting. |
@@ -74,7 +84,7 @@ Read `DEPLOY.md`. Short version:
    and goes red where it is not happy.
 3. Share it as "Anyone with the link, Viewer".
 4. Paste the sheet ID and the tab gids into the config block at the top of
-   `index.html`.
+   your team's `index.html` (`docs/<team folder>/index.html`).
 5. Upload the files to a GitHub repo and turn on Pages (`DEPLOY.md`, Part 3).
 
 ## The weekly workflow

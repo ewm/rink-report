@@ -19,9 +19,36 @@ var SIZE = 1080;
 /** Page margin. The gold bands run full width; type stays inside this. */
 var PAD = 84;
 
-var NAVY = "#003087";
-var GOLD = "#FCD51E";
-var WHITE = "#FFFFFF";
+/*
+ * The card's colors. They start as the Wings' and are swapped for the
+ * team's club colors (from theme.js, via teams.js) each time a card is
+ * drawn. GROUND is the square, BAND the stripes and diamond, ON_BAND the
+ * type set on a stripe, ON_GROUND the team names, ACCENT_ON_GROUND the
+ * club name and event tag set straight on the square.
+ */
+var GROUND = "#003087";
+var BAND = "#FCD51E";
+var ON_BAND = "#003087";
+var ON_GROUND = "#FFFFFF";
+var ACCENT_ON_GROUND = "#FCD51E";
+
+/**
+ * Picks up this team's club colors, when theme.js found the team in
+ * teams.js. Otherwise the card keeps the Wings' navy and gold.
+ */
+function useClubColors() {
+  var club = window.ONE_TIMER_CLUB;
+
+  if (!club || !club.card) {
+    return;
+  }
+
+  GROUND = club.card.ground;
+  BAND = club.card.band;
+  ON_BAND = club.card.onBand;
+  ON_GROUND = club.card.onGround;
+  ACCENT_ON_GROUND = club.card.accentOnGround;
+}
 
 /** The open panel, or null. One at a time. */
 var panel = null;
@@ -235,7 +262,7 @@ function longDate(iso) {
  * @param {CanvasRenderingContext2D} ctx
  */
 function drawGround(ctx) {
-  ctx.fillStyle = NAVY;
+  ctx.fillStyle = GROUND;
   ctx.fillRect(0, 0, SIZE, SIZE);
 
   ctx.save();
@@ -272,7 +299,7 @@ function drawHeader(ctx, crest, club) {
     left = PAD + w + 30;
   }
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = ACCENT_ON_GROUND;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
@@ -324,7 +351,7 @@ function drawHypeBar(ctx, text) {
   var top = 176;
   var height = 124;
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = BAND;
   ctx.beginPath();
   ctx.moveTo(0, top);
   ctx.lineTo(SIZE, top - lift);
@@ -339,7 +366,7 @@ function drawHypeBar(ctx, text) {
   var tracking = 0.16;
 
   setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
-  ctx.fillStyle = NAVY;
+  ctx.fillStyle = ON_BAND;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, SIZE / 2 + (size * tracking) / 2, top + height / 2 - lift / 2);
@@ -363,11 +390,14 @@ function drawTag(ctx, text, y) {
   var w = ctx.measureText(text).width - trail + 44;
   var h = 50;
 
-  ctx.strokeStyle = "rgba(252,213,30,0.8)";
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.strokeStyle = BAND;
   ctx.lineWidth = 2;
   ctx.strokeRect((SIZE - w) / 2, y - h / 2, w, h);
+  ctx.restore();
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = ACCENT_ON_GROUND;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, SIZE / 2 + trail / 2, y + 1);
@@ -387,14 +417,14 @@ function drawDivider(ctx, word, y) {
   var half = 55;
   var reach = half * Math.SQRT2 + 30;
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = BAND;
   ctx.fillRect(PAD, y - 3, SIZE / 2 - reach - PAD, 6);
   ctx.fillRect(SIZE / 2 + reach, y - 3, SIZE - PAD - (SIZE / 2 + reach), 6);
 
   ctx.save();
   ctx.translate(SIZE / 2, y);
   ctx.rotate(Math.PI / 4);
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = BAND;
   ctx.fillRect(-half, -half, half * 2, half * 2);
   ctx.restore();
 
@@ -402,7 +432,7 @@ function drawDivider(ctx, word, y) {
   var tracking = 0.1;
 
   setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
-  ctx.fillStyle = NAVY;
+  ctx.fillStyle = ON_BAND;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(word, SIZE / 2 + (size * tracking) / 2, y + 2);
@@ -501,13 +531,13 @@ function drawMatchup(ctx, us, them, word, top, bottom) {
 
   var y = top + Math.max(0, (room - total) / 2);
 
-  paintTeam(ctx, a, y, WHITE);
+  paintTeam(ctx, a, y, ON_GROUND);
   y += a.height + gap;
 
   drawDivider(ctx, word, y + dividerH / 2);
   y += dividerH + gap;
 
-  paintTeam(ctx, b, y, WHITE);
+  paintTeam(ctx, b, y, ON_GROUND);
 }
 
 /**
@@ -523,7 +553,7 @@ function drawFoot(ctx, g) {
   var leftY = 838;
   var rightY = 778;
 
-  ctx.fillStyle = GOLD;
+  ctx.fillStyle = BAND;
   ctx.beginPath();
   ctx.moveTo(0, leftY);
   ctx.lineTo(SIZE, rightY);
@@ -534,7 +564,7 @@ function drawFoot(ctx, g) {
 
   var inner = SIZE - PAD * 2;
 
-  ctx.fillStyle = NAVY;
+  ctx.fillStyle = ON_BAND;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -586,6 +616,7 @@ function draw(canvas, g, crest) {
   canvas.width = SIZE;
   canvas.height = SIZE;
 
+  useClubColors();
   drawGround(ctx);
   drawHeader(ctx, crest, us.toUpperCase());
 

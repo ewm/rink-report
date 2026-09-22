@@ -11,8 +11,30 @@
 /** The config block from index.html. */
 var CFG = window.RINK_CONFIG || {};
 
-/** localStorage key for the last good copy. Bump it when the stored shape changes. */
-var CACHE_KEY = "rinkreport.v5";
+/**
+ * Browser storage is shared by every page on one web address, and every
+ * team's folder lives on the same address. So each key this page stores
+ * carries the folder's path, or two teams opened on one phone would
+ * overwrite each other's saved standings.
+ *
+ * @param {string} name - The key's own name, such as "rinkreport.v5".
+ * @returns {string} The name plus this page's folder, e.g. "rinkreport.v5:/wswings12u/".
+ */
+function scopedKey(name) {
+  var dir = "/";
+
+  try {
+    dir = location.pathname.replace(/[^/]*$/, "") || "/";
+  } catch (e) {}
+
+  return name + ":" + dir;
+}
+
+/** localStorage key for the last good copy. Bump the version when the stored shape changes. */
+var CACHE_KEY = scopedKey("rinkreport.v5");
+
+/** localStorage key for whether this reader folded the sponsors block. */
+var SPONSORS_KEY = scopedKey("rinkreport.sponsorsOpen");
 
 /** Whether the page was opened with ?check. */
 var DIAG = /[?&]check\b/.test(location.search);
@@ -118,7 +140,7 @@ var state = {
   // Open by default. A reader who folds it keeps it folded on that phone only.
   sponsorsOpen: (function () {
     try {
-      return localStorage.getItem("rinkreport.sponsorsOpen") !== "0";
+      return localStorage.getItem(SPONSORS_KEY) !== "0";
     } catch (e) {
       return true;
     }
@@ -163,4 +185,4 @@ function notify() {
   }
 }
 
-export { CFG, CACHE_KEY, ADMIN, DIAG, on, offList, state, log, onChange, notify };
+export { CFG, CACHE_KEY, SPONSORS_KEY, ADMIN, DIAG, on, offList, state, log, onChange, notify };

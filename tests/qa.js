@@ -96,7 +96,9 @@ function ok(cond, msg){ if(cond){passes++; console.log('  ok   '+msg);} else {fa
 function serve(dir, port){
   return new Promise(res=>{
     const s=http.createServer((req,r)=>{
-      const p=path.join(dir, req.url.split('?')[0]==='/'?'index.html':req.url.split('?')[0]);
+      // A folder address (ending in /) serves that folder's index.html, as GitHub Pages does.
+      const u=req.url.split('?')[0];
+      const p=path.join(dir, u.endsWith('/') ? u+'index.html' : u);
       if(!fs.existsSync(p) || fs.statSync(p).isDirectory()){ r.writeHead(404); r.end(); return; }
       const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png'};
       r.writeHead(200,{'content-type':MIME[path.extname(p)]||'application/octet-stream'}); r.end(fs.readFileSync(p));
@@ -147,7 +149,7 @@ async function openPage(browser, url, opts){
   });
   // The site's saved copy under data/: absent unless opts.snapshot, in which
   // case it serves the fixtures (as the GitHub Action would have written them).
-  await page.route(/localhost:8811\/data\//, route=>{
+  await page.route(new RegExp('localhost:8811/'+TEAM+'/data/'), route=>{
     const name=new URL(route.request().url()).pathname.replace(/^.*\/data\//,'');
     if(!opts.snapshot){ route.fulfill({status:404, body:'not found'}); return; }
     if(name==='updated.txt'){ route.fulfill({status:200, contentType:'text/plain', body:'2026-09-09T22:15:00Z\n'}); return; }
@@ -155,11 +157,16 @@ async function openPage(browser, url, opts){
     if(!FIX[which]){ route.fulfill({status:404, body:'nope'}); return; }
     route.fulfill({status:200, contentType:'text/csv', body:FIX[which]});
   });
+  // opts.teamsJs: a replacement ../teams.js, so a check can give the club
+  // other colors or add teams without touching the real file.
+  if(opts.teamsJs){
+    await page.route(/localhost:8811\/teams\.js/, route=>route.fulfill({status:200, contentType:'text/javascript', body:opts.teamsJs}));
+  }
   // opts.features: {name:false,...} is spliced into RINK_CONFIG as the page
   // loads, so a switch can be tested without editing index.html.
   if(opts.features){
-    await page.route(/localhost:8811\/(\?.*)?$/, route=>{
-      const html=fs.readFileSync(path.join(SITE_DIR,'index.html'),'utf8')
+    await page.route(new RegExp('localhost:8811/'+TEAM+'/(\\?.*)?$'), route=>{
+      const html=fs.readFileSync(path.join(SITE_DIR,TEAM,'index.html'),'utf8')
         .replace('</script>', '</script><script>window.RINK_CONFIG.features=Object.assign({},window.RINK_CONFIG.features,'+JSON.stringify(opts.features)+');</script>');
       route.fulfill({status:200, contentType:'text/html; charset=utf-8', body:html});
     });
@@ -171,6 +178,10 @@ async function openPage(browser, url, opts){
 }
 
 const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
+// Every team page lives in its own folder under docs/. The suite drives the
+// Wings'. BASE is that page's address on the test server.
+const TEAM = 'wswings12u';
+const BASE = 'http://localhost:8811/'+TEAM+'/';
 (async()=>{
   const SITE = SITE_DIR;
   const sNew = await serve(SITE, 8811);
@@ -179,7 +190,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 1. Happy path over the export route
   console.log('\n[1] export route, stats present');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors: '+errors.join(' | '));
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent));
     ok(tabs.join('/')==='League/Events/Stats', 'bar is League / Events / Stats (past showcase folded into Events): '+tabs.join(' / '));
@@ -212,7 +223,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(!/Giglio|Malicki|Tuzzolino|O'Connell/.test(body), 'no full last names anywhere on the page');
     ok(!/SV%|1\.000/.test(body), 'no save percentage anywhere on the page');
     ok(/Through 5 games/.test(body), '"Through 5 games" eyebrow');
-    const cache = await page.evaluate(()=>JSON.parse(localStorage.getItem('rinkreport.v5')));
+    const cache = await page.evaluate(()=>JSON.parse(localStorage.getItem('rinkreport.v5:/wswings12u/')));
     ok(cache && cache.data && cache.data.stats && cache.data.stats.skaters.length===13, 'cache v5 carries stats');
     ok(cache && cache.data && cache.data.rinks && Object.keys(cache.data.rinks).length===18, 'cache v5 carries rinks');
     ok(cache && cache.data && cache.data.sponsors && cache.data.sponsors.count===9, 'cache v5 carries sponsors');
@@ -232,7 +243,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 2. gviz fallback with blanked numeric headers
   console.log('\n[2] tab-name route (numeric headers blanked)');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{stats:'404'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{stats:'404'}});
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent));
     ok(tabs.indexOf('Stats')!==-1, 'Stats tab present via gviz');
@@ -249,7 +260,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 2. gviz fallback with blanked numeric headers
   console.log('\n[2b] tab-name route, EVERY numeric header blanked');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{stats:'404'}, harsh:true});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{stats:'404'}, harsh:true});
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent));
     ok(tabs.indexOf('Stats')!==-1, 'Stats tab present via gviz');
@@ -266,7 +277,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 3. No stats tab at all
   console.log('\n[3] stats tab missing on every route');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{stats:'404'}, gviz:{stats:'404'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{stats:'404'}, gviz:{stats:'404'}});
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent)).catch(()=>[]);
     ok(tabs.join('/')==='League/Events', 'no Stats tab: '+tabs.join(' / '));
@@ -274,7 +285,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(!/Player Stats/.test(body), 'no stats warning shown to parents');
     ok(/Standings/.test(body), 'standings still render');
     // ?check
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1500);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1500);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Stats\s+not shown/.test(diag), '?check says stats not shown: '+(diag.match(/Stats .*/)||[''])[0]);
     ok(/Player Stats/.test(diag), '?check lists the stats tab name');
@@ -284,11 +295,11 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 4. Header row present, no players under it
   console.log('\n[4] stats tab exists but is empty');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{stats:'empty'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{stats:'empty'}});
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent)).catch(()=>[]);
     ok(tabs.indexOf('Stats')===-1, 'no Stats tab for an empty sheet');
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1500);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1500);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/no player rows/.test(diag), '?check explains why: '+(diag.match(/Stats .*/)||[''])[0]);
     await ctx.close();
@@ -297,13 +308,13 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 5. ?check with stats loaded, and dark scheme screenshot
   console.log('\n[5] diagnostics + dark mode');
   {
-    const {page, ctx} = await openPage(browser, 'http://localhost:8811/?check', {});
+    const {page, ctx} = await openPage(browser, BASE+'?check', {});
     await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Stats\s+13 skaters, 2 goalies/.test(diag), '?check counts: '+(diag.match(/Stats .*/)||[''])[0]);
     ok(/stats=raw export/.test(diag), 'read via raw export for stats');
     await ctx.close();
-    const d = await openPage(browser, 'http://localhost:8811/', {scheme:'dark'});
+    const d = await openPage(browser, BASE, {scheme:'dark'});
     await d.page.click('.viewbar button[data-v="stats"]'); await d.page.waitForTimeout(100);
     await d.page.screenshot({path:path.join(OUT,'shot_stats_dark.png'), fullPage:true});
     ok(d.errors.length===0, 'dark mode renders without errors');
@@ -313,7 +324,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 6. A later poll that loses the stats tab keeps the last copy
   console.log('\n[6] transient stats failure keeps the previous copy');
   {
-    const {page, ctx} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx} = await openPage(browser, BASE, {});
     await page.unroute(/docs\.google\.com/);
     await page.route(/docs\.google\.com/, route=>{
       const u=new URL(route.request().url());
@@ -332,7 +343,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 7. Events tab: past showcase only
   console.log('\n[7] events page, one past showcase');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     await page.click('.viewbar button[data-v="events"]'); await page.waitForTimeout(100);
     ok(errors.length===0, 'no page errors');
     const kicker = await page.$eval('.masthead .eyebrow', e=>e.textContent);
@@ -365,7 +376,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 8. A tournament on the calendar gets the button; a later one does not
   console.log('\n[8] future tournaments');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {schedule:'future'});
+    const {page, ctx, errors} = await openPage(browser, BASE, {schedule:'future'});
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent));
     ok(tabs.join('/')==='League/Thanksgiving…/Events/Stats', 'bar: '+tabs.join(' / '));
@@ -388,7 +399,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 9. Live event wins the button and the landing view
   console.log('\n[9] live event');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {schedule:'live'});
+    const {page, ctx, errors} = await openPage(browser, BASE, {schedule:'live'});
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent));
     ok(tabs.join('/')==='League/Labor Day Faceoff/Events/Stats', 'bar names the live event, not the later tournament: '+tabs.join(' / '));
@@ -397,7 +408,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await page.click('.viewbar button[data-v="events"]'); await page.waitForTimeout(100);
     const ahead = await page.$$eval('.card:not(.sponsors)', c=>[...c[0].querySelectorAll('.evrow')].map(x=>x.textContent));
     ok(ahead.length===2 && /NOW/.test(ahead[0]) && /Thanksgiving/.test(ahead[1]), 'coming up: live one tagged NOW, then Thanksgiving: '+JSON.stringify(ahead));
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1200);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Bar\s+League\s+\|\s+Labor Day Faceoff\s+\|\s+Events\s+\|\s+Stats/.test(diag), '?check Bar line: '+(diag.match(/Bar .*/)||[''])[0]);
     ok(/Labor Day Faceoff \(2, .*in the bar\)/.test(diag), '?check Events line marks the featured one');
@@ -407,7 +418,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 10. Before opening day: no wall of zeros
   console.log('\n[10] pre-season league view');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors');
     const h2 = await page.$$eval('.card:not(.sponsors) h2', e=>e.map(x=>x.textContent));
     ok(h2[0]==='Standings', 'section still titled Standings: '+h2.join('|'));
@@ -439,7 +450,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 11. Directions and calendar links
   console.log('\n[11] directions + calendar');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors');
     const acts = await page.$$eval('.next .actions a', a=>a.map(x=>({t:x.textContent, h:x.getAttribute('href'), d:x.getAttribute('download')})));
     ok(acts.length===3, 'three links under the next game: '+acts.map(a=>a.t).join(', '));
@@ -451,7 +462,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(/DTSTART:20260913T110000\r\nDTEND:20260913T123000/.test(icsBody), 'ics: Sep 13 11:00 for 90 minutes');
     ok(/SUMMARY:at Southtown Stars \(hockey\)/.test(icsBody), 'ics: title reads "at Southtown Stars (hockey)"');
     ok(/LOCATION:Leisure-1\\, 1 Test Rink Rd\\, West Seneca\\, NY 14224/.test(icsBody), 'ics: location is rink + address, commas escaped');
-    ok(/DESCRIPTION:.*Scores and standings: http:\/\/localhost:8811\//.test(icsBody), 'ics: description links back to the page');
+    ok(/DESCRIPTION:.*Scores and standings: http:\/\/localhost:8811\/wswings12u\//.test(icsBody), 'ics: description links back to the page');
     const g = acts.find(a=>a.t==='Google Calendar');
     ok(g && /calendar\.google\.com\/calendar\/render\?action=TEMPLATE/.test(g.h) && /dates=20260913T110000\/20260913T123000/.test(g.h) && /text=at%20Southtown%20Stars/.test(g.h), 'Google Calendar link: '+(g&&g.h.slice(0,120)));
     // schedule rows
@@ -478,7 +489,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     const crest = await page.$eval('.masthead img.crest', i=>({w:i.naturalWidth, h:i.naturalHeight, cw:i.clientWidth, ch:i.clientHeight}));
     ok(crest.w===216 && crest.h===132 && crest.ch===44 && crest.cw<=84, 'crest loaded, 44px tall, wide, capped: '+JSON.stringify(crest));
     // ?check
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1200);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Rinks\s+5 of 18 with an address\s+no address yet: Cheektowaga, Cornerstone/.test(diag), '?check rinks line: '+(diag.match(/Rinks .*/)||[''])[0].slice(0,120));
     ok(/rinks=raw export/.test(diag), 'rinks read via raw export');
@@ -488,7 +499,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 12. No Rinks tab anywhere: page unchanged, links simply absent
   console.log('\n[12] rinks tab missing');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{rinks:'404'}, gviz:{rinks:'404'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{rinks:'404'}, gviz:{rinks:'404'}});
     ok(errors.length===0, 'no page errors');
     const acts = await page.$$eval('.next .actions a', a=>a.map(x=>x.textContent));
     ok(acts.join('/')==='Add to calendar/Google Calendar', 'calendar links stay, Directions gone: '+acts.join('/'));
@@ -499,7 +510,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(/Standings/.test(body), 'standings still render');
     const ics = await page.$eval('.next .actions a[download]', a=>decodeURIComponent(a.getAttribute('href')));
     ok(/LOCATION:Leisure-1\r\n/.test(ics), 'ics location falls back to the rink name alone');
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1200);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Rinks\s+not read/.test(diag), '?check says rinks not read: '+(diag.match(/Rinks .*/)||[''])[0].slice(0,100));
     await ctx.close();
@@ -508,7 +519,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 13. Rinks over the tab-name route (gviz) still resolve
   console.log('\n[13] rinks via tab name');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{rinks:'404'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{rinks:'404'}});
     ok(errors.length===0, 'no page errors');
     const acts = await page.$$eval('.next .actions a', a=>a.map(x=>x.textContent));
     ok(acts[0]==='Directions', 'Directions present via gviz route');
@@ -521,7 +532,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 14. Sponsors: tiered, on every view, under the scores
   console.log('\n[14] sponsors block');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors');
     const tiers = await page.$$eval('.sponsors .sptier', ts=>ts.map(t=>{
       const chip = t.querySelector('.sprail a, .sprail span');
@@ -577,7 +588,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
       await page.click('.viewbar button[data-v="'+v+'"]'); await page.waitForTimeout(120);
       ok((await page.$$('.sponsors')).length===1, 'sponsors still on the '+v+' view');
     }
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1200);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Sponsors\s+9 sponsors\s+Gold 2, Silver 5, Bronze 2/.test(diag), '?check sponsors line: '+(diag.match(/Sponsors .*/)||[''])[0].slice(0,120));
     await ctx.close();
@@ -586,14 +597,14 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 15. No Sponsors tab: the page is exactly what it was before
   console.log('\n[15] sponsors tab missing');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{sponsors:'404'}, gviz:{sponsors:'404'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{sponsors:'404'}, gviz:{sponsors:'404'}});
     ok(errors.length===0, 'no page errors');
     ok((await page.$$('.sponsors')).length===0, 'no sponsors section');
     const body = await page.$eval('#app', e=>e.textContent);
     ok(!/tab IDs in index.html belong to a different sheet/.test(body), 'a failing sponsors tab does not accuse the other tab IDs');
     ok(!/sponsor/i.test(body), 'parents are told nothing about a missing sponsors tab');
     ok(/Standings/.test(body), 'standings still render');
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(1200);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
     ok(/Sponsors\s+not shown/.test(await page.$eval('pre.diag', e=>e.textContent)), '?check says sponsors not shown');
     await ctx.close();
   }
@@ -601,7 +612,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 16. What the sheet can put in an href
   console.log('\n[16] sponsor website safety');
   {
-    const {page, ctx} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx} = await openPage(browser, BASE, {});
     const got = await page.evaluate(async()=>{
       const m = await import('/js/shape/sponsors.js');
       return ['https://a.com','http://a.com','a.com','www.a.com/x?y=1','javascript:alert(1)','JavaScript:alert(1)','mailto:x@y.com','data:text/html,x','  ','not a url'].map(m.safeUrl);
@@ -623,7 +634,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 17. Folding the sponsors away, and it staying folded on that phone
   console.log('\n[17] sponsors fold');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors');
     const read = () => page.evaluate(()=>{
       const sec=document.querySelector('.sponsors'), b=document.getElementById('rr-sponsors');
@@ -653,7 +664,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await page.reload(); await page.waitForTimeout(2500);
     st = await read();
     ok(st.shut && !st.bodyShown, 'still folded after a reload on the same phone: '+JSON.stringify(st));
-    ok((await page.evaluate(()=>localStorage.getItem('rinkreport.sponsorsOpen')))==='0', 'the choice is stored, and only on that phone');
+    ok((await page.evaluate(()=>localStorage.getItem('rinkreport.sponsorsOpen:/wswings12u/')))==='0', 'the choice is stored, and only on that phone');
 
     await page.click('.sponsors .sph'); await page.waitForTimeout(150);
     st = await read();
@@ -668,8 +679,8 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 18. A fresh reader on a phone that has never seen the page gets it open
   console.log('\n[18] fold defaults for a new reader');
   {
-    const {page, ctx} = await openPage(browser, 'http://localhost:8811/', {});
-    ok((await page.evaluate(()=>localStorage.getItem('rinkreport.sponsorsOpen')))===null, 'nothing stored until the reader actually folds it');
+    const {page, ctx} = await openPage(browser, BASE, {});
+    ok((await page.evaluate(()=>localStorage.getItem('rinkreport.sponsorsOpen:/wswings12u/')))===null, 'nothing stored until the reader actually folds it');
     ok((await page.$eval('.sponsors .sph', b=>b.getAttribute('aria-expanded')))==='true', 'a brand new reader sees the sponsors');
     await ctx.close();
   }
@@ -678,7 +689,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   console.log('\n[19] MyHockey links on the division list and standings');
   {
     const yr = 2026;   // the frozen clock says Sept 10 2026
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors');
     const li = await page.$$eval('.division li', li=>li.map(x=>({t:x.textContent, c:x.className, a:x.querySelector('a.tm') ? {href:x.querySelector('a.tm').getAttribute('href'), target:x.querySelector('a.tm').getAttribute('target'), rel:x.querySelector('a.tm').getAttribute('rel')} : null})));
     const by = n => li.find(x=>x.t===n);
@@ -711,7 +722,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   }
   // and over the tab-name route, where Google may blank a numeric-looking header
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {export:{teams:'404'}});
+    const {page, ctx, errors} = await openPage(browser, BASE, {export:{teams:'404'}});
     ok(errors.length===0, 'no page errors on the gviz route');
     const n = await page.$$eval('.division li a.tm', a=>a.length);
     ok(n===4, 'links survive the tab-name route ('+n+')');
@@ -722,7 +733,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   console.log('\n[20] feature switches');
   {
     // everything on (the default): the pieces are all there
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {});
+    const {page, ctx, errors} = await openPage(browser, BASE, {});
     ok(errors.length===0, 'no page errors');
     const present = await page.evaluate(()=>({
       next:!!document.querySelector('section.next'), sp:!!document.querySelector('.sponsors'), crest:!!document.querySelector('img.crest'),
@@ -734,7 +745,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   {
     // the whole list off at once
     const off = {nextGame:false,sponsors:false,stats:false,events:false,preseason:false,directions:false,calendar:false,seasonCalendar:false,mhrLinks:false,monoNumbers:false};
-    const {page, ctx, errors, asked} = await openPage(browser, 'http://localhost:8811/', {features:off});
+    const {page, ctx, errors, asked} = await openPage(browser, BASE, {features:off});
     ok(errors.length===0, 'no page errors with every switch off');
     const gone = await page.evaluate(()=>({
       next:!!document.querySelector('section.next'), sp:!!document.querySelector('.sponsors'), crest:!!document.querySelector('img.crest'),
@@ -754,31 +765,31 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     // the tabs that feed the switched-off pieces were never asked for
     ok(!asked.includes('stats') && !asked.includes('rinks') && !asked.includes('sponsors') && asked.includes('schedule'), 'stats, rinks and sponsors tabs not fetched; schedule still is: '+asked.join(','));
     // and ?check names them
-    await page.goto('http://localhost:8811/?check'); await page.waitForTimeout(600);
+    await page.goto(BASE+'?check'); await page.waitForTimeout(600);
     const diag = await page.$eval('#app', e=>e.textContent);
     ok(/Features\s+off: nextGame, sponsors, stats, events, preseason, directions, calendar, seasonCalendar, mhrLinks, monoNumbers/.test(diag), '?check lists every switched-off feature');
     await ctx.close();
   }
   {
     // one switch at a time, on the pieces that share a component
-    let r = await openPage(browser, 'http://localhost:8811/', {features:{directions:false}});
+    let r = await openPage(browser, BASE, {features:{directions:false}});
     let acts = await r.page.$$eval('.next .act', a=>a.map(x=>x.textContent));
     ok(acts.join('/')==='Add to calendar/Google Calendar' && (await r.page.$$eval('.rinklink', a=>a.length))===0, 'directions off: calendar links stay, rink names go plain: '+acts.join('/'));
     await r.ctx.close();
-    r = await openPage(browser, 'http://localhost:8811/', {features:{calendar:false}});
+    r = await openPage(browser, BASE, {features:{calendar:false}});
     acts = await r.page.$$eval('.next .act', a=>a.map(x=>x.textContent));
     ok(acts.join('/')==='Directions' && !!(await r.page.$('.seasoncal')), 'calendar off: Directions stays, the season .ics under the schedule stays: '+acts.join('/'));
     await r.ctx.close();
-    r = await openPage(browser, 'http://localhost:8811/', {features:{events:false}, schedule:'live'});
+    r = await openPage(browser, BASE, {features:{events:false}, schedule:'live'});
     const t = await r.page.$$eval('.viewbar button', b=>b.map(x=>x.textContent).join('/'));
     const k = await r.page.$eval('.masthead .eyebrow', e=>e.textContent);
     ok(t==='League/Stats' && k!=='Labor Day Faceoff', 'events off during a live event: no event button, and the page lands on League: '+t+' / '+k);
     await r.ctx.close();
-    r = await openPage(browser, 'http://localhost:8811/', {features:{stats:false}});
+    r = await openPage(browser, BASE, {features:{stats:false}});
     ok((await r.page.$$eval('.viewbar button', b=>b.map(x=>x.textContent).join('/')))==='League/Events', 'stats off: Events tab still there');
     await r.ctx.close();
     // a missing key, and a value that is not false, both count as on
-    r = await openPage(browser, 'http://localhost:8811/', {features:{sponsors:'no', stats:0}});
+    r = await openPage(browser, BASE, {features:{sponsors:'no', stats:0}});
     const on2 = await r.page.evaluate(()=>({sp:!!document.querySelector('.sponsors'), tabs:[...document.querySelectorAll('.viewbar button')].map(b=>b.textContent).join('/')}));
     ok(on2.sp && on2.tabs==='League/Events/Stats', 'only the word false switches a feature off: '+JSON.stringify(on2));
     await r.ctx.close();
@@ -786,7 +797,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     // monoNumbers is the one switch that changes no markup, only the face the
     // figures are set in, so it is checked on the computed style. preseason is
     // switched off here purely to put a standings table on the page to read.
-    r = await openPage(browser, 'http://localhost:8811/', {features:{preseason:false}});
+    r = await openPage(browser, BASE, {features:{preseason:false}});
     let mono = await r.page.evaluate(()=>{
       const ff = sel => { const el = document.querySelector(sel); return el ? getComputedStyle(el).fontFamily : 'MISSING'; };
       return {
@@ -801,7 +812,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(!/Chivo Mono/.test(mono.name) && !/Chivo Mono/.test(mono.head), 'monoNumbers leaves team names and column headings in Barlow: '+mono.name.split(',')[0]+' / '+mono.head.split(',')[0]);
     await r.ctx.close();
 
-    r = await openPage(browser, 'http://localhost:8811/', {features:{preseason:false, monoNumbers:false}});
+    r = await openPage(browser, BASE, {features:{preseason:false, monoNumbers:false}});
     mono = await r.page.evaluate(()=>({
       cls:document.documentElement.classList.contains('mono-nums'),
       pts:getComputedStyle(document.querySelector('tbody td.pts')).fontFamily,
@@ -816,18 +827,18 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   {
     // a. an evening face-off is live in the evening, not in the morning (the PM bug)
     const evening = new Date(2026, 8, 10, 19, 5, 0);   // 7:05 pm on the frozen day
-    let r = await openPage(browser, 'http://localhost:8811/', {schedule:'live', clock:evening});
+    let r = await openPage(browser, BASE, {schedule:'live', clock:evening});
     let probe = await r.page.evaluate(async()=>{ const m = await import('/js/app.js'); return {live:m.gameOnNow(), delay:m.pollDelay(), times:[...new Set(Array.from(document.querySelectorAll('.game .tm')).map(e=>e.textContent))].slice(0,4)}; });
     ok(probe.live===true && probe.delay>=90000 && probe.delay<=150000, 'a 6:55 pm game is live at 7:05 pm and the poll runs at the fast pace: '+JSON.stringify(probe));
     await r.ctx.close();
     const morning = new Date(2026, 8, 10, 7, 5, 0);    // 7:05 am the same day
-    r = await openPage(browser, 'http://localhost:8811/', {schedule:'live', clock:morning});
+    r = await openPage(browser, BASE, {schedule:'live', clock:morning});
     probe = await r.page.evaluate(async()=>{ const m = await import('/js/app.js'); return {live:m.gameOnNow(), delay:m.pollDelay()}; });
     ok(probe.live===false && probe.delay>=720000 && probe.delay<=1200000, 'the same game is not live at 7:05 am and the poll runs slow: '+JSON.stringify(probe));
     await r.ctx.close();
 
     // b. a pair split on head-to-head gets two rank numbers
-    r = await openPage(browser, 'http://localhost:8811/', {});
+    r = await openPage(browser, BASE, {});
     const ranks = await r.page.evaluate(async()=>{
       const m = await import('/js/model/standings.js');
       const g = (h,a,hs,as)=>({home:h, away:a, hs, as, date:'2026-10-01', time:'', type:'', event:'', pool:''});
@@ -840,19 +851,19 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await r.ctx.close();
 
     // c. "Our team" typed with different case still counts as ours
-    r = await openPage(browser, 'http://localhost:8811/', {settingsTeam:'west seneca wings'});
+    r = await openPage(browser, BASE, {settingsTeam:'west seneca wings'});
     const chip = await r.page.$eval('#app', e=>({chip:!!e.querySelector('.record'), ours:e.querySelectorAll('.side.ours').length, warn:/no team on the Teams tab is spelled that way/.test(e.textContent)}));
     await r.page.click('.evrow.pre'); await r.page.waitForTimeout(100);
     const chip2 = await r.page.$eval('#app', e=>({chip:!!e.querySelector('.record'), ours:e.querySelectorAll('.side.ours').length}));
     ok(!chip.warn && chip2.chip && chip2.ours>0, 'lower-case team name is snapped to the Teams tab spelling: '+JSON.stringify({chip, chip2}));
     r.ctx.close();
-    r = await openPage(browser, 'http://localhost:8811/', {settingsTeam:'West Seneca Wngs'});
+    r = await openPage(browser, BASE, {settingsTeam:'West Seneca Wngs'});
     const miss = await r.page.$eval('#app', e=>/Our team is "West Seneca Wngs" on the Settings tab, but no team on the Teams tab is spelled that way/.test(e.textContent));
     ok(miss, 'a team name that matches nothing gets a warning on the page');
     await r.ctx.close();
 
     // d. a schedule that comes back garbled keeps the last good copy
-    r = await openPage(browser, 'http://localhost:8811/', {});
+    r = await openPage(browser, BASE, {});
     ok((await r.page.$$eval('.game', g=>g.length))>0, 'first load has games');
     await r.page.unroute(/docs\.google\.com/);
     await r.page.route(/docs\.google\.com/, route=>{
@@ -867,7 +878,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
 
     // e. a transient 404 on the first try does not accuse the tab IDs
     let tries = 0;
-    r = await openPage(browser, 'http://localhost:8811/', {});
+    r = await openPage(browser, BASE, {});
     await r.page.unroute(/docs\.google\.com/);
     await r.page.route(/docs\.google\.com/, route=>{
       const u=new URL(route.request().url());
@@ -884,7 +895,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await r.ctx.close();
 
     // f. the .ics stamp comes from the fetch time, so a quiet poll repaints nothing
-    r = await openPage(browser, 'http://localhost:8811/', {});
+    r = await openPage(browser, BASE, {});
     const stamps = await r.page.evaluate(()=>{ const a=document.querySelector('.next .act[download]'); return decodeURIComponent(a.getAttribute('href')).match(/DTSTAMP:(\d+T\d+)/)[1]; });
     ok(/^20260910T120000$/.test(stamps), 'DTSTAMP is the fetch time on the frozen clock: '+stamps);
     await r.ctx.close();
@@ -895,12 +906,12 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   {
     const all404 = {settings:'404', teams:'404', schedule:'404', stats:'404', rinks:'404', sponsors:'404'};
     // no saved copy on the site: the error banner, nothing else
-    let r = await openPage(browser, 'http://localhost:8811/', {export:all404, gviz:all404});
+    let r = await openPage(browser, BASE, {export:all404, gviz:all404});
     let body = await r.page.$eval('#app', e=>e.textContent);
     ok(/Can.t reach the schedule right now/.test(body) && !/saved copy/.test(body), 'with no saved copy the page shows the error banner: '+body.slice(0,80));
     await r.ctx.close();
     // a saved copy under data/: the page renders from it and says so
-    r = await openPage(browser, 'http://localhost:8811/', {export:all404, gviz:all404, snapshot:true});
+    r = await openPage(browser, BASE, {export:all404, gviz:all404, snapshot:true});
     ok(r.errors.length===0, 'no page errors');
     body = await r.page.$eval('#app', e=>e.textContent);
     const shape = await r.page.evaluate(()=>({games:document.querySelectorAll('.game').length, tabs:[...document.querySelectorAll('.viewbar button')].map(b=>b.textContent).join('/'), sponsors:!!document.querySelector('.sponsors')}));
@@ -908,7 +919,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     ok(/Google Sheets can.t be reached right now\. Showing the saved copy from/.test(body), 'the banner says it is the saved copy and when it was taken');
     ok(/9\/9\/2026|2026-09-09/.test(body), 'the copy\'s date comes from data/updated.txt: '+(body.match(/saved copy from [^.]+/)||[''])[0]);
     ok(r.asked.length>0, 'Google was tried first ('+r.asked.length+' requests)');
-    await r.page.goto('http://localhost:8811/?check');
+    await r.page.goto(BASE+'?check');
     await r.page.waitForFunction(()=>/Read via\s+\w+=/.test(document.querySelector('#app').textContent), null, {timeout:20000}).catch(()=>{});
     const diag = await r.page.$eval('#app', e=>e.textContent);
     ok(/Saved copy/.test(diag) && /schedule=site snapshot/.test(diag), '?check names the snapshot route');
@@ -918,7 +929,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 23. Schedule order: what is coming sits above what is finished
   console.log('\n[23] schedule order');
   {
-    const {page, ctx, errors} = await openPage(browser, 'http://localhost:8811/', {schedule:'scored'});
+    const {page, ctx, errors} = await openPage(browser, BASE, {schedule:'scored'});
     ok(errors.length===0, 'no page errors');
     // Each day in the card, in the order it is painted, plus the divider.
     const read = () => page.evaluate(()=>{
@@ -954,7 +965,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   console.log('\n[24] period length -> GAA');
   {
     const read = async (opts) => {
-      const r = await openPage(browser, 'http://localhost:8811/', opts);
+      const r = await openPage(browser, BASE, opts);
       await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
       const out = await r.page.evaluate(()=>{
         const card=[...document.querySelectorAll('.card')].find(c=>/In net/.test(((c.querySelector('h2')||{}).textContent)||''));
@@ -989,7 +1000,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   console.log('\n[24b] ties in the goalie record');
   {
     const read = async (opts) => {
-      const r = await openPage(browser, 'http://localhost:8811/', opts);
+      const r = await openPage(browser, BASE, opts);
       await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
       const out = await r.page.evaluate(()=>{
         const card=[...document.querySelectorAll('.card')].find(c=>/In net/.test(((c.querySelector('h2')||{}).textContent)||''));
@@ -1022,7 +1033,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   console.log('\n[25] stats scope switch');
   {
     const open = async (opts) => {
-      const r = await openPage(browser, 'http://localhost:8811/', opts);
+      const r = await openPage(browser, BASE, opts);
       await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
       return r;
     };
@@ -1077,7 +1088,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 26. The schedule opens on Ours
   console.log('\n[26] schedule opens on Ours');
   {
-    const r = await openPage(browser, 'http://localhost:8811/', {schedule:'scored'});
+    const r = await openPage(browser, BASE, {schedule:'scored'});
     const seg = () => r.page.$$eval('.seg [data-act="filter"]', b=>b.map(x=>x.textContent+':'+x.getAttribute('aria-pressed')).join(' '));
     const games = () => r.page.$$eval('.game', gs=>gs.map(g=>g.textContent));
 
@@ -1109,7 +1120,7 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   {
     // Ours with a team name that matches nothing would be a blank card, which
     // reads as a broken page rather than a filter. It has to say which it is.
-    const r = await openPage(browser, 'http://localhost:8811/', {schedule:'scored', settingsTeam:'Nobody FC'});
+    const r = await openPage(browser, BASE, {schedule:'scored', settingsTeam:'Nobody FC'});
     const empty = await r.page.$eval('.card .empty', e=>e.textContent).catch(()=>'');
     ok(/Nobody FC/.test(empty) && /Tap All/.test(empty), 'an unmatched team name explains the empty card and points at All: '+empty);
     const filled = await r.page.$$eval('.game', g=>g.length);
@@ -1123,11 +1134,11 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 27. The gameday post card
   console.log('\n[27] gameday post card');
   {
-    const plain = await openPage(browser, 'http://localhost:8811/', {schedule:'scored'});
+    const plain = await openPage(browser, BASE, {schedule:'scored'});
     ok((await plain.page.$$eval('.postbtn', b=>b.length))===0, 'no post button without ?admin');
     await plain.ctx.close();
 
-    const r = await openPage(browser, 'http://localhost:8811/?admin', {schedule:'scored'});
+    const r = await openPage(browser, BASE+'?admin', {schedule:'scored'});
     ok(r.errors.length===0, 'no page errors in admin mode: '+r.errors.join(' | '));
 
     const rows = await r.page.evaluate(()=>[...document.querySelectorAll('.game')].map(g=>({
@@ -1180,19 +1191,200 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
   // 28. A blank Event cell is only flagged when that team is at the event
   {
     console.log('\n[28] blank Event cell on an event day');
-    const ours = await openPage(browser, 'http://localhost:8811/?admin', {schedule:'strayOurs'});
+    const ours = await openPage(browser, BASE+'?admin', {schedule:'strayOurs'});
     const oursText = await ours.page.$eval('#app', e=>e.textContent);
     ok(/Event cell is blank, but other games that day belong to Pre-Season Summer Showcase 2026/.test(oursText),
        'our own game with a blank Event on a showcase day is flagged');
     ok(/Schedule row 205:/.test(oursText), 'and the warning names the row (205)');
     await ours.ctx.close();
 
-    const other = await openPage(browser, 'http://localhost:8811/?admin', {schedule:'strayOther'});
+    const other = await openPage(browser, BASE+'?admin', {schedule:'strayOther'});
     const otherText = await other.page.$eval('#app', e=>e.textContent);
     ok(!/Event cell is blank/.test(otherText),
        'two other league teams playing on a showcase day is not flagged');
     ok(other.errors.length===0, 'no page errors: '+other.errors.join(' | '));
     await other.ctx.close();
+  }
+
+  // 29. The One Timer: the team page in its folder, in its club's colors
+  console.log('\n[29] team page in its folder, club colors from teams.js');
+  {
+    const r = await openPage(browser, BASE, {schedule:'scored'});
+    ok(r.errors.length===0, 'no page errors: '+r.errors.join(' | '));
+    const look = await r.page.evaluate(()=>{
+      const cs = el => getComputedStyle(document.querySelector(el));
+      return {
+        mast: cs('.masthead').backgroundColor,
+        rule: cs('.masthead').borderBottomColor,
+        title: document.title,
+        themeColor: document.querySelector('meta[name="theme-color"]').content,
+        manifest: !!document.querySelector('link[rel="manifest"]'),
+        home: (document.querySelector('a.home')||{}).getAttribute ? document.querySelector('a.home').getAttribute('href') : null,
+        record: (document.querySelector('.record b')||{}).textContent || '',
+        recordLabel: (document.querySelector('.record .eyebrow')||{}).textContent || '',
+        club: !!window.ONE_TIMER_CLUB,
+        tabH: Math.round(document.querySelector('.viewbar button').getBoundingClientRect().height)
+      };
+    });
+    ok(look.club, 'theme.js found the team in teams.js by its folder');
+    ok(look.mast==='rgb(0, 48, 135)' && look.rule==='rgb(252, 213, 30)', 'masthead is club navy with the gold rule: '+look.mast+' / '+look.rule);
+    ok(look.title==='West Seneca Wings | The One Timer', 'browser tab named after the team: '+look.title);
+    ok(look.themeColor==='#003087', 'phone browser bar in the club main color: '+look.themeColor);
+    ok(look.manifest, 'home-screen manifest linked');
+    ok(look.home==='../', 'All teams row links back to the landing page: '+look.home);
+    ok(/^\d+-\d+-\d+$/.test(look.record) && /PTS$/.test(look.recordLabel), 'record set big as W-L-T with points under it: '+look.record+' / '+look.recordLabel);
+    ok(look.tabH>=44, 'tabs are at least 44px tall: '+look.tabH);
+    const man = JSON.parse(fs.readFileSync(path.join(SITE_DIR,TEAM,'manifest.json'),'utf8'));
+    ok(man.start_url==='./' && fs.existsSync(path.join(SITE_DIR,TEAM,man.icons[0].src)), 'manifest opens this folder and its icon file exists');
+    await r.ctx.close();
+  }
+
+  // 30. Two team folders on one phone keep separate saved copies
+  console.log('\n[30] two team folders do not share browser storage');
+  {
+    const r = await openPage(browser, BASE, {});
+    // A second team folder, served from the Wings page, as a new team's copy would be.
+    await r.page.route(/localhost:8811\/otherteam\/(\?.*)?$/, route=>route.fulfill({status:200, contentType:'text/html; charset=utf-8',
+      body: fs.readFileSync(path.join(SITE_DIR,TEAM,'index.html'),'utf8')}));
+    await r.page.route(/localhost:8811\/otherteam\/data\//, route=>route.fulfill({status:404, body:'nope'}));
+    await r.page.evaluate(()=>localStorage.setItem('rinkreport.sponsorsOpen:/wswings12u/','0'));
+    await r.page.goto('http://localhost:8811/otherteam/');
+    await r.page.waitForTimeout(1500);
+    const keys = await r.page.evaluate(()=>Object.keys(localStorage).sort());
+    ok(keys.indexOf('rinkreport.v5:/wswings12u/')!==-1 && keys.indexOf('rinkreport.v5:/otherteam/')!==-1, 'each folder saves its own copy: '+keys.join(', '));
+    ok(keys.indexOf('rinkreport.v5')===-1, 'nothing saved under the old shared key');
+    const sp = await r.page.evaluate(()=>({there:!!document.querySelector('.sponsors'), shut:!!document.querySelector('.sponsors.shut')}));
+    ok(sp.there && !sp.shut, 'folding sponsors on one team does not fold them on another: '+JSON.stringify(sp));
+    const other = await r.page.evaluate(()=>({club:!!window.ONE_TIMER_CLUB, home:!!document.querySelector('a.home')}));
+    ok(!other.club && other.home, 'a folder missing from teams.js keeps the stylesheet colors but still has the way back to All teams: '+JSON.stringify(other));
+    await r.ctx.close();
+  }
+
+  // 31. A club with hard colors: red and black
+  console.log('\n[31] a red and black club, light and dark');
+  {
+    const teamsJs = fs.readFileSync(path.join(SITE_DIR,'teams.js'),'utf8').replace('primary: "#003087"','primary: "#C8102E"').replace('accent: "#FCD51E"','accent: "#111111"');
+    for (const scheme of ['light','dark']) {
+      const r = await openPage(browser, BASE, {teamsJs, scheme});
+      ok(r.errors.length===0, scheme+': no page errors');
+      const c = await r.page.evaluate(()=>{
+        const cs = el => getComputedStyle(document.querySelector(el));
+        return { mast: cs('.masthead').backgroundColor, rule: cs('.masthead').borderBottomColor,
+          next: document.querySelector('.next') ? cs('.next').backgroundColor : '', nextInk: document.querySelector('.next') ? cs('.next').color : '',
+          mastInk: cs('.masthead h1').color, paper: getComputedStyle(document.body).backgroundColor };
+      });
+      const rgb = s => s.match(/\d+/g).slice(0,3).map(Number);
+      const lum = a => { const f=v=>{v/=255; return v<=0.03928? v/12.92 : Math.pow((v+0.055)/1.055,2.4);}; const [r,g,b]=a.map(f); return 0.2126*r+0.7152*g+0.0722*b; };
+      const cr = (x,y) => { const a=lum(rgb(x)), b=lum(rgb(y)); return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05); };
+      ok(c.mast==='rgb(200, 16, 46)', scheme+': masthead in the club red: '+c.mast);
+      ok(cr(c.rule, c.mast)>=1.6, scheme+': the rule under the masthead still shows against it ('+cr(c.rule,c.mast).toFixed(2)+')');
+      ok(!c.next || cr(c.next, c.paper)>=1.2, scheme+': the next-game panel shows against the page ('+(c.next?cr(c.next,c.paper).toFixed(2):'no card')+')');
+      ok(!c.next || cr(c.nextInk, c.next)>=4.5, scheme+': type on the next-game panel reads ('+(c.next?cr(c.nextInk,c.next).toFixed(2):'no card')+')');
+      ok(cr(c.mastInk, c.mast)>=4.5, scheme+': team name on the masthead reads ('+cr(c.mastInk,c.mast).toFixed(2)+')');
+      await r.ctx.close();
+    }
+    const r = await openPage(browser, BASE+'?admin', {teamsJs, schedule:'scored'});
+    await r.page.click('.postbtn');
+    await r.page.waitForFunction(()=>{ const n=document.querySelector('.postnote'); return n && !/Drawing/.test(n.textContent); }, null, {timeout:8000});
+    const px = await r.page.evaluate(()=>{ const d=document.querySelector('.postcanvas').getContext('2d').getImageData(1060,300,1,1).data; return d[0]+','+d[1]+','+d[2]; });
+    ok(/^(19\d|20\d),/.test(px), 'the gameday post is drawn on the club red, not Wings navy: '+px);
+    await r.ctx.close();
+  }
+
+  // 32. The landing page
+  console.log('\n[32] landing page');
+  {
+    const ctx = await browser.newContext({ viewport:{width:390,height:900} });
+    const page = await ctx.newPage();
+    const errors=[]; page.on('pageerror', e=>errors.push(String(e)));
+    await page.route(/docs\.google\.com/, route=>route.fulfill({status:404, body:'no'}));
+    await page.goto('http://localhost:8811/');
+    await page.waitForTimeout(300);
+    const land = await page.evaluate(()=>({
+      h1: document.querySelector('.mast h1').textContent,
+      clubs: [...document.querySelectorAll('.org-head span:first-child')].map(e=>e.textContent),
+      links: [...document.querySelectorAll('.team a')].map(a=>a.getAttribute('href')),
+      back: !!document.querySelector('.back'), find: !!document.querySelector('#q'),
+      band: getComputedStyle(document.querySelector('.org-head')).backgroundColor,
+      wide: document.documentElement.scrollWidth
+    }));
+    ok(errors.length===0, 'no page errors: '+errors.join(' | '));
+    ok(land.h1==='The One Timer', 'masthead reads The One Timer');
+    ok(land.clubs.join('|')==='West Seneca Youth Hockey', 'one club band: '+land.clubs.join('|'));
+    ok(land.links.join('|')==='wswings12u/', 'the Wings row links to their folder: '+land.links.join('|'));
+    ok(land.band==='rgb(0, 48, 135)', 'the club band is in the club color: '+land.band);
+    ok(!land.back && !land.find, 'first visit: no Your team panel, no search box with one team');
+    ok(land.wide<=390, 'no sideways scroll at 390px: '+land.wide);
+    await page.click('.team a');
+    await page.waitForTimeout(800);
+    ok(/\/wswings12u\/$/.test(page.url()), 'tapping the team opens its page: '+page.url());
+    await page.goto('http://localhost:8811/');
+    await page.waitForTimeout(300);
+    const back = await page.evaluate(()=>{ const b=document.querySelector('.back'); return b ? {name:b.querySelector('.name').textContent, href:b.getAttribute('href'), bg:getComputedStyle(b).backgroundColor} : null; });
+    ok(back && /West Seneca Wings/.test(back.name) && /12U/.test(back.name) && back.href==='wswings12u/', 'second visit: Your team panel with the age group: '+JSON.stringify(back));
+    ok(back && back.bg==='rgb(252, 213, 30)', 'the panel is in the club accent: '+(back&&back.bg));
+
+    // Many teams: search, age order, missing club
+    const many = fs.readFileSync(path.join(SITE_DIR,'teams.js'),'utf8').replace(/teams: \[[\s\S]*\]\s*\};\s*$/, `teams: [
+      { folder: "a", name: "West Seneca Wings", org: "wsyha", program: "12U", league: "WNYAHL" },
+      { folder: "b", name: "West Seneca Wings", org: "wsyha", program: "8U", aka: ["Mite"] },
+      { folder: "c", name: "West Seneca Wings", org: "wsyha", program: "Squirt" },
+      { folder: "d", name: "West Seneca Wings", org: "wsyha", program: "14U" },
+      { folder: "e", name: "Red Team", org: "nope", program: "10U" },
+      { folder: "f", name: "West Seneca Wings Girls", org: "wsyha", program: "14U Girls" },
+      { folder: "g", name: "West Seneca Wings", org: "wsyha", program: "Bantam" },
+      { folder: "h", name: "West Seneca Wings", org: "wsyha", program: "16U" },
+      { folder: "i", name: "Other Wings", org: "wsyha", program: "18U" },
+      { folder: "j", name: "Peewee Wings", org: "wsyha", program: "Peewee" }
+    ]
+  };`);
+    await page.route(/localhost:8811\/teams\.js/, route=>route.fulfill({status:200, contentType:'text/javascript', body:many}));
+    await page.goto('http://localhost:8811/');
+    await page.waitForTimeout(300);
+    const order = await page.$$eval('[data-org="wsyha"] .team .tag', t=>t.map(x=>x.textContent));
+    ok(order.join(',')==='8U,Squirt,12U,Peewee,14U,14U Girls,Bantam,16U,18U', 'age groups sort youngest first: '+order.join(','));
+    const other = await page.$$eval('.org-head span:first-child', e=>e.map(x=>x.textContent));
+    ok(other.indexOf('Other teams')!==-1, 'a team whose club is missing lands under Other teams');
+    const count = async q => { await page.fill('#q', q); await page.waitForTimeout(60); return page.$$eval('.team', rs=>rs.filter(r=>!r.hidden).length); };
+    ok(await count('wings 12u')===1, 'search matches every word: "wings 12u" finds 1');
+    ok(await count('mite')===1, 'search knows the aka names: "mite" finds 1');
+    ok(await count('girls 14')===1, '"girls 14" finds 1');
+    ok(await count('zzz')===0 && /No team matches/.test(await page.$eval('.find .count', e=>e.textContent)), 'no match says so');
+    ok(await count('8u')===1, '"8u" finds the 8U team and not 18U');
+    ok(await count('pee wee')===1, '"pee wee" finds the team whose age group is typed Peewee');
+    const lastClub = await page.$$eval('.org-head span:first-child', e=>e.map(x=>x.textContent).pop());
+    ok(lastClub==='Other teams', 'Other teams sorts last: '+lastClub);
+    await ctx.close();
+
+    // A mistyped color on the first club does not strip the colors from the rest
+    const bad = fs.readFileSync(path.join(SITE_DIR,'teams.js'),'utf8').replace('orgs: {', 'orgs: {\n    aaa: { name: "Aaa Club", primary: "navy", accent: "#FFFFFF" },').replace('folder: "wswings12u",', 'folder: "wswings12u",') + '\nwindow.ONE_TIMER.teams.push({ folder: "x", name: "Bad Color Team", org: "aaa", program: "10U" });';
+    const ctx3 = await browser.newContext();
+    const p3 = await ctx3.newPage();
+    const errs3=[]; p3.on('pageerror', e=>errs3.push(String(e)));
+    await p3.route(/localhost:8811\/teams\.js/, route=>route.fulfill({status:200, contentType:'text/javascript', body:bad}));
+    await p3.goto('http://localhost:8811/');
+    await p3.waitForTimeout(200);
+    const wsBand = await p3.$eval('[data-org="wsyha"] .org-head', e=>getComputedStyle(e).backgroundColor);
+    ok(errs3.length===0 && wsBand==='rgb(0, 48, 135)', 'a bad color on one club leaves the others colored: '+wsBand+' '+errs3.join('|'));
+    await ctx3.close();
+
+    // Old root links with ?admin go to the team's page when there is one team
+    const ctx4 = await browser.newContext();
+    const p4 = await ctx4.newPage();
+    await p4.route(/docs\.google\.com/, route=>route.fulfill({status:404, body:'no'}));
+    await p4.goto('http://localhost:8811/?admin');
+    await p4.waitForTimeout(500);
+    ok(/\/wswings12u\/\?admin$/.test(p4.url()), 'an old /?admin link lands on the team page with ?admin kept: '+p4.url());
+    await ctx4.close();
+
+    // teams.js fails to load
+    const ctx2 = await browser.newContext();
+    const p2 = await ctx2.newPage();
+    await p2.route(/localhost:8811\/teams\.js/, route=>route.fulfill({status:404, body:'no'}));
+    await p2.goto('http://localhost:8811/');
+    await p2.waitForTimeout(200);
+    ok(/Can't load the team list/.test(await p2.$eval('body', e=>e.textContent)), 'a missing teams.js says it cannot load, not "No teams yet"');
+    await ctx2.close();
   }
 
   await browser.close(); sNew.close();

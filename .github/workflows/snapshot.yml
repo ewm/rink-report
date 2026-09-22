@@ -1,10 +1,14 @@
-# Saves a copy of the Google Sheet into docs/data/ every six hours.
+# Saves a copy of every team's Google Sheet every six hours.
 #
-# The page reads data/<tab>.csv (beside it, under docs/) only when Google
-# itself cannot be reached, and
-# the files double as a backup of the sheet with full history in git. Nothing
-# is committed when the sheet has not changed. Run it by hand from the Actions
-# tab ("Run workflow") after a big edit if you want the copy fresh right away.
+# Each team page lives in its own folder under docs/ (docs/wswings12u/ and
+# so on) and reads <its folder>/data/<tab>.csv only when Google itself
+# can't be reached. The files double as a backup of each sheet, with full
+# history in git. Nothing is committed when no sheet has changed. Run it by
+# hand from the Actions tab ("Run workflow") after a big edit if you want
+# the copies fresh right away.
+#
+# A folder counts as a team when its index.html has a sheetId in it. Only
+# folders are looked at, so the landing page at docs/index.html never is.
 name: Save a copy of the sheet
 
 on:
@@ -19,8 +23,6 @@ jobs:
   snapshot:
     runs-on: ubuntu-latest
 
-    # Every step below runs inside docs/, which is the folder Pages serves,
-    # so index.html and data/ are where the script expects them.
     defaults:
       run:
         working-directory: docs
@@ -28,42 +30,77 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch every tab as CSV
+      - name: Fetch every tab of every team's sheet as CSV
         run: |
           set -e
-          SHEET=$(grep -o 'sheetId: *"[^"]*"' index.html | sed 's/.*"\(.*\)"/\1/')
-          GIDS=$(grep -o 'gids: *{[^}]*}' index.html)
-          mkdir -p data
-          got=0
-          for tab in settings teams schedule stats rinks sponsors; do
-            gid=$(echo "$GIDS" | grep -o "$tab: *\"[0-9]*\"" | grep -o '[0-9]*' || true)
-            if [ -z "$gid" ]; then continue; fi
-            url="https://docs.google.com/spreadsheets/d/$SHEET/export?format=csv&gid=$gid"
-            if curl -fsSL --max-time 30 "$url" -o "data/$tab.csv.new"; then
-              if head -c 1 "data/$tab.csv.new" | grep -q '<'; then
-                echo "$tab: got a web page, not data; keeping the old copy"
-                rm -f "data/$tab.csv.new"
-              else
-                mv "data/$tab.csv.new" "data/$tab.csv"
-                got=1
+          shopt -s nullglob
+          found=0
+
+          for page in */index.html; do
+            team=$(dirname "$page")
+            SHEET=$(grep -o 'sheetId: *"[^"]*"' "$page" | sed 's/.*"\(.*\)"/\1/' || true)
+
+            if [ -z "$SHEET" ]; then
+              echo "$team: no sheetId in index.html, not a team page; skipping"
+              continue
+            fi
+
+            found=1
+            GIDS=$(grep -o 'gids: *{[^}]*}' "$page" || true)
+            mkdir -p "$team/data"
+            got=0
+
+            for tab in settings teams schedule stats rinks sponsors; do
+              gid=$(echo "$GIDS" | grep -o "$tab: *\"[0-9]*\"" | grep -o '[0-9]*' || true)
+
+              if [ -z "$gid" ]; then
+                continue
               fi
-            else
-              echo "$tab: could not be fetched; keeping the old copy"
-              rm -f "data/$tab.csv.new"
+
+              url="https://docs.google.com/spreadsheets/d/$SHEET/export?format=csv&gid=$gid"
+              out="$team/data/$tab.csv"
+
+              if curl -fsSL --max-time 30 "$url" -o "$out.new"; then
+                if head -c 1 "$out.new" | grep -q '<'; then
+                  echo "$team/$tab: got a web page, not data; keeping the old copy"
+                  rm -f "$out.new"
+                else
+                  mv "$out.new" "$out"
+                  got=1
+                fi
+              else
+                echo "$team/$tab: could not be fetched; keeping the old copy"
+                rm -f "$out.new"
+              fi
+            done
+
+            if [ "$got" = 1 ]; then
+              date -u +%Y-%m-%dT%H:%M:%SZ > "$team/data/updated.txt"
             fi
           done
-          if [ "$got" = 1 ]; then
-            date -u +%Y-%m-%dT%H:%M:%SZ > data/updated.txt
+
+          if [ "$found" = 0 ]; then
+            echo "No team folders found under docs/. Nothing to save."
           fi
 
       - name: Commit when a tab changed
         run: |
           git config user.name "rink-report snapshot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
-          if git diff --cached --quiet -- data ':!data/updated.txt'; then
-            echo "sheet unchanged since the last copy"
+          shopt -s nullglob
+          dirs=(*/data)
+
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "no team data folders; nothing to commit"
             exit 0
           fi
-          git commit -m "Snapshot: copy of the sheet at $(cat data/updated.txt)"
+
+          git add "${dirs[@]}"
+
+          if git diff --cached --quiet -- . ':(exclude)*/data/updated.txt'; then
+            echo "no sheet changed since the last copy"
+            exit 0
+          fi
+
+          git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push

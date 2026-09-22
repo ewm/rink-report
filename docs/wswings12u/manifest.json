@@ -1,0 +1,12 @@
+{
+  "name": "West Seneca Wings 12U",
+  "short_name": "Wings 12U",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#FFFFFF",
+  "theme_color": "#003087",
+  "icons": [
+    { "src": "logo.png", "sizes": "216x132", "type": "image/png" }
+  ]
+}

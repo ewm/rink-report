@@ -13,6 +13,25 @@ import { countdownText, fmtDate, todayISO } from "../util/dates.js";
 import { esc } from "../util/text.js";
 
 /**
+ * The countdown, with the number set big: "IN 3 DAYS" becomes a large 3
+ * over a small DAYS. TODAY and TOMORROW stay as words.
+ *
+ * @param {string} text - From countdownText().
+ * @returns {string} HTML.
+ */
+function countdownHtml(text) {
+  var m = /^IN (\d+) (\w+)$/.exec(text);
+
+  if (!m) {
+    return '<span class="countdown">' + esc(text) + "</span>";
+  }
+
+  return '<span class="countdown big">'
+    + "<b>" + m[1] + "</b>"
+    + '<span class="unit">' + esc(m[2]) + "</span></span>";
+}
+
+/**
  * The next-game card: matchup, date line, event tag and action links.
  *
  * @returns {string} HTML.
@@ -42,7 +61,7 @@ function nextGameHtml() {
     "</span>";
 
   if (g && !stale) {
-    h += '<span class="countdown">' + esc(countdownText(g.date)) + "</span>";
+    h += countdownHtml(countdownText(g.date));
   } else if (g) {
     h += '<span class="countdown">SCORE NOT IN</span>';
   }

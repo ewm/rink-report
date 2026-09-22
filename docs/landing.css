@@ -1,0 +1,510 @@
+/* ============================================================
+   The One Timer: landing page.
+
+   The house is black ink on paper, a plain printed program. Clubs
+   appear in their own colors only where they are named: their header,
+   their team rows, and the "Back to your team" panel. theme.js writes
+   each club's colors onto [data-org="<id>"].
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Base tokens. Dark mode is declared twice on purpose: once for
+   the phone's setting, once for a manual data-theme.
+   The club slots here are only a fallback for a club missing
+   from teams.js: plain ink, no color.
+   ------------------------------------------------------------ */
+:root {
+  --paper: #FFFFFF;
+  --tint: #F4F6FA;
+  --ink: #0B1220;
+  --ink-2: #55627A;
+  --ink-3: #5F6C84;
+  --rule: #0B1220;
+  --hair: #DFE4EE;
+
+  --main: #0B1220;
+  --main-ink: #0B1220;
+  --on-main: #FFFFFF;
+  --accent: #0B1220;
+  --mark: #0B1220;
+  --on-accent: #FFFFFF;
+  --on-accent-2: #C9CED8;
+  --us-ink: #0B1220;
+  --us-bg: #F4F6FA;
+  --focus: #0B1220;
+
+  --f-display: "Barlow Condensed", "Arial Narrow", Helvetica, sans-serif;
+  --f-text: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0A111C;
+    --tint: #111A29;
+    --ink: #EDF2F9;
+    --ink-2: #94A2B8;
+    --ink-3: #7C8BA2;
+    --rule: #EDF2F9;
+    --hair: #1F2A3D;
+    --main: #EDF2F9;
+    --main-ink: #EDF2F9;
+    --on-main: #0A111C;
+    --accent: #EDF2F9;
+    --mark: #EDF2F9;
+    --on-accent: #0A111C;
+    --on-accent-2: #3A4456;
+    --us-ink: #EDF2F9;
+    --us-bg: #111A29;
+    --focus: #EDF2F9;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0A111C;
+  --tint: #111A29;
+  --ink: #EDF2F9;
+  --ink-2: #94A2B8;
+  --ink-3: #7C8BA2;
+  --rule: #EDF2F9;
+  --hair: #1F2A3D;
+  --main: #EDF2F9;
+  --main-ink: #EDF2F9;
+  --on-main: #0A111C;
+  --accent: #EDF2F9;
+  --mark: #EDF2F9;
+  --on-accent: #0A111C;
+  --on-accent-2: #3A4456;
+  --us-ink: #EDF2F9;
+  --us-bg: #111A29;
+  --focus: #EDF2F9;
+}
+
+/* ------------------------------------------------------------
+   Page
+   ------------------------------------------------------------ */
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.5 var(--f-text);
+  -webkit-text-size-adjust: 100%;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 0 56px;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.eyebrow {
+  margin: 0;
+  font: 700 11px/1.2 var(--f-text);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   Masthead: ink on paper, the wordmark as the loud line, a 5px
+   ink rule under it. No house color, so no club can clash.
+   ------------------------------------------------------------ */
+.mast {
+  padding: 22px 18px 14px;
+  border-bottom: 5px solid var(--rule);
+}
+
+.mast .eyebrow {
+  color: var(--ink-2);
+}
+
+.mast h1 {
+  margin: 4px 0 0;
+  font: 700 56px/.92 var(--f-display);
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+
+.mast .sub {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------
+   Your teams: the one accent panel on the page, in the club's
+   colors, plus up to two more recent teams under it.
+   ------------------------------------------------------------ */
+.mine {
+  margin-top: 14px;
+}
+
+.back {
+  display: block;
+  padding: 14px 18px 16px;
+  background: var(--accent);
+  color: var(--on-accent);
+  text-decoration: none;
+}
+
+.back:focus-visible,
+.team a:focus-visible,
+.also a:focus-visible,
+.home:focus-visible {
+  outline-offset: -4px;
+}
+
+/* On the club's panel the ring takes the panel's own type color, which is
+   guaranteed to read against it. */
+.back:focus-visible {
+  outline-color: var(--on-accent);
+}
+
+/* Rows scroll clear of the sticky search box when focus moves to them. */
+.team a,
+.also a {
+  scroll-margin-top: 140px;
+}
+
+.back .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--on-accent-2);
+}
+
+.back .name {
+  display: block;
+  margin-top: 6px;
+  font: 700 34px/1 var(--f-display);
+  text-transform: uppercase;
+}
+
+.back .tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  color: inherit;
+  font: 700 11px/1 var(--f-text);
+  letter-spacing: .1em;
+  vertical-align: 6px;
+}
+
+.back .next {
+  display: block;
+  margin-top: 10px;
+  color: var(--on-accent-2);
+  font-size: 14px;
+}
+
+.back .next b {
+  color: var(--on-accent);
+}
+
+.also {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.also li + li {
+  border-top: 1px solid var(--hair);
+}
+
+.also a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 18px;
+  border-left: 4px solid var(--mark);
+  text-decoration: none;
+  font: 700 17px/1.1 var(--f-display);
+  text-transform: uppercase;
+}
+
+.also a > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.also a .tag {
+  margin-left: 8px;
+}
+
+/* ------------------------------------------------------------
+   Finder: only rendered once the list is long enough to need it.
+   Sticks to the top of the screen while scrolling a long list.
+   ------------------------------------------------------------ */
+.find {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 14px 18px 12px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--hair);
+}
+
+.find label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink-2);
+}
+
+.find input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--ink-3);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.2 var(--f-text);
+  -webkit-appearance: none;
+}
+
+.find input:focus {
+  border-color: var(--ink);
+}
+
+.find .count {
+  margin: 6px 0 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------
+   Club header, two styles. body[data-club-style] picks one.
+
+   band: a solid bar in the club's main color.
+   rule: a 5px rule in the club's color with the name set under
+         it in the club's color, on paper. Quieter with many clubs.
+   ------------------------------------------------------------ */
+.org {
+  margin-top: 18px;
+}
+
+.org-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  font: 700 13px/1.25 var(--f-text);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.org-head .eyebrow {
+  flex: none;
+  letter-spacing: .12em;
+}
+
+[data-club-style="band"] .org-head {
+  padding: 11px 18px 10px;
+  background: var(--main);
+  color: var(--on-main);
+}
+
+[data-club-style="band"] .org-head .eyebrow {
+  color: inherit;
+  opacity: .85;
+}
+
+[data-club-style="rule"] .org-head {
+  padding: 10px 18px 8px;
+  border-top: 5px solid var(--main-ink);
+  color: var(--main-ink);
+}
+
+[data-club-style="rule"] .org-head .eyebrow {
+  color: var(--ink-3);
+}
+
+.org ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ------------------------------------------------------------
+   Team row
+   ------------------------------------------------------------ */
+.team + .team,
+[data-club-style="rule"] .team {
+  border-top: 1px solid var(--hair);
+}
+
+.team a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 10px 18px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.team a:hover {
+  background: var(--tint);
+}
+
+/* A team this phone picked before: club tint, club ink, accent bar. */
+.team.us a {
+  background: var(--us-bg);
+  box-shadow: inset 4px 0 0 var(--mark);
+}
+
+.team.us .name {
+  color: var(--us-ink);
+}
+
+.crest {
+  flex: none;
+  width: 72px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.crest.none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hair);
+  color: var(--main-ink);
+  font: 700 15px/1 var(--f-display);
+  text-transform: uppercase;
+}
+
+.team .words {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.team .name {
+  display: block;
+  font: 700 17px/1.1 var(--f-display);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.team .meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--ink-3);
+  color: var(--ink);
+  font: 700 10px/1 var(--f-text);
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+.team .meta .tag {
+  margin-right: 6px;
+}
+
+.go {
+  flex: none;
+  color: var(--ink-3);
+  font: 700 17px/1 var(--f-text);
+}
+
+.team a:hover .go {
+  color: var(--main-ink);
+}
+
+.empty {
+  margin: 0;
+  padding: 16px 18px;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------
+   Footer
+   ------------------------------------------------------------ */
+.foot {
+  margin-top: 24px;
+  border-top: 2px solid var(--rule);
+  padding: 12px 18px 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.foot p {
+  margin: 0 0 6px;
+}
+
+/* ------------------------------------------------------------
+   Two breakpoints only
+   ------------------------------------------------------------ */
+@media (min-width: 700px) {
+  .mast h1 {
+    font-size: 64px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mast h1 {
+    font-size: 46px;
+  }
+
+  .back .name {
+    font-size: 29px;
+  }
+
+  .crest {
+    width: 56px;
+    height: 36px;
+  }
+
+  .org-head {
+    letter-spacing: .08em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

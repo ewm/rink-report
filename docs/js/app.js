@@ -6,7 +6,7 @@
  * that refetches when a phone comes back.
  * See ARCHITECTURE.md, "Module map" and "Polling".
  */
-import { CFG, CACHE_KEY, on, state, log, onChange, notify } from "./state.js";
+import { CFG, CACHE_KEY, SPONSORS_KEY, on, state, log, onChange, notify } from "./state.js";
 import { render } from "./render.js";
 import { getCSV } from "./sheet/routes.js";
 import { shapeSettings } from "./shape/settings.js";
@@ -351,7 +351,7 @@ document.addEventListener("click", function (e) {
     state.sponsorsOpen = !state.sponsorsOpen;
 
     try {
-      localStorage.setItem("rinkreport.sponsorsOpen", state.sponsorsOpen ? "1" : "0");
+      localStorage.setItem(SPONSORS_KEY, state.sponsorsOpen ? "1" : "0");
     } catch (err) {}
 
     render();

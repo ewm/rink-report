@@ -12,9 +12,17 @@ section each comment names.
 
 ```
 docs/
-  index.html          the shell: fonts, the CONFIG block (the only thing a
+  index.html          The One Timer landing page (see "The One Timer" below)
+  teams.js            every club (name + two colors) and team (folder, club)
+  theme.js            a club's two colors -> every color slot, light and dark
+  landing.js/.css     the landing page
+  wswings12u/         one folder per team:
+    index.html        the shell: fonts, the CONFIG block (the only thing a
                       manager edits), an empty #app, and one module script
-  css/rink.css        every style
+    logo.png          the crest, optional
+    manifest.json     the home-screen shortcut's name and icon
+    data/             the saved copy of this team's sheet, written by the Action
+  css/rink.css        every style, shared by every team
   js/
     app.js            entry point: boot, load(), the poll, the cache, clicks
     state.js          RINK_CONFIG, the feature switches, the store, notify()
@@ -29,15 +37,59 @@ docs/
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
                       one component per card, each (state) -> HTML string
-  data/               the saved copy of the sheet, written by the Action
-  .github/workflows/  snapshot.yml, the job that writes data/
+.github/workflows/    snapshot.yml, the job that writes each team's data/
 tests/                Playwright suite + fixtures; see tests/README.md
 ```
 
 Modules are native ES modules (`<script type="module">`). Every phone that
 can open a Google Sheet can run them. The one consequence: the page has to
 come from a web server, not a `file://` double-click. Use
-`python3 -m http.server 8000` in `docs/` for local preview.
+`python3 -m http.server 8000` in `docs/` for local preview, then open
+`localhost:8000/` for the landing page or `localhost:8000/wswings12u/` for
+the Wings.
+
+## The One Timer: team folders and club colors
+
+The site is one GitHub Pages repo on one address. The landing page sits at
+the root and every team gets a folder: `theonetimer.<tld>/wswings12u/`.
+All teams run the same `js/` and `css/`; a team's folder holds only what is
+its own (config, crest, manifest, saved copy of its sheet). Adding a team is
+a folder plus an entry in `teams.js`.
+
+A team page's shell loads `../theme.js` and `../teams.js` in the head,
+before the page paints, and calls `OneTimerTheme.applyTeamPage()`. That
+finds the team by its folder name (the last part of the address, or
+`RINK_CONFIG.folder` if a page sets one), looks up its club, and writes the
+club's color slots onto `:root`. `rink.css` still carries the Wings' values
+as a fallback, so a folder missing from `teams.js` looks like the Wings and
+shows no "All teams" row. `window.ONE_TIMER_CLUB` holds what was applied;
+the footer and the gameday post read it.
+
+**The color slots.** A club gives a main color and an accent. `theme.js`
+derives `navy` (main), `navy-ink`, `on-navy`, `accent-on-main`, `gold` (the
+accent panel), `mark` (the 5px rule and the 4px bars), `on-gold`,
+`on-gold-2`, `us-ink`, `us-bg` and `focus`, separately for light and dark.
+The names navy and gold are the Wings' history; they mean "main" and
+"accent" now. Colors are moved lighter or darker in OKLCH, in small steps,
+only until they reach their contrast target (7:1 for main as text, 4.5:1 for
+type on a panel, 3:1 for the focus ring), so a club's color changes as
+little as readability allows. When an accent can't do its job (white on a
+white page, black on a dark page, too close to the main color), the accent
+panel is filled with the main color and the thin marks are drawn in ink.
+`OneTimerTheme.check()` says so in plain words and the landing page logs it.
+
+**Browser storage is per address, not per folder.** Every team shares one
+address, so every key the page stores carries its folder's path:
+`rinkreport.v5:/wswings12u/`, `rinkreport.sponsorsOpen:/wswings12u/`
+(`scopedKey()` in `state.js`). Without it, two teams opened on one phone
+paint each other's standings. Test [30] covers it.
+
+**The landing page** (`landing.js`) groups teams by club, sorts clubs by
+name and teams by age (8U, Squirt, 12U...), and shows a search box once
+there are 8 or more teams. Search matches every word typed, against name,
+club, age group, league and a team's `aka` names. The teams a phone picked
+are remembered (`onetimer.recent`, newest first, up to three): the newest
+becomes the "Your team" panel in its club's accent, the others sit under it.
 
 ### Data flow
 
@@ -102,7 +154,7 @@ Two rules keep it sane:
 
 `sponsorsOpen` is the one reader preference in the store. It defaults to open
 (the sponsors paid to be seen) and a reader who folds the block keeps it
-folded on that phone only, via `rinkreport.sponsorsOpen` in localStorage.
+folded on that phone only, via `rinkreport.sponsorsOpen:<folder>` in localStorage.
 That key is separate from the data cache key on purpose: it must survive a
 cache-key bump.
 
@@ -205,10 +257,11 @@ If you find yourself simplifying this back to one route, read
 
 ## The saved copy
 
-`.github/workflows/snapshot.yml` runs every six hours on GitHub, fetches the
+`.github/workflows/snapshot.yml` runs every six hours on GitHub. For every
+team folder under `docs/` whose `index.html` has a `sheetId`, it fetches the
 six tabs through the same raw-export URLs the page uses, and commits them to
-`data/<tab>.csv` plus `data/updated.txt` (the UTC time of the copy) when a
-tab changed. A tab that comes back as a web page or fails to fetch keeps its
+`<team>/data/<tab>.csv` plus `<team>/data/updated.txt` (the UTC time of the
+copy) when a tab changed. The landing page has no `sheetId` and is skipped. A tab that comes back as a web page or fails to fetch keeps its
 old file.
 
 `routesFor()` lists `data/<tab>.csv` as the last route, after both Google

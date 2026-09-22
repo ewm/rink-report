@@ -2,6 +2,12 @@
 
 About 20 minutes, once. After this you never touch the site again, only the sheet.
 
+> **The One Timer layout.** The site now holds more than one team. Each team
+> has its own folder under `docs/` (the Wings are `docs/wswings12u/`), and
+> wherever this guide says `index.html` or `logo.png` it means the ones in
+> the team's folder. The landing page at `docs/index.html` lists every team
+> from `docs/teams.js`; a new team needs a folder and an entry there.
+
 You need: a Google account, and a free GitHub account (email signup, no card).
 
 ---
@@ -477,7 +483,7 @@ The page tells you. Warnings appear at the bottom of the page under **Things to 
 
 **"Our team name does not match any row on the Teams tab"**: a spelling or spacing difference between Settings and Teams. Copy-paste from one to the other.
 
-**Adding a club crest**: drop the logo into `site` as `logo.png`, beside index.html, and it appears in the masthead. The page checks for it once when it loads; if the file isn't there it simply doesn't draw one.
+**Adding a club crest**: drop the logo into the team's folder as `logo.png`, beside its index.html, and it appears in the masthead. The page checks for it once when it loads; if the file isn't there it simply doesn't draw one.
 
 **The page briefly showed "Can't reach the schedule"**: Google hands back the occasional transient error. The page retries three times per tab with a short backoff before it says anything. If the banner is still up after a few minutes, it's real; go to `?check` and read the request log.
 

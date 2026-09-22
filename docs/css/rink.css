@@ -1,6 +1,13 @@
 /* ------------------------------------------------------------------
-   West Seneca Wings — royal blue #003087 and jersey gold #FCD51E,
-   sampled from the club site.
+   Club colors come from ../teams.js: theme.js works out every color slot
+   from a club's two colors and writes them over the values below, before
+   the page paints. The values here are the West Seneca Wings' (royal blue
+   #003087 and jersey gold #FCD51E, sampled from the club site) and only
+   show if teams.js can't be read.
+   Slots theme.js writes: navy (main), navy-ink, on-navy, accent-on-main,
+   gold (accent panel), mark (thin rules and bars), on-gold, on-gold-2,
+   us-ink, us-bg, focus. "navy" and "gold" are the old names for main and
+   accent; they stay so this file didn't need rewriting.
    Type: Barlow Condensed for names, Barlow for the words. The figures are
    Chivo Mono, a monospaced face built on the same skeleton, so the score is
    the loudest thing on the page and every column lines up by construction
@@ -14,11 +21,11 @@
    ------------------------------------------------------------------ */
 :root{
   --paper:#FFFFFF; --ground:#FFFFFF; --tint:#F4F6FA;
-  --ink:#0B1220; --ink-2:#55627A; --ink-3:#8A96AB;
+  --ink:#0B1220; --ink-2:#55627A; --ink-3:#5F6C84;
   --rule:#0B1220; --hair:#DFE4EE;
-  --navy:#003087; --navy-ink:#003087; --on-navy:#FFFFFF;
-  --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
-  --us-ink:#003087; --us-bg:rgba(252,213,30,.16);
+  --navy:#003087; --navy-ink:#003087; --on-navy:#FFFFFF; --accent-on-main:#FCD51E;
+  --gold:#FCD51E; --mark:#FCD51E; --on-gold:#003087; --on-gold-2:#3F596D;
+  --us-ink:#003087; --us-bg:#FFF8DB; --focus:#A98D00;
   --m-gold:#B58B00; --m-silver:#78849A; --m-bronze:#A2662F;
   --win:#116B45; --warn:#7A4E00; --warn-bg:#FFF6DC; --warn-rule:#E0B354;
 
@@ -29,22 +36,22 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --paper:#0A111C; --ground:#0A111C; --tint:#111A29;
-    --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#697991;
+    --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#7C8BA2;
     --rule:#EDF2F9; --hair:#1F2A3D;
-    --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
-    --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
-    --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+    --navy:#003087; --navy-ink:#6E9FF7; --on-navy:#FFFFFF; --accent-on-main:#FCD51E;
+    --gold:#FCD51E; --mark:#FCD51E; --on-gold:#003087; --on-gold-2:#3F596D;
+    --us-ink:#FCD51E; --us-bg:#131E30; --focus:#FCD51E;
     --m-gold:#FCD51E; --m-silver:#AEBACD; --m-bronze:#D9945A;
     --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
   }
 }
 :root[data-theme="dark"]{
   --paper:#0A111C; --ground:#0A111C; --tint:#111A29;
-  --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#697991;
+  --ink:#EDF2F9; --ink-2:#94A2B8; --ink-3:#7C8BA2;
   --rule:#EDF2F9; --hair:#1F2A3D;
-  --navy:#062E7E; --navy-ink:#8FB2EE; --on-navy:#FFFFFF;
-  --gold:#FCD51E; --on-gold:#001B4D; --on-gold-2:rgba(0,27,77,.75);
-  --us-ink:#FCD51E; --us-bg:rgba(143,178,238,.09);
+  --navy:#003087; --navy-ink:#6E9FF7; --on-navy:#FFFFFF; --accent-on-main:#FCD51E;
+  --gold:#FCD51E; --mark:#FCD51E; --on-gold:#003087; --on-gold-2:#3F596D;
+  --us-ink:#FCD51E; --us-bg:#131E30; --focus:#FCD51E;
     --m-gold:#FCD51E; --m-silver:#AEBACD; --m-bronze:#D9945A;
   --win:#4FB489; --warn:#E0B354; --warn-bg:#20190A; --warn-rule:#6B5316;
 }
@@ -59,42 +66,52 @@ body{margin:0; background:var(--ground); color:var(--ink);
    Below 780 nothing changes at all — a max-width only binds above itself. */
 #app{max-width:780px; margin:0 auto; padding:0 0 56px}
 h1,h2{margin:0; font-family:var(--f-display); font-weight:700; letter-spacing:.01em; text-wrap:balance}
-.eyebrow{font-size:10px; letter-spacing:.2em; text-transform:uppercase; font-weight:700; color:var(--ink-3)}
+.eyebrow{font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--ink-3)}
 
 /* ---- masthead: the club's navy bar, with the gold rule under it ---- */
 .masthead{background:var(--navy); padding:19px 18px 16px; display:flex; align-items:center; gap:13px;
-  border-bottom:5px solid var(--gold)}
+  border-bottom:5px solid var(--mark)}
 /* The Wings crest is wide (a wing off a circle), so it is sized by height and
    takes the width it needs, capped so a long team name still fits beside it. */
 .masthead .crest{height:44px; width:auto; max-width:84px; flex:0 0 auto; object-fit:contain; display:block}
 .masthead .txt{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto}
-.masthead .eyebrow{color:var(--gold)}
+.masthead .eyebrow{color:var(--accent-on-main)}
 .masthead h1{font-size:31px; line-height:1; text-transform:uppercase; letter-spacing:.02em; color:var(--on-navy)}
-.record{font-variant-numeric:tabular-nums; font-size:12px;
-  font-weight:600; white-space:nowrap; color:var(--gold); align-self:center;
-  border:1px solid rgba(252,213,30,.5); padding:5px 8px}
+/* The record is the loudest figure up here: W-L-T big, points as a label. */
+.record{flex:0 0 auto; align-self:center; text-align:right; white-space:nowrap; color:var(--on-navy)}
+.record b{display:block; font-family:var(--f-display); font-weight:700; font-size:34px; line-height:1;
+  letter-spacing:.02em; font-variant-numeric:tabular-nums}
+.record .eyebrow{display:block; margin-top:3px; color:var(--accent-on-main)}
 
 /* ---- next game: the club's navy-on-yellow banner, full width ---- */
 .next{background:var(--gold); color:var(--on-gold)}
 .next .strip{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
   padding:13px 18px 0}
 .next .strip .eyebrow{color:var(--on-gold)}
-.countdown{font-size:10px; font-weight:700;
+.countdown{font-size:11px; font-weight:700;
   letter-spacing:.14em; color:var(--on-gold)}
+/* "IN 3 DAYS": the number set big over a small unit. */
+.countdown.big{text-align:right; line-height:1}
+.countdown.big b{display:block; font-family:var(--f-display); font-size:34px; line-height:.9}
+.countdown.big .unit{display:block; margin-top:3px}
+.next .strip:has(.countdown.big){align-items:flex-start}
 .next .body{padding:6px 18px 18px}
 .matchup{font-family:var(--f-display); font-weight:700; font-size:34px; line-height:1.02;
   text-transform:uppercase; letter-spacing:.01em; color:var(--on-gold); margin:0 0 10px}
-.matchup .vs{font-size:18px; letter-spacing:.08em; opacity:.62; padding-right:3px}
+.matchup .vs{font-size:18px; letter-spacing:.08em; color:var(--on-gold-2); padding-right:3px}
 .when{font-size:13px; display:flex; flex-wrap:wrap; gap:2px 14px; color:var(--on-gold-2);
   font-variant-numeric:tabular-nums}
 .when b{font-weight:700; color:var(--on-gold)}
 .empty{color:var(--ink-2); font-size:14px; margin:0; padding:2px 0}
 /* the row of things to tap under the next game: directions, calendar */
 .actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+/* The buttons sit on the club's accent panel. Their wash is a tint of the
+   panel's own type color, so the club's contrast holds on any panel color. */
 .actions .act{font-size:10px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; color:var(--on-gold); text-decoration:none; border:1px solid var(--on-gold);
-  padding:6px 10px; background:rgba(255,255,255,.28)}
-.actions .act:hover{background:rgba(255,255,255,.55)}
+  padding:6px 10px; background:transparent;
+  background:color-mix(in srgb, var(--on-gold) 8%, transparent)}
+.actions .act:hover{background:color-mix(in srgb, var(--on-gold) 16%, transparent)}
 
 /* ---- competition switch: league play vs a showcase weekend ---- */
 /* Two tabs share the width evenly. By February a season can carry four —
@@ -105,13 +122,13 @@ h1,h2{margin:0; font-family:var(--f-display); font-weight:700; letter-spacing:.0
 .viewbar{display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch;
   scrollbar-width:none; border-bottom:2px solid var(--rule); background:var(--tint)}
 .viewbar::-webkit-scrollbar{display:none}
-.viewbar button{flex:1 0 auto; min-width:88px; font:inherit; font-size:11px; font-weight:700;
+.viewbar button{flex:1 0 auto; min-width:88px; min-height:44px; font:inherit; font-size:11px; font-weight:700;
   letter-spacing:.12em; text-transform:uppercase; padding:11px 6px; background:transparent;
   color:var(--ink-2); border:0; border-right:1px solid var(--hair); cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .viewbar button:last-child{border-right:0}
-.viewbar button[aria-pressed="true"]{background:var(--navy); color:#fff;
-  box-shadow:inset 0 -4px 0 var(--gold)}
+.viewbar button[aria-pressed="true"]{background:var(--navy); color:var(--on-navy);
+  box-shadow:inset 0 -4px 0 var(--mark)}
 
 .evtag{margin-top:9px; display:inline-block; font-size:10px;
   font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--on-gold);
@@ -127,19 +144,20 @@ h1,h2{margin:0; font-family:var(--f-display); font-weight:700; letter-spacing:.0
 /* ---- standings ---- */
 .tablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
 table{width:100%; border-collapse:collapse; font-size:14px}
-thead th{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+thead th{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
   font-weight:700; text-align:right; padding:0 0 8px; white-space:nowrap}
 thead th+th{padding-left:9px}
 thead th:first-child{text-align:left; padding-left:32px}
 tbody td{padding:9px 0; border-top:1px solid var(--hair); text-align:right; white-space:nowrap;
-  font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink-2)}
+  font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink)}
 tbody td+td{padding-left:9px}
 tbody td:first-child{text-align:left; padding-left:32px; text-indent:-24px;
   color:var(--ink); width:99%;
   white-space:normal; overflow-wrap:anywhere; font-size:15px}
-tbody td.pts{color:var(--ink); font-weight:600; font-size:15px}
+tbody td.pts{color:var(--ink); font-weight:700; font-size:17px}
 tr.us td{background:var(--us-bg)}
-tr.us td:first-child{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--gold)}
+tr.us td:first-child{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--mark)}
+tr.us td{color:var(--us-ink)}
 tr.us td.pts{color:var(--us-ink); font-weight:700}
 /* text-indent is inherited, and this inline-block would re-apply the cell's
    negative indent to its own digit and push it out of view. */
@@ -210,7 +228,7 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .division{margin-top:18px}
 .division ul{list-style:none; margin:6px 0 0; padding:0; columns:2; column-gap:18px}
 .division li{font-size:15px; padding:6px 0; border-bottom:1px solid var(--hair); break-inside:avoid; color:var(--ink)}
-.division li.us{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--gold); padding-left:10px}
+.division li.us{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--mark); padding-left:10px}
 @media (max-width:420px){ .division ul{columns:1} }
 .tag{display:inline-block; font-size:10px; font-weight:700;
   letter-spacing:.1em; padding:2px 6px; border:1px solid var(--hair); color:var(--ink-3)}
@@ -222,8 +240,15 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .seg button{font:inherit; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
   padding:5px 10px; background:transparent; color:var(--ink-2); border:0; cursor:pointer}
 .seg button+button{border-left:1px solid var(--rule)}
-.seg button[aria-pressed="true"]{background:var(--navy); color:#fff}
-button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+.seg button[aria-pressed="true"]{background:var(--navy); color:var(--on-navy)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+/* Controls that run edge to edge draw the ring inside, so the phone's screen edge doesn't cut it off. */
+.viewbar button:focus-visible,.home:focus-visible{outline-offset:-4px}
+/* A tab's ring is its own text color, which reads on the tab whether it is
+   the club color (on) or the plain bar (off). On the club's accent panel the
+   ring is the panel's type color, for the same reason. */
+.viewbar button:focus-visible{outline-color:currentColor}
+.next a:focus-visible,.next button:focus-visible{outline-color:var(--on-gold)}
 
 .status{display:flex; align-items:center; justify-content:space-between; gap:10px;
   font-size:10px; letter-spacing:.1em; text-transform:uppercase;
@@ -238,6 +263,11 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold); outline-offs
 .banner li+li{border-top:1px solid rgba(128,100,20,.22)}
 .banner b{font-weight:700}
 .foot{font-size:11px; color:var(--ink-3); text-align:center; line-height:1.8; margin:22px 0 0; padding:0 18px}
+/* The way back to every team on The One Timer: a full-width row, easy to hit. */
+.home{display:flex; align-items:center; gap:10px; min-height:52px; margin-top:24px; padding:0 18px;
+  border-top:2px solid var(--rule); border-bottom:1px solid var(--hair); color:var(--ink);
+  font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; text-decoration:none}
+.home:hover{background:var(--tint)}
 .foot a{color:var(--ink-3)}
 .card .foot{text-align:left; padding:12px 0 0; margin:0; border-top:1px solid var(--hair)}
 /* ---- sponsors: the back page of the program ----
@@ -300,7 +330,7 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
   tbody td+td,thead th+th{padding-left:15px}
   table{font-size:15px}
   tbody td:first-child{font-size:16px}
-  tbody td.pts{font-size:16px}
+  tbody td.pts{font-size:18px}
 }
 
 @media (max-width:420px){

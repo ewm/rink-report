@@ -57,6 +57,12 @@ function scoreLeague(csv, n){
   }).join('\r\n');
 }
 ALT.scored = scoreLeague(FIX.schedule, 2);
+// A blank Event cell on a day the showcase is running (Aug 29). One row is
+// our own game, so it is a forgotten cell; the other is two league teams who
+// simply had a normal game that day and must not be flagged.
+function addRow(csv, line){ return csv.replace(/\r?\n$/, '') + '\r\n' + line + '\r\n'; }
+ALT.strayOurs  = addRow(FIX.schedule, '2026-08-29,5:00 PM,West Seneca Wings,Buffalo Bisons,,,Nichols,,Pool,,');
+ALT.strayOther = addRow(FIX.schedule, '2026-08-29,5:00 PM,Cazenovia Chiefs,Buffalo Bisons,,,Nichols,,Q-Game,,');
 
 const GIDS = { '1160090892':'settings', '239776309':'teams', '1739208952':'schedule', '703037060':'stats', '1202177208':'rinks', '95128319':'sponsors' };
 const TABS = { 'Settings':'settings', 'Teams':'teams', 'Schedule':'schedule', 'Player Stats':'stats', 'Rinks':'rinks', 'Sponsors':'sponsors' };
@@ -1169,6 +1175,24 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
     await r.page.waitForTimeout(120);
     ok((await r.page.$$eval('.postwrap', n=>n.length))===0, 'and so does the Close button');
     await r.ctx.close();
+  }
+
+  // 28. A blank Event cell is only flagged when that team is at the event
+  {
+    console.log('\n[28] blank Event cell on an event day');
+    const ours = await openPage(browser, 'http://localhost:8811/?admin', {schedule:'strayOurs'});
+    const oursText = await ours.page.$eval('#app', e=>e.textContent);
+    ok(/Event cell is blank, but other games that day belong to Pre-Season Summer Showcase 2026/.test(oursText),
+       'our own game with a blank Event on a showcase day is flagged');
+    ok(/Schedule row 205:/.test(oursText), 'and the warning names the row (205)');
+    await ours.ctx.close();
+
+    const other = await openPage(browser, 'http://localhost:8811/?admin', {schedule:'strayOther'});
+    const otherText = await other.page.$eval('#app', e=>e.textContent);
+    ok(!/Event cell is blank/.test(otherText),
+       'two other league teams playing on a showcase day is not flagged');
+    ok(other.errors.length===0, 'no page errors: '+other.errors.join(' | '));
+    await other.ctx.close();
   }
 
   await browser.close(); sNew.close();

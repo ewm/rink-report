@@ -448,7 +448,7 @@ You shouldn't need to memorise these, the workbook checks all of them for you an
 
    **Renaming a club is the exception worth knowing about**: see below.
 3. **Both goal columns or neither.** One filled in and the game still counts as not played.
-4. **Every game of an event needs that event's name in the Event column.** A blank Event cell on a showcase day drops that one game into League play, splitting the standings in two. Mixing blank and filled Event cells across the whole sheet is fine and expected, that's how a season and a showcase share one Schedule tab. What's not fine is a blank cell on a day the event is running, and both the workbook and the page now flag exactly that, by row number.
+4. **Every game of an event needs that event's name in the Event column.** A blank Event cell on a showcase day drops that one game into League play, splitting the standings in two. Mixing blank and filled Event cells across the whole sheet is fine and expected, that's how a season and a showcase share one Schedule tab. What's not fine is a blank cell on a game of a team that is at the event that day, and the page flags exactly that, by row number. Two other league teams playing a normal game on the same day as a tournament is fine and is left alone.
 5. **Never rename the Settings, Teams or Schedule tabs.** The page finds them by name.
 6. **Keep the Settings answer column all text.** One number in it and Google decides the whole column is numeric and discards every word.
 7. **Column K must say OK** on every row that has a game in it.

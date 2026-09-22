@@ -172,7 +172,7 @@ function shapeGames(rows, teamList, alias) {
   var selfPlay = [];
   var dupes = [];
   var halfScore = [];
-  var eventDays = bare();
+  var eventTeams = bare();
   var blankEvent = [];
 
   for (var r = h.headerIndex + 1; r < rows.length; r++) {
@@ -247,11 +247,14 @@ function shapeGames(rows, teamList, alias) {
       halfScore.push(r + 1);
     }
 
-    // A blank Event on a day that belongs to an event is a forgotten cell.
+    // Remember which teams were at an event each day. A blank Event cell is
+    // only a forgotten cell when one of its teams is at an event that same
+    // day. Other league teams can still have a normal game that day.
     if (g.event) {
-      eventDays[iso] = g.event;
+      eventTeams[iso + "|" + norm(away)] = g.event;
+      eventTeams[iso + "|" + norm(home)] = g.event;
     } else {
-      blankEvent.push({ row: r + 1, date: iso });
+      blankEvent.push({ row: r + 1, date: iso, away: away, home: home });
     }
 
     out.push(g);
@@ -371,9 +374,11 @@ function shapeGames(rows, teamList, alias) {
   var strayEvent = "";
 
   blankEvent.forEach(function (b) {
-    if (eventDays[b.date]) {
+    var ev = eventTeams[b.date + "|" + norm(b.away)] || eventTeams[b.date + "|" + norm(b.home)];
+
+    if (ev) {
       stray.push(b.row);
-      strayEvent = strayEvent || eventDays[b.date];
+      strayEvent = strayEvent || ev;
     }
   });
 

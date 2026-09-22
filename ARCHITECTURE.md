@@ -301,9 +301,12 @@ rename that leaves two near-identical names gets a warning that says which
 Teams-tab name it nearly matched.
 
 A forgotten Event cell: a sheet that runs a season and a showcase always has
-both kinds of row, so the mix proves nothing. What does prove something is a
-row with a blank Event sitting on a day that belongs to an event. That row
-drops into League play on its own, and the parser says so.
+both kinds of row, so the mix proves nothing. Nor does the date on its own:
+while one team is away at a tournament, two other league teams can have a
+normal game that same day. What does prove something is a row with a blank
+Event whose away or home team is also in an event game that day. A team
+cannot be in two places at once, so that row is a forgotten cell. It drops
+into League play on its own, and the parser says so.
 
 Missing scores: at the start of a season every game is in the future and
 every score is legitimately blank. Only a game whose date has passed is

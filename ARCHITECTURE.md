@@ -32,7 +32,7 @@ docs/
     shape/            settings.js  teams.js  games.js  stats.js  rinks.js
                       sponsors.js
                       CSV rows -> objects, plus manager warnings
-    model/            game.js  standings.js  views.js  links.js
+    model/            game.js  standings.js  rating.js  views.js  links.js
                       what the data means: records, tiebreaks, tabs,
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
@@ -202,7 +202,7 @@ Two rules that are not stylistic:
 The CONFIG block in `index.html` ends with a `features` object, one boolean
 per optional card or data-driven piece of the page: `nextGame`, `sponsors`,
 `stats`, `events`, `preseason`, `directions`, `calendar`, `seasonCalendar`,
-`mhrLinks`, `monoNumbers`. `on(name)` in `state.js` is true unless the block says `false`;
+`mhrLinks`, `monoNumbers`, `rating`. `on(name)` in `state.js` is true unless the block says `false`;
 a name missing from the block counts as on, so an `index.html` written
 before a switch existed keeps every feature it had. Small controls (the
 Refresh button, the Setup check link, the record chip, the All/Ours switch,
@@ -457,6 +457,56 @@ order. `allEqual()` decides that, and for a pair it also looks at
 head-to-head: a pair the sequence split on head-to-head used to be flagged
 level and shown with one rank number. Do not add a special case to the
 comparator; add a sequence.
+
+## Team rating
+
+The Rtg column in every standings table, from `model/rating.js`. It answers
+"how many goals better or worse than an average team in this table is this
+team, once you count who they played." +1.5 means about a goal and a half
+better than average; two teams' ratings subtracted is roughly the margin you
+would expect between them on neutral ice.
+
+It is the MyHockey Rankings idea (each game is worth the opponent's rating
+plus the goal margin, and a team's rating is the average of its games) with
+four changes, all in the `RATING` block at the top of the file:
+
+- **Margins are softened.** Goals 1 to 3 of a margin count in full, goals 4
+  to 6 count half, anything past 6 counts nothing. A 12-0 win is worth 4.5,
+  the same as 6-0. MHR caps at 7, so one blowout is worth seven 1-goal wins.
+- **Two ghost games.** Every team starts with two games at exactly average.
+  After three real games they still hold a team near the middle; after
+  twenty they barely register. This is what keeps one early result from
+  deciding the table.
+- **Old games fade.** A game counts half as much once it is 60 days old, a
+  quarter at 120. Kids get better between October and February.
+- **Solved together.** Every rating depends on the others, so all of them
+  are recomputed round after round (up to 200, usually far fewer) until no
+  rating moves more than 0.0005, and after each round they are shifted so
+  the average team sits at 0.
+
+The rating uses exactly the games the table counts: `standings()` collects
+them as it tallies and hands them to `ratings()`. So an event table rates
+from that event's pool games, and the league table from league games. It
+never changes the order; points and the tiebreak sequence still do that. A
+team with no game yet shows a dash, not 0.0, because 0.0 would claim it is
+average. Rounding is done on the size and the sign put back, so two
+mirror-image teams always show mirror-image ratings.
+
+The numbers in `RATING` are starting points. Once a season has enough
+results, check them: for each game, did the higher-rated team (rated from
+the games before it) win? Change one knob at a time.
+
+Under each table that has a score in it, `ratingNoteHtml()` in
+`ui/standings.js` prints a short guide for parents: what the number is, that
+0.0 is average and +1.0 is about a goal a game better, how to compare two
+teams by subtracting, and the three fairness rules. It is its own block, not
+folded into the tiebreak sentence, so it reads as a key.
+
+The column shows goals with one decimal (+0.8), on purpose. A whole-number
+version (tenths, +8) was tried and dropped: it sat next to the +/- column,
+which is in real goals, and read as eight goals.
+
+`rating: false` in the features block removes the column and its guide.
 
 ## Views
 
@@ -729,10 +779,10 @@ right place: labels match by prefix and order disambiguates.
 ## Testing
 
 `tests/qa.js` boots the real page in headless Chromium with every Google
-request answered from `tests/fixtures/`, drives it, and checks the DOM: 205
+request answered from `tests/fixtures/`, drives it, and checks the DOM: 334
 checks across the read routes, the Events tab in three calendar situations,
 the Stats tab, directions and calendar links, sponsors, MyHockey links, the
-feature switches, the September 2026 review fixes (PM face-off, team-name
+feature switches, the team rating, the September 2026 review fixes (PM face-off, team-name
 snap, garbled schedule, transient 404, head-to-head rank, DTSTAMP) and the
 saved copy. `npm install` once, `npm test` after any change. Screenshots
 land in `tests/out/`. The number of checks is not a target; add one when a

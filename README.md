@@ -163,6 +163,7 @@ where it was.
 | `seasonCalendar` | the whole-season calendar link under the schedule |
 | `mhrLinks` | MyHockey Rankings links on team names |
 | `monoNumbers` | Chivo Mono on the figures (they go back to Barlow) |
+| `rating` | the Rtg column in the standings |
 
 Add `?admin` to the address for one more thing: a "Gameday post" button on
 every game of ours still to be played, which makes a 1080 x 1080 Instagram
@@ -185,7 +186,7 @@ JSDoc docblock on every function, and comments that carry only the rule a
 reader needs. The reasoning lives in `ARCHITECTURE.md`. No em-dashes.
 
 `tests/` boots the real page in a headless browser with every sheet request
-answered from fixture CSVs and runs 205 checks. `npm install` once, then
+answered from fixture CSVs and runs 334 checks. `npm install` once, then
 `npm test` after any change.
 
 To deploy a change, drag the changed files onto the repo's upload page and

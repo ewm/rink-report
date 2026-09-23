@@ -14,6 +14,45 @@ import { fmtDate, todayISO } from "../util/dates.js";
 import { bare, esc } from "../util/text.js";
 
 /**
+ * A rating for a table cell: signed, one decimal, or a dash before the
+ * team's first game.
+ *
+ * @param {number|null} x
+ * @returns {string}
+ */
+function ratingText(x) {
+  if (x === null || x === undefined) {
+    return "&ndash;";
+  }
+
+  return (x > 0 ? "+" : "") + x.toFixed(1);
+}
+
+/**
+ * The short guide to the Rtg column under a standings table: what the
+ * number is, how to read it, and the three rules that keep it fair.
+ * See ARCHITECTURE.md, "Team rating".
+ *
+ * @returns {string} HTML.
+ */
+function ratingNoteHtml() {
+  return (
+    '<div class="foot rtgnote">' +
+    "<p><b>Rtg</b> is how many goals better (+) or worse (-) a team is than an average team " +
+    "in this table, after counting how strong each opponent was.</p>" +
+    "<ul>" +
+    "<li><b>0.0</b> is average. <b>+1.0</b> is about a goal a game better. <b>-1.0</b> is a goal worse.</li>" +
+    "<li>To size up a game, subtract the two ratings. A +1.4 team playing a +0.8 team " +
+    "should win by about half a goal.</li>" +
+    "<li>To keep it fair: goals past 3 in one game count less, recent games count more, and every " +
+    "team starts with two average games so one big result can't swing it.</li>" +
+    "</ul>" +
+    "<p>Points still decide the standings. Rtg adds how tough each team's games have been.</p>" +
+    "</div>"
+  );
+}
+
+/**
  * A team name, linked to its MyHockey Rankings page when the Teams tab has
  * one, plain text when it does not. The link opens in a new tab and the
  * stylesheet draws the outbound arrow. See ARCHITECTURE.md, "Standings".
@@ -61,6 +100,7 @@ function standingsHtml(v, flat, rules) {
   var grouped = false;
   var t;
   var soleGroup = "";
+  var showRating = on("rating");
 
   // Until a counted score is in, the table is a team list and gets no rank numbers.
   var anyPlayed = false;
@@ -121,7 +161,11 @@ function standingsHtml(v, flat, rules) {
       body +=
         '<table><thead><tr><th scope="col">Team</th><th scope="col">GP</th><th scope="col">W</th>' +
         '<th scope="col">L</th><th scope="col">T</th><th scope="col">GF</th><th scope="col">GA</th>' +
-        '<th scope="col">+/-</th><th scope="col">Pts</th></tr></thead><tbody>';
+        '<th scope="col">+/-</th><th scope="col">Pts</th>' +
+        (showRating
+          ? '<th scope="col" class="rtg"><abbr title="Team rating: goals better or worse than an average team here">Rtg</abbr></th>'
+          : "") +
+        "</tr></thead><tbody>";
 
       var shownRank = 0;
       var prevPts = null;
@@ -163,7 +207,9 @@ function standingsHtml(v, flat, rules) {
           r.diff +
           '</td><td class="pts">' +
           r.pts +
-          "</td></tr>";
+          "</td>" +
+          (showRating ? '<td class="rtg">' + ratingText(r.rating) + "</td>" : "") +
+          "</tr>";
       });
 
       body += "</tbody></table>";
@@ -194,6 +240,10 @@ function standingsHtml(v, flat, rules) {
 
     if (note) {
       body += '<p class="foot">' + esc(note) + "</p>";
+    }
+
+    if (showRating && anyPlayed) {
+      body += ratingNoteHtml();
     }
   } else {
     body +=

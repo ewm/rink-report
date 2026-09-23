@@ -155,6 +155,15 @@ tbody td:first-child{text-align:left; padding-left:32px; text-indent:-24px;
   color:var(--ink); width:99%;
   white-space:normal; overflow-wrap:anywhere; font-size:15px}
 tbody td.pts{color:var(--ink); font-weight:700; font-size:17px}
+/* The rating sits after points and reads quieter than them: points decide
+   the order, the rating is context. */
+tbody td.rtg{color:var(--ink-2); font-size:13px}
+thead th.rtg abbr{text-decoration:none; cursor:help}
+/* The Rtg guide under the table: same small type as the tiebreak note. */
+.card .rtgnote p{margin:0 0 4px}
+.card .rtgnote ul{margin:0 0 4px; padding-left:16px}
+.card .rtgnote li{margin:0}
+.card .rtgnote b{color:var(--ink-2)}
 tr.us td{background:var(--us-bg)}
 tr.us td:first-child{font-weight:700; color:var(--us-ink); box-shadow:inset 4px 0 0 var(--mark)}
 tr.us td{color:var(--us-ink)}

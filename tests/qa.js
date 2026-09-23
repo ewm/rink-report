@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (265 checks, ~2 minutes)
+//   npm test         (334 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -747,7 +747,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
   }
   {
     // the whole list off at once
-    const off = {nextGame:false,sponsors:false,stats:false,events:false,preseason:false,directions:false,calendar:false,seasonCalendar:false,mhrLinks:false,monoNumbers:false};
+    const off = {nextGame:false,sponsors:false,stats:false,events:false,preseason:false,directions:false,calendar:false,seasonCalendar:false,mhrLinks:false,monoNumbers:false,rating:false};
     const {page, ctx, errors, asked} = await openPage(browser, BASE, {features:off});
     ok(errors.length===0, 'no page errors with every switch off');
     const gone = await page.evaluate(()=>({
@@ -770,7 +770,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     // and ?check names them
     await page.goto(BASE+'?check'); await page.waitForTimeout(600);
     const diag = await page.$eval('#app', e=>e.textContent);
-    ok(/Features\s+off: nextGame, sponsors, stats, events, preseason, directions, calendar, seasonCalendar, mhrLinks, monoNumbers/.test(diag), '?check lists every switched-off feature');
+    ok(/Features\s+off: nextGame, sponsors, stats, events, preseason, directions, calendar, seasonCalendar, mhrLinks, monoNumbers, rating/.test(diag), '?check lists every switched-off feature');
     await ctx.close();
   }
   {
@@ -1399,6 +1399,77 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await p2.waitForTimeout(200);
     ok(/Can't load the team list/.test(await p2.$eval('body', e=>e.textContent)), 'a missing teams.js says it cannot load, not "No teams yet"');
     await ctx2.close();
+  }
+
+  // 33. Team rating (the Rtg column)
+  console.log('\n[33] team rating');
+  {
+    // The math, straight from the module.
+    const r = await openPage(browser, BASE, {});
+    const m = await r.page.evaluate(async ()=>{
+      const R = await import('/js/model/rating.js');
+      const today = new Date(); const iso = d=>{ const x=new Date(today); x.setDate(x.getDate()-d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+      const g = (home, away, hs, as, ago)=>({home, away, hs, as, date: iso(ago||0)});
+      return {
+        soft: [0,1,3,4,6,10,-10].map(R.softMargin),
+        pair: R.ratings([g('A','B',3,0)]),
+        blow6: R.ratings([g('A','B',6,0)]),
+        blow12: R.ratings([g('A','B',12,0)]),
+        // Same 3-0 win, played 60 days ago, against a team C beat 3-0 today.
+        old: R.ratings([g('A','B',3,0,60), g('C','B',3,0,0)]),
+        // Strength of schedule: A and C both win 2-1, but A's opponent beat D 5-0.
+        sos: R.ratings([g('A','B',2,1), g('B','D',5,0), g('C','E',2,1)]),
+        none: Object.keys(R.ratings([])).length
+      };
+    });
+    ok(m.soft.join(',')==='0,1,3,3.5,4.5,4.5,-4.5', 'margins: goals 1-3 full, 4-6 half, nothing past 6: '+m.soft.join(','));
+    // The exact answer is +0.75 / -0.75, which sits on a rounding edge.
+    ok(m.pair.A===-m.pair.B && m.pair.A>=0.7 && m.pair.A<=0.8, 'one 3-0 game with two ghost games each: about +0.75 / -0.75, mirror images: '+JSON.stringify(m.pair));
+    ok(m.blow6.A===m.blow12.A, 'a 12-0 win is worth no more than a 6-0 win: '+m.blow6.A+' / '+m.blow12.A);
+    ok(m.old.C > m.old.A, 'the same win counts less when it is 60 days old: C '+m.old.C+' > A '+m.old.A);
+    ok(m.sos.A > m.sos.C, 'beating a stronger team by 1 is worth more than beating a weaker one by 1: A '+m.sos.A+' > C '+m.sos.C);
+    ok(m.none===0, 'no games, no ratings');
+
+    // The showcase table on the page: every team rated, Rtg is the last
+    // column, the ratings average out to zero, and points still set the order.
+    await r.page.click('.evrow');
+    await r.page.waitForTimeout(150);
+    const t = await r.page.evaluate(()=>{
+      const tb = document.querySelector('table');
+      return {
+        head: [...tb.querySelectorAll('thead th')].map(x=>x.textContent),
+        rows: [...tb.querySelectorAll('tbody tr')].map(tr=>({
+          pts: +tr.querySelector('td.pts').textContent,
+          rtg: (tr.querySelector('td.rtg')||{}).textContent })),
+        foot: (tb.closest('.card').querySelector('.rtgnote')||{}).textContent || '',
+        wide: document.documentElement.scrollWidth
+      };
+    });
+    ok(t.head[t.head.length-1]==='Rtg' && t.head[t.head.length-2]==='Pts', 'Rtg is the last column, after Pts: '+t.head.join('/'));
+    ok(t.rows.length===6 && t.rows.every(x=>/^[+-]?\d+\.\d$/.test(x.rtg)), 'every showcase team has a signed one-decimal rating: '+t.rows.map(x=>x.rtg).join(' '));
+    const sum = t.rows.reduce((a,x)=>a+(+x.rtg),0);
+    ok(Math.abs(sum) <= 0.3, 'ratings average out to zero (sum '+sum.toFixed(2)+')');
+    ok(t.rows.every((x,i)=>i===0 || t.rows[i-1].pts>=x.pts), 'points still set the order, not the rating');
+    ok(/Rtg is how many goals better/.test(t.foot) && /0\.0 is average/.test(t.foot) && /subtract the two ratings/.test(t.foot) && !/—/.test(t.foot.split('Rtg is')[1]), 'the note under the table explains Rtg in plain words: '+t.foot);
+    ok(t.wide<=412, 'no sideways page scroll at 412px with the extra column: '+t.wide);
+    await r.ctx.close();
+  }
+  {
+    // A team yet to play shows a dash, not 0.0.
+    const r = await openPage(browser, BASE, {schedule:'scored'});
+    const rows = await r.page.$$eval('table tbody tr', trs=>trs.map(tr=>({gp:tr.children[1].textContent, rtg:tr.querySelector('td.rtg').textContent})));
+    ok(rows.length>0 && rows.filter(x=>x.gp==='0').every(x=>x.rtg==='–') && rows.filter(x=>x.gp!=='0').every(x=>/\d\.\d/.test(x.rtg)), 'league table: played teams rated, unplayed teams show a dash: '+JSON.stringify(rows));
+    await r.ctx.close();
+  }
+  {
+    // rating:false takes the column and its note away.
+    const r = await openPage(browser, BASE, {schedule:'scored', features:{rating:false}});
+    const off = await r.page.evaluate(()=>({
+      rtg: document.querySelectorAll('.rtg').length,
+      head: [...document.querySelectorAll('table thead th')].map(x=>x.textContent).join('/'),
+      foot: (document.querySelector('table').closest('.card').querySelector('.rtgnote')||{}).textContent || '' }));
+    ok(off.rtg===0 && /Pts$/.test(off.head) && !/Rtg/.test(off.foot), 'rating off: no Rtg column, no note: '+off.head);
+    await r.ctx.close();
   }
 
   await browser.close(); sNew.close();

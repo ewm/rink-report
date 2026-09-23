@@ -7,6 +7,7 @@
  * See ARCHITECTURE.md, "Standings and tiebreaks".
  */
 import { isBracket, isExhibition, played } from "./game.js";
+import { ratings } from "./rating.js";
 import { state } from "../state.js";
 import { bare, norm } from "../util/text.js";
 
@@ -98,7 +99,9 @@ var METRIC = {
  *
  * Scrimmages count toward nothing, and at an event bracket games do not
  * move the pool standings. `cap` accumulates the capped goal margin for
- * rulesets with a cap.
+ * rulesets with a cap. Each row also gets `rating` (see model/rating.js),
+ * worked out from the same games the table counts, or null before the
+ * team's first game. The rating never changes the order.
  *
  * @param {Object[]} games
  * @param {string[]} teams - The clubs to list.
@@ -109,6 +112,7 @@ var METRIC = {
 function standings(games, teams, isEvent, rules) {
   var cfg = state.data.config;
   var rows = bare();
+  var counted = [];
   var i;
   var g;
 
@@ -153,6 +157,7 @@ function standings(games, teams, isEvent, rules) {
       continue;
     }
 
+    counted.push(g);
     h.gp++;
     a.gp++;
     h.gf += g.hs;
@@ -182,6 +187,7 @@ function standings(games, teams, isEvent, rules) {
     }
   }
 
+  var rated = ratings(counted);
   var out = [];
 
   for (var k in rows) {
@@ -190,6 +196,7 @@ function standings(games, teams, isEvent, rules) {
 
       r.pts = r.w * cfg.ptsWin + r.t * cfg.ptsTie + r.l * cfg.ptsLoss;
       r.diff = r.gf - r.ga;
+      r.rating = r.gp ? rated[r.team] : null;
       out.push(r);
     }
   }

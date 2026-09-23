@@ -60,7 +60,8 @@ var FEATURES = [
   "calendar",
   "seasonCalendar",
   "mhrLinks",
-  "monoNumbers"
+  "monoNumbers",
+  "rating"
 ];
 
 /**

@@ -1,4 +1,4 @@
-# Rink Report
+# Check The Rink
 
 A standings page for a youth hockey team, run off a Google Sheet.
 

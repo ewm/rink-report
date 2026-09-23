@@ -209,3 +209,10 @@ No rosters. No logins. No notifications. No admin panel.
 Every one of those adds something that has to be maintained mid-season,
 which is exactly when volunteer-run team sites die. The sheet is the admin
 panel.
+
+## Copyright
+
+Copyright (c) 2026 Minted Moose LLC. All rights reserved. The code is public
+so GitHub Pages can host it, not as a license to reuse it. See `LICENSE`.
+Both the team pages and the landing page carry the same notice in their
+footers.

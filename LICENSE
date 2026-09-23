@@ -1,0 +1,20 @@
+Copyright (c) 2026 Minted Moose LLC. All rights reserved.
+
+This repository holds the source code, design, text and documentation for
+Check The Rink (checktherink.com), including the Rink Report team pages and
+the team rating in docs/js/model/rating.js.
+
+The code is published so the site can be hosted on GitHub Pages and so its
+work can be checked. Publishing it does not grant a license. No part of it
+may be copied, modified, distributed, sold, or used to build another product
+or service without written permission from Minted Moose LLC.
+
+GitHub's Terms of Service let other GitHub users view and fork public
+repositories on GitHub itself. That is all they allow. They grant no right to
+use this code anywhere else.
+
+Team names, schedules, scores and player statistics shown on the site belong
+to the teams and leagues that entered them and are not covered by this
+notice.
+
+For permission, contact Minted Moose LLC through github.com/ewm.

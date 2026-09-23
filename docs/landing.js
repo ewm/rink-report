@@ -386,6 +386,7 @@
       + '<footer class="foot">'
       + "<p>Each team's page is kept by that team's manager, from their own spreadsheet.</p>"
       + "<p>Add your team's page to your home screen to skip this step next time.</p>"
+      + "<p>&copy; 2026 Minted Moose LLC. All rights reserved.</p>"
       + "</footer>";
 
     el.innerHTML = html;

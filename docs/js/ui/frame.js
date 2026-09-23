@@ -243,7 +243,8 @@ function footHtml() {
     h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span> All teams</a>';
   }
 
-  return h + '<p class="foot">Scores are entered by the team after each game.<br><a href="?check">Setup check</a></p>';
+  return h + '<p class="foot">Scores are entered by the team after each game.<br><a href="?check">Setup check</a>' +
+    '<br>&copy; 2026 Minted Moose LLC. All rights reserved.</p>';
 }
 
 export {

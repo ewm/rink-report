@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (334 checks, ~2 minutes)
+//   npm test         (336 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1419,7 +1419,14 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
         old: R.ratings([g('A','B',3,0,60), g('C','B',3,0,0)]),
         // Strength of schedule: A and C both win 2-1, but A's opponent beat D 5-0.
         sos: R.ratings([g('A','B',2,1), g('B','D',5,0), g('C','E',2,1)]),
-        none: Object.keys(R.ratings([])).length
+        none: Object.keys(R.ratings([])).length,
+        // The same games moved five months later: the fade is measured from
+        // the table's latest game, so the ratings must not change.
+        early: R.ratings([g('A','B',3,0,40), g('C','B',2,1,10), g('A','C',1,1,0)]),
+        late: R.ratings([g('A','B',3,0,190), g('C','B',2,1,160), g('A','C',1,1,150)]),
+        // A score that is not a number is skipped, not spread to everyone.
+        bad: R.ratings([g('A','B',3,0), g('C','D',NaN,1)]),
+        nobad: R.ratings([g('A','B',3,0)])
       };
     });
     ok(m.soft.join(',')==='0,1,3,3.5,4.5,4.5,-4.5', 'margins: goals 1-3 full, 4-6 half, nothing past 6: '+m.soft.join(','));
@@ -1429,6 +1436,8 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(m.old.C > m.old.A, 'the same win counts less when it is 60 days old: C '+m.old.C+' > A '+m.old.A);
     ok(m.sos.A > m.sos.C, 'beating a stronger team by 1 is worth more than beating a weaker one by 1: A '+m.sos.A+' > C '+m.sos.C);
     ok(m.none===0, 'no games, no ratings');
+    ok(JSON.stringify(m.early)===JSON.stringify(m.late), 'ratings do not drift with the calendar when no new games are played: '+JSON.stringify(m.early)+' / '+JSON.stringify(m.late));
+    ok(JSON.stringify(m.bad)===JSON.stringify(m.nobad) && m.bad.A!==0, 'a game with a score that is not a number is left out: '+JSON.stringify(m.bad));
 
     // The showcase table on the page: every team rated, Rtg is the last
     // column, the ratings average out to zero, and points still set the order.
@@ -1450,7 +1459,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const sum = t.rows.reduce((a,x)=>a+(+x.rtg),0);
     ok(Math.abs(sum) <= 0.3, 'ratings average out to zero (sum '+sum.toFixed(2)+')');
     ok(t.rows.every((x,i)=>i===0 || t.rows[i-1].pts>=x.pts), 'points still set the order, not the rating');
-    ok(/Rtg is how many goals better/.test(t.foot) && /0\.0 is average/.test(t.foot) && /subtract the two ratings/.test(t.foot) && !/—/.test(t.foot.split('Rtg is')[1]), 'the note under the table explains Rtg in plain words: '+t.foot);
+    ok(/Rtg is how many goals a game better/.test(t.foot) && /0\.0 is average/.test(t.foot) && /cautious guess/.test(t.foot) && !/—/.test(t.foot.split('Rtg is')[1]), 'the note under the table explains Rtg in plain words: '+t.foot);
     ok(t.wide<=412, 'no sideways page scroll at 412px with the extra column: '+t.wide);
     await r.ctx.close();
   }

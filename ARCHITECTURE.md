@@ -462,9 +462,9 @@ comparator; add a sequence.
 
 The Rtg column in every standings table, from `model/rating.js`. It answers
 "how many goals better or worse than an average team in this table is this
-team, once you count who they played." +1.5 means about a goal and a half
-better than average; two teams' ratings subtracted is roughly the margin you
-would expect between them on neutral ice.
+team, once you count who they played." +1.5 is stronger than +0.5, and the
+gap between two teams is a cautious guess at the margin between them (real
+margins run about a third bigger; see the guide paragraph below).
 
 It is the MyHockey Rankings idea (each game is worth the opponent's rating
 plus the goal margin, and a team's rating is the average of its games) with
@@ -477,8 +477,12 @@ four changes, all in the `RATING` block at the top of the file:
   After three real games they still hold a team near the middle; after
   twenty they barely register. This is what keeps one early result from
   deciding the table.
-- **Old games fade.** A game counts half as much once it is 60 days old, a
-  quarter at 120. Kids get better between October and February.
+- **Old games fade.** A game 60 days older than the table's latest game
+  counts half, 120 days older a quarter. Kids get better between October and
+  February. Age is measured from the latest game, not from today: measured
+  from today, every rating shrank a little each day with no new games, and an
+  event table kept fading for months after the event. A game with a score
+  that is not a finite number is dropped before any of this.
 - **Solved together.** Every rating depends on the others, so all of them
   are recomputed round after round (up to 200, usually far fewer) until no
   rating moves more than 0.0005, and after each round they are shifted so
@@ -498,8 +502,13 @@ the games before it) win? Change one knob at a time.
 
 Under each table that has a score in it, `ratingNoteHtml()` in
 `ui/standings.js` prints a short guide for parents: what the number is, that
-0.0 is average and +1.0 is about a goal a game better, how to compare two
-teams by subtracting, and the three fairness rules. It is its own block, not
+0.0 is average, that the gap between two teams is a cautious guess at the
+margin, and the fairness rules. "Cautious" is deliberate. Both peer reviews
+(Youth Hockey/Rink-Report-Rating-Peer-Review-2026-09-23.md) found a 1.0 gap
+works out to about 1.3 goals in a typical league, because the softened
+margin trims blowouts and the ghost games hold new teams near 0. The guide
+used to promise "+1.0 is about a goal" and was changed rather than the
+margin curve, which is kept for sportsmanship. It is its own block, not
 folded into the tiebreak sentence, so it reads as a key.
 
 The column shows goals with one decimal (+0.8), on purpose. A whole-number
@@ -779,7 +788,7 @@ right place: labels match by prefix and order disambiguates.
 ## Testing
 
 `tests/qa.js` boots the real page in headless Chromium with every Google
-request answered from `tests/fixtures/`, drives it, and checks the DOM: 334
+request answered from `tests/fixtures/`, drives it, and checks the DOM: 336
 checks across the read routes, the Events tab in three calendar situations,
 the Stats tab, directions and calendar links, sponsors, MyHockey links, the
 feature switches, the team rating, the September 2026 review fixes (PM face-off, team-name

@@ -38,14 +38,15 @@ function ratingText(x) {
 function ratingNoteHtml() {
   return (
     '<div class="foot rtgnote">' +
-    "<p><b>Rtg</b> is how many goals better (+) or worse (-) a team is than an average team " +
+    "<p><b>Rtg</b> is how many goals a game better (+) or worse (-) a team is than an average team " +
     "in this table, after counting how strong each opponent was.</p>" +
     "<ul>" +
-    "<li><b>0.0</b> is average. <b>+1.0</b> is about a goal a game better. <b>-1.0</b> is a goal worse.</li>" +
-    "<li>To size up a game, subtract the two ratings. A +1.4 team playing a +0.8 team " +
-    "should win by about half a goal.</li>" +
-    "<li>To keep it fair: goals past 3 in one game count less, recent games count more, and every " +
-    "team starts with two average games so one big result can't swing it.</li>" +
+    "<li><b>0.0</b> is average. Higher means stronger.</li>" +
+    "<li>The gap between two teams is a cautious guess at the goal margin between them. " +
+    "Real margins usually run a bit bigger, because blowouts are trimmed and teams with " +
+    "few games are held close to 0.</li>" +
+    "<li>To keep it fair: goals past 3 in one game count half, goals past 6 don't count, recent " +
+    "games count more, and every team starts with two average games so one big result can't swing it.</li>" +
     "</ul>" +
     "<p>Points still decide the standings. Rtg adds how tough each team's games have been.</p>" +
     "</div>"

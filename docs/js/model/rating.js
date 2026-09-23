@@ -6,18 +6,22 @@
  * averaged over games) with four changes for a youth season.
  * See ARCHITECTURE.md, "Team rating".
  */
-import { daysUntil } from "../util/dates.js";
+import { dateObj } from "../util/dates.js";
 import { bare } from "../util/text.js";
 
 /**
  * The tuning knobs. Starting points, meant to be checked against real
- * results once the season has enough of them.
+ * results once the season has enough of them. See the peer review of
+ * Sept 23 2026 for how each one was tested.
+ *
+ * ghostGames must stay above 0: at 0 the rounds flip back and forth and
+ * never settle. halfLifeDays at 0 or below switches the fade off.
  */
 var RATING = {
   fullGoals: 3, // goals 1 to 3 of a margin count in full
   halfGoals: 6, // goals 4 to 6 count half; past this they count nothing
   ghostGames: 2, // every team starts with this many games at league average
-  halfLifeDays: 60, // a game this old counts half as much as one played today
+  halfLifeDays: 60, // a game this much older than the table's latest game counts half
   maxRounds: 200,
   settled: 0.0005 // stop once no rating moves more than this in a round
 };
@@ -38,17 +42,36 @@ function softMargin(m) {
 }
 
 /**
- * How much a game counts by its age: 1 today, a half at halfLifeDays, a
- * quarter at twice that. A game dated in the future counts 1.
+ * How much a game counts by its age, measured back from the latest game in
+ * the same table (not from today, or every rating would shrink a little each
+ * day with no new games). The latest game counts 1, a game halfLifeDays
+ * older counts a half, twice that a quarter. An unreadable date counts 1.
  *
  * @param {string} iso - The game date.
+ * @param {Date|null} latest - The latest game date in the table.
  * @returns {number}
  */
-function ageWeight(iso) {
-  var d = daysUntil(iso);
-  var age = d === null ? 0 : Math.max(0, -d);
+function ageWeight(iso, latest) {
+  var d = dateObj(iso);
+
+  if (!d || !latest || RATING.halfLifeDays <= 0) {
+    return 1;
+  }
+
+  var age = Math.max(0, Math.round((latest - d) / 86400000));
 
   return Math.pow(0.5, age / RATING.halfLifeDays);
+}
+
+/**
+ * Whether a game has two real scores. A score that is not a finite number
+ * would spread through every rating and show the whole column as 0.0.
+ *
+ * @param {Object} g
+ * @returns {boolean}
+ */
+function hasScores(g) {
+  return Number.isFinite(g.hs) && Number.isFinite(g.as);
 }
 
 /**
@@ -69,12 +92,24 @@ function ageWeight(iso) {
 function ratings(games) {
   var links = bare();
   var names = [];
+  var latest = null;
   var i;
+
+  games = games.filter(hasScores);
+
+  // The latest game date sets "now" for the fade.
+  for (i = 0; i < games.length; i++) {
+    var day = dateObj(games[i].date);
+
+    if (day && (!latest || day > latest)) {
+      latest = day;
+    }
+  }
 
   // Each team's list of {opp, margin, weight}, one entry per game.
   for (i = 0; i < games.length; i++) {
     var g = games[i];
-    var w = ageWeight(g.date);
+    var w = ageWeight(g.date, latest);
     var m = softMargin(g.hs - g.as);
 
     if (!links[g.home]) {

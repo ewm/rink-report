@@ -48,7 +48,7 @@ function ratingNoteHtml() {
     "<li>To keep it fair: goals past 3 in one game count half, goals past 6 don't count, recent " +
     "games count more, and every team starts with two average games so one big result can't swing it.</li>" +
     "</ul>" +
-    "<p>Points still decide the standings. Rtg adds how tough each team's games have been.</p>" +
+    "<p>Points show who won. Rtg shows who is playing best once you count who they played.</p>" +
     "</div>"
   );
 }

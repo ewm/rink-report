@@ -17,7 +17,7 @@ import { bare } from "../util/text.js";
  * never settle.
  */
 var RATING = {
-  cap: 8, // a margin counts up to 8 goals, the same cap the USA Hockey tiebreak uses
+  cap: 8, // a margin counts up to 8 goals, so a runaway score or a typo can't swing a table
   ghostGames: 2, // every team starts with this many games at league average
   maxRounds: 200,
   settled: 0.0005 // stop once no rating moves more than this in a round

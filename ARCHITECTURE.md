@@ -458,6 +458,23 @@ head-to-head: a pair the sequence split on head-to-head used to be flagged
 level and shown with one rank number. Do not add a special case to the
 comparator; add a sequence.
 
+`wnyahl` is the one ruleset that is not a sequence, because the WNYAHL
+rulebook restarts. `wnyahlPlace()` takes teams level on points and applies,
+in order: step 1, only when every tied team has played every other, their
+games against each other (points, wins, differential, goals for divided by
+goals against); then step 2, all games (wins, differential with no cap,
+quotient). The first measure that separates anyone places them, and each
+group still tied starts again at step 1 with only its own members, as the
+rulebook says ("the remaining tied teams shall start the tie breaking
+process again at step 1"). A quotient with no goals against beats any real
+quotient, and those teams are then ordered by goals for. The rulebook's
+last steps (periods won, quickest first goal, a shootout) need data the
+sheet does not have, so teams still tied after step 2 are marked level with
+a `tieKey`, and the table only shares a rank number between rows with the
+same `tieKey`. Each row carries `vs`, its record against each opponent, for
+step 1. Forfeits are recorded by the league as 1-0 wins, so a forfeit typed
+into the sheet as 1-0 is already scored the league's way.
+
 ## Team rating
 
 The Rtg column in every standings table, from `model/rating.js`. It answers
@@ -470,9 +487,10 @@ It is the MyHockey Rankings idea (each game is worth the opponent's rating
 plus the goal margin, and a team's rating is the average of its games) with
 these rules, all in the `RATING` block at the top of the file:
 
-- **Margins count up to 8 goals.** The same cap the USA Hockey tiebreak
-  uses, which is the rule the league already applies to goal differential.
-  A 12-0 win is worth 8, the same as 8-0. MHR caps at 7.
+- **Margins count up to 8 goals.** A 12-0 win is worth 8, the same as 8-0,
+  so a runaway score or a typo (19-2 for 9-2) can't swing a table. MHR caps
+  at 7. The WNYAHL tiebreak itself has no cap; in simulation no cap and an
+  8-goal cap predicted equally well, so the cap stays for the typo guard.
 - **Two ghost games.** Every team starts with two games at exactly average.
   After three real games they still hold a team near the middle; after
   twenty they barely register. This is what keeps one early result from
@@ -513,7 +531,8 @@ was the margin close to the rating gap? Change one knob at a time.
 Under each table that has a score in it, `ratingNoteHtml()` in
 `ui/standings.js` prints a short guide for parents: what the number is, that
 0.0 is average and +1.0 is about a goal a game better, how to size up a game
-by subtracting, and the two rules (8-goal cap, two average games). It is its
+by subtracting, and the two rules (8-goal cap, two average games). It does
+not claim the league uses the same cap: WNYAHL does not cap differential. It is its
 own block, not folded into the tiebreak sentence, so it reads as a key.
 
 The column shows goals with one decimal (+0.8), on purpose. A whole-number
@@ -793,7 +812,7 @@ right place: labels match by prefix and order disambiguates.
 ## Testing
 
 `tests/qa.js` boots the real page in headless Chromium with every Google
-request answered from `tests/fixtures/`, drives it, and checks the DOM: 335
+request answered from `tests/fixtures/`, drives it, and checks the DOM: 340
 checks across the read routes, the Events tab in three calendar situations,
 the Stats tab, directions and calendar links, sponsors, MyHockey links, the
 feature switches, the team rating, the September 2026 review fixes (PM face-off, team-name

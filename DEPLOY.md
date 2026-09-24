@@ -434,6 +434,7 @@ Events publish genuinely different tiebreakers and they produce different tables
 | `goal percentage` | Head-to-head, then goals for ÷ (goals for + against), then differential, then fewest goals against. Common in Canadian events. |
 | `usa hockey` | Most wins, then differential and goal quotient, each capped at eight goals a game. |
 | `differential` | Head-to-head, then goal differential, then goals for. |
+| `wnyahl` | The WNYAHL rulebook. First the games between the tied teams, if they have all played each other (points, wins, differential, goals for ÷ goals against), then all games (wins, differential with no cap, goals for ÷ goals against). Each group still tied starts over. Periods won and quickest first goal aren't in the sheet, so teams still tied after that are shown level. |
 
 Two-team and three-or-more-team ties follow separate paths, because most rulebooks separate them: head-to-head settles a pair and means nothing across three clubs who didn't all play each other. When a group of three narrows to two, the pair falls back to the two-team sequence, which is what the rulebooks say.
 

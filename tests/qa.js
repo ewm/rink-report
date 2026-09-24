@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (335 checks, ~2 minutes)
+//   npm test         (340 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1476,6 +1476,52 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
       head: [...document.querySelectorAll('table thead th')].map(x=>x.textContent).join('/'),
       foot: (document.querySelector('table').closest('.card').querySelector('.rtgnote')||{}).textContent || '' }));
     ok(off.rtg===0 && /Pts$/.test(off.head) && !/Rtg/.test(off.foot), 'rating off: no Rtg column, no note: '+off.head);
+    await r.ctx.close();
+  }
+
+  // 34. WNYAHL tiebreak rules
+  console.log('\n[34] WNYAHL tiebreaks');
+  {
+    const r = await openPage(browser, BASE, {});
+    const t = await r.page.evaluate(async ()=>{
+      const S = await import('/js/model/standings.js');
+      const g = (home, away, hs, as)=>({home, away, hs, as, date:'2026-10-01', type:'Q-Game'});
+      const run = (games, teams, rules)=>S.standings(games, teams, false, rules).map(x=>x.team+(x.level?'=':'')).join(',');
+      const W = S.RULESETS.wnyahl, U = S.RULESETS.usahockey;
+
+      // A pair level on points that played each other: head-to-head first,
+      // even though B's overall differential is far better.
+      const pair = [g('A','B',2,1), g('B','C',9,0), g('D','A',1,0), g('D','B',1,0)];
+
+      // Three level teams who all played each other, one win each:
+      // head-to-head differential decides.
+      const cycle = [g('A','B',2,1), g('B','X',10,0), g('X','A',1,0)];
+
+      // A is placed by head-to-head points; B and C then start again with
+      // only their own game (a tie), and fall through to all games, where
+      // B's differential is better. Without the restart C would be ahead.
+      const restart = [g('A','B',5,0), g('A','C',1,0), g('B','C',1,1), g('D','A',1,0), g('E','A',1,0),
+                       g('B','D',9,0), g('B','E',0,0), g('C','E',1,0), g('C','D',0,0)];
+
+      // Level teams who never met: all games, differential with no cap.
+      const nocap = [g('A','X',12,0), g('B','Y',9,0)];
+
+      // Two identical records who never met: shown level.
+      const level = [g('A','X',3,1), g('B','Y',3,1)];
+
+      return {
+        pair: run(pair, ['A','B','C','D'], W), pairUsa: run(pair, ['A','B','C','D'], U),
+        cycle: run(cycle, ['A','B','X'], W),
+        restart: run(restart, ['A','B','C','D','E'], W),
+        nocap: run(nocap, ['A','B','X','Y'], W),
+        level: run(level, ['A','B','X','Y'], W)
+      };
+    });
+    ok(t.pair==='D,A,B,C' && t.pairUsa==='D,B,A,C', 'a pair that met: WNYAHL puts the head-to-head winner first, USA Hockey does not: '+t.pair+' / '+t.pairUsa);
+    ok(t.cycle==='B,A,X', 'three who all met with a win each: head-to-head differential decides: '+t.cycle);
+    ok(t.restart==='A,B,C,E,D', 'once A is placed, B and C start again at step 1 and go to all games: '+t.restart);
+    ok(t.nocap.startsWith('A,B'), 'teams who never met: all-games differential with no 8-goal cap (12 beats 9): '+t.nocap);
+    ok(t.level.startsWith('A=,B='), 'identical records who never met are shown level: '+t.level);
     await r.ctx.close();
   }
 

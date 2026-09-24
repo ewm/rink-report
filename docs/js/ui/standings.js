@@ -44,8 +44,8 @@ function ratingNoteHtml() {
     "<li><b>0.0</b> is average. <b>+1.0</b> is about a goal a game better. <b>-1.0</b> is a goal worse.</li>" +
     "<li>To size up a game, subtract the two ratings. A +1.4 team playing a +0.8 team " +
     "should win by about half a goal.</li>" +
-    "<li>A win counts up to 8 goals, the same cap the league's tiebreaker uses. Every team " +
-    "starts with two average games, so one big result early on can't swing it.</li>" +
+    "<li>A win counts up to 8 goals, so a runaway score or a typo can't swing it. Every team " +
+    "starts with two average games, so one big result early on can't swing it either.</li>" +
     "</ul>" +
     "<p>Points show who won. Rtg shows who is playing best once you count who they played.</p>" +
     "</div>"
@@ -170,16 +170,18 @@ function standingsHtml(v, flat, rules) {
       var shownRank = 0;
       var prevPts = null;
       var prevLevel = false;
+      var prevTieKey;
 
       st.forEach(function (r, i) {
         var mine = r.team === cfg.teamName;
 
-        if (!(r.level && prevLevel && r.pts === prevPts)) {
+        if (!(r.level && prevLevel && r.pts === prevPts && r.tieKey === prevTieKey)) {
           shownRank = i + 1;
         }
 
         prevPts = r.pts;
         prevLevel = r.level;
+        prevTieKey = r.tieKey;
 
         body +=
           "<tr" +

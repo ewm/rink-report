@@ -44,6 +44,17 @@ var RULESETS = {
     two: ["h2h", "diff", "gf"],
     many: ["diff", "gf"],
     note: "Ties broken by head-to-head, then goal differential, then goals for."
+  },
+  wnyahl: {
+    label: "WNYAHL",
+    custom: "wnyahl",
+    two: [],
+    many: [],
+    note:
+      "Ties broken by WNYAHL rules: first the games between the tied teams, if they have all " +
+      "played each other (points, wins, goal differential, goals for divided by goals against), " +
+      "then all games (wins, goal differential, goals for divided by goals against). Periods won " +
+      "and quickest first goal aren't in the sheet, so teams still level after that are shown level."
   }
 };
 
@@ -127,7 +138,8 @@ function standings(games, teams, isEvent, rules) {
       ga: 0,
       cap: 0,
       pts: 0,
-      h2h: bare()
+      h2h: bare(),
+      vs: bare()
     };
   }
 
@@ -166,6 +178,9 @@ function standings(games, teams, isEvent, rules) {
     a.ga += g.hs;
 
     var margin = Math.min((rules && rules.cap) || 99, Math.abs(g.hs - g.as));
+
+    addVs(h, g.away, g.hs, g.as);
+    addVs(a, g.home, g.as, g.hs);
 
     if (g.hs > g.as) {
       h.w++;
@@ -240,6 +255,14 @@ function orderTable(rows, rules, isEvent) {
   order.forEach(function (p) {
     var g = groups[p];
 
+    if (rules.custom === "wnyahl") {
+      wnyahlPlace(g).forEach(function (r) {
+        out.push(r);
+      });
+
+      return;
+    }
+
     if (g.length === 1) {
       g[0].level = false;
       out.push(g[0]);
@@ -261,6 +284,204 @@ function orderTable(rows, rules, isEvent) {
   });
 
   return out;
+}
+
+/**
+ * Adds one game to a row's record against one opponent.
+ *
+ * @param {Object} row - A standings row.
+ * @param {string} opp - The opponent's name.
+ * @param {number} gf - Goals this team scored.
+ * @param {number} ga - Goals the opponent scored.
+ */
+function addVs(row, opp, gf, ga) {
+  var v = row.vs[opp] || (row.vs[opp] = { gp: 0, w: 0, t: 0, gf: 0, ga: 0 });
+
+  v.gp++;
+  v.gf += gf;
+  v.ga += ga;
+
+  if (gf > ga) {
+    v.w++;
+  } else if (gf === ga) {
+    v.t++;
+  }
+}
+
+/**
+ * Goals for divided by goals against, the WNYAHL way: dividing by zero
+ * ranks above any real quotient, and teams with no goals against are then
+ * ordered by goals for.
+ *
+ * @param {number} gf
+ * @param {number} ga
+ * @returns {number}
+ */
+function quotientOf(gf, ga) {
+  return ga ? gf / ga : 1e9 + gf;
+}
+
+/**
+ * Whether every pair of teams in a group has played each other at least
+ * once in the counted games.
+ *
+ * @param {Object[]} tied - Standings rows.
+ * @returns {boolean}
+ */
+function allPlayedEachOther(tied) {
+  for (var i = 0; i < tied.length; i++) {
+    for (var j = i + 1; j < tied.length; j++) {
+      if (!tied[i].vs[tied[j].team]) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * The WNYAHL step 1 measures: each team's record in the games between the
+ * tied teams only (points, wins, differential, quotient).
+ *
+ * @param {Object[]} tied - Standings rows.
+ * @returns {Function[]} One function per measure, (row) -> number.
+ */
+function headToHeadMeasures(tied) {
+  var cfg = state.data.config;
+  var mini = bare();
+
+  tied.forEach(function (r) {
+    var m = { pts: 0, w: 0, gf: 0, ga: 0 };
+
+    tied.forEach(function (o) {
+      var v = r.vs[o.team];
+
+      if (o === r || !v) {
+        return;
+      }
+
+      m.w += v.w;
+      m.gf += v.gf;
+      m.ga += v.ga;
+      m.pts += v.w * cfg.ptsWin + v.t * cfg.ptsTie + (v.gp - v.w - v.t) * cfg.ptsLoss;
+    });
+
+    mini[r.team] = m;
+  });
+
+  return [
+    function (r) {
+      return mini[r.team].pts;
+    },
+    function (r) {
+      return mini[r.team].w;
+    },
+    function (r) {
+      return mini[r.team].gf - mini[r.team].ga;
+    },
+    function (r) {
+      return quotientOf(mini[r.team].gf, mini[r.team].ga);
+    }
+  ];
+}
+
+/** The WNYAHL step 2 measures, over all the games each team played. */
+var ALL_GAMES_MEASURES = [
+  function (r) {
+    return r.w;
+  },
+  function (r) {
+    return r.gf - r.ga; // no cap: the league's differential is plain GF - GA
+  },
+  function (r) {
+    return quotientOf(r.gf, r.ga);
+  }
+];
+
+/**
+ * Splits a group by one measure into buckets of equal value, best first.
+ *
+ * @param {Object[]} tied
+ * @param {Function} measure - (row) -> number, higher is better.
+ * @returns {Object[][]}
+ */
+function splitBy(tied, measure) {
+  var sorted = tied.slice().sort(function (x, y) {
+    return measure(y) - measure(x) || x.team.localeCompare(y.team);
+  });
+
+  var buckets = [];
+
+  sorted.forEach(function (r) {
+    var last = buckets[buckets.length - 1];
+
+    if (last && measure(last[0]) === measure(r)) {
+      last.push(r);
+    } else {
+      buckets.push([r]);
+    }
+  });
+
+  return buckets;
+}
+
+/**
+ * Orders teams level on points by the WNYAHL tiebreak.
+ *
+ * Step 1 uses only the games between the tied teams, and only when all of
+ * them have played each other; step 2 uses all games. The first measure
+ * that separates anyone places them, and every group still tied starts
+ * again at step 1 with only its own members. Periods won, quickest first
+ * goal and the shootout need data the sheet does not have, so teams still
+ * tied after step 2 are marked level and share a rank (tieKey keeps two
+ * separate level groups on the same points from sharing one number).
+ *
+ * @param {Object[]} tied - Standings rows level on points.
+ * @returns {Object[]} The same rows, in order.
+ */
+function wnyahlPlace(tied) {
+  if (tied.length === 1) {
+    tied[0].level = false;
+    tied[0].tieKey = undefined;
+    return tied;
+  }
+
+  var measures = allPlayedEachOther(tied) ? headToHeadMeasures(tied) : [];
+
+  measures = measures.concat(ALL_GAMES_MEASURES);
+
+  for (var i = 0; i < measures.length; i++) {
+    var buckets = splitBy(tied, measures[i]);
+
+    if (buckets.length > 1) {
+      var out = [];
+
+      buckets.forEach(function (b) {
+        out = out.concat(wnyahlPlace(b));
+      });
+
+      return out;
+    }
+  }
+
+  var key = tied
+    .map(function (r) {
+      return r.team;
+    })
+    .sort()
+    .join("|");
+
+  tied.sort(function (x, y) {
+    return x.team.localeCompare(y.team);
+  });
+
+  tied.forEach(function (r) {
+    r.level = true;
+    r.tieKey = key;
+  });
+
+  return tied;
 }
 
 /**
@@ -382,4 +603,4 @@ function allEqual(g, seq, rules) {
   return true;
 }
 
-export { rulesFor, standings };
+export { RULESETS, rulesFor, standings };

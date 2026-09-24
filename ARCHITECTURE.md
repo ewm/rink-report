@@ -37,7 +37,9 @@ docs/
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
                       one component per card, each (state) -> HTML string
-.github/workflows/    snapshot.yml, the job that writes each team's data/
+.github/workflows/    snapshot.yml, the job that writes each team's data/,
+                      and sheet-changes.py, its daily change list
+changes/              <team>/<date>.md, what changed in the sheet each day
 tests/                Playwright suite + fixtures; see tests/README.md
 ```
 
@@ -257,7 +259,8 @@ If you find yourself simplifying this back to one route, read
 
 ## The saved copy
 
-`.github/workflows/snapshot.yml` runs every six hours on GitHub. For every
+`.github/workflows/snapshot.yml` runs once a day on GitHub (07:00 UTC, about
+3 AM Eastern), and by hand from the Actions tab. For every
 team folder under `docs/` whose `index.html` has a `sheetId`, it fetches the
 six tabs through the same raw-export URLs the page uses, and commits them to
 `<team>/data/<tab>.csv` plus `<team>/data/updated.txt` (the UTC time of the
@@ -271,6 +274,24 @@ copy's date (`noteSnapshot()` in `app.js` reads `updated.txt` when any tab
 came from the snapshot). `?check` shows `site snapshot` in the Read via line.
 The files are also the backup: if the sheet is lost, they paste straight
 back into a fresh one.
+
+### The change report
+
+Before a tab's copy is replaced, `.github/workflows/sheet-changes.py`
+compares the old and new copies and lists the differences in plain words:
+each changed row with its cells ("Event was blank, now "tttt""), each added
+row, each removed row, all by the row number Google Sheets shows. Rows are
+matched with difflib, so one row typed into the middle is one added row, and
+rows that only moved in a sort are counted, not listed. The header row is
+found by an anchor cell (Date, Field, Rink name, Team name, Sponsor, Player,
+No); rows are named by their Date/Away/Home, Field, Rink name, Team name or
+Sponsor cells when those headings appear once. On the stats tab, a heading
+that repeats (four Player columns) is prefixed with its block title.
+
+The list is appended to `changes/<team>/<date>.md` at the repo root, one
+section per run, and shown on the run's page in the Actions tab. It lives
+outside `docs/` so GitHub Pages never serves it. It only ever compares
+copies that already passed `check-names.py`, so it can't print a full name.
 
 The test suite stubs `data/` to 404 by default, so a local `data/` folder
 never masks a failing route; section [22] serves the fixtures from it.

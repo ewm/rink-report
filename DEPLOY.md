@@ -548,7 +548,7 @@ schedule have no switch.
 
 ### The saved copy of the sheet
 
-Every six hours a small job on GitHub (Actions tab, "Save a copy of the
+Once a day (about 3 AM Eastern) a small job on GitHub (Actions tab, "Save a copy of the
 sheet") reads the six tabs and saves them as CSV files under `data/` in the
 repo, committing only when something changed. Two things that buys you:
 
@@ -558,6 +558,10 @@ repo, committing only when something changed. Two things that buys you:
   standings instead of an error.
 - The files are a backup with history. If the sheet is ever lost, open the
   latest `data/*.csv` on GitHub and paste each one into a fresh sheet.
+- A daily list of what changed in the sheet. Open `changes/wswings12u/` on
+  GitHub and pick the date. Each line names the tab, the row number and what
+  the cell was before and after, so a stray edit like a typo in the Event
+  column is easy to spot and undo.
 
 The job needs nothing from you. If Actions ever shows it red, the usual cause
 is the sheet no longer being shared as "Anyone with the link". Run it by hand

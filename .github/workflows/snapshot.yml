@@ -1,4 +1,5 @@
-# Saves a copy of every team's Google Sheet every six hours.
+# Saves a copy of every team's Google Sheet once a day (about 3 AM Eastern),
+# and writes down what changed since the last copy.
 #
 # Each team page lives in its own folder under docs/ (docs/wswings12u/ and
 # so on) and reads <its folder>/data/<tab>.csv only when Google itself
@@ -6,6 +7,13 @@
 # history in git. Nothing is committed when no sheet has changed. Run it by
 # hand from the Actions tab ("Run workflow") after a big edit if you want
 # the copies fresh right away.
+#
+# Change report: before a tab's copy is replaced, sheet-changes.py compares
+# the old and new copies and lists every changed cell, added row and removed
+# row in plain words, with the row number as Google Sheets shows it. The list
+# goes to changes/<team>/<date>.md at the top of the repo (outside docs/, so
+# the website never serves it) and onto the run's page on the Actions tab.
+# A day with more than one run gets one section per run in the same file.
 #
 # A folder counts as a team when its index.html has a sheetId in it. Only
 # folders are looked at, so the landing page at docs/index.html never is.
@@ -51,6 +59,9 @@ jobs:
             fi
 
             found=1
+            report="$RUNNER_TEMP/$team-changes.md"
+            : > "$report"
+            previous=$(cat "$team/data/updated.txt" 2>/dev/null || true)
             GIDS=$(grep -o 'gids: *{[^}]*}' "$page" || true)
             mkdir -p "$team/data"
             got=0
@@ -74,6 +85,11 @@ jobs:
                   echo "$team/$tab" >> "$GITHUB_WORKSPACE/refused.txt"
                   rm -f "$out.new"
                 else
+                  if ! cmp -s "$out" "$out.new"; then
+                    python3 "$GITHUB_WORKSPACE/.github/workflows/sheet-changes.py" "$out" "$out.new" "${tab^}" >> "$report" \
+                      || echo "$team/$tab: saved, but its changes could not be listed"
+                  fi
+
                   mv "$out.new" "$out"
                   got=1
                 fi
@@ -85,6 +101,28 @@ jobs:
 
             if [ "$got" = 1 ]; then
               date -u +%Y-%m-%dT%H:%M:%SZ > "$team/data/updated.txt"
+            fi
+
+            # Write the change report, when anything changed.
+            if [ -s "$report" ]; then
+              day=$(TZ=America/New_York date +%Y-%m-%d)
+              now=$(TZ=America/New_York date '+%b %-d, %-I:%M %p')
+              log="$GITHUB_WORKSPACE/changes/$team/$day.md"
+              since="the first copy"
+
+              if [ -n "$previous" ]; then
+                since=$(TZ=America/New_York date -d "$previous" '+%b %-d, %-I:%M %p' 2>/dev/null || echo "$previous")
+              fi
+
+              mkdir -p "$(dirname "$log")"
+
+              if [ ! -f "$log" ]; then
+                printf '# %s: sheet changes, %s\n\nTimes are Eastern.\n\n' "$team" "$day" > "$log"
+              fi
+
+              printf '## Copy taken %s (changes since %s)\n\n' "$now" "$since" >> "$log"
+              cat "$report" >> "$log"
+              { printf '## %s: changes since %s\n\n' "$team" "$since"; cat "$report"; } >> "$GITHUB_STEP_SUMMARY"
             fi
           done
 
@@ -106,12 +144,18 @@ jobs:
 
           git add "${dirs[@]}"
 
+          if [ -d "$GITHUB_WORKSPACE/changes" ]; then
+            git add "$GITHUB_WORKSPACE/changes"
+          fi
+
           if git diff --cached --quiet -- . ':(exclude)*/data/updated.txt'; then
             echo "no sheet changed since the last copy"
             exit 0
           fi
 
-          git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          files=$(git diff --cached --name-only)
+          git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -m "Files saved (the day's change list is under changes/):" -m "$files"
           git push
 
       - name: Go red if a tab was refused for full names

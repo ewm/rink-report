@@ -70,7 +70,7 @@ Report. All teams share the same `js/` and `css/`.
 | `docs/css/rink.css` | Every Rink Report style, shared by every team. |
 | `docs/_headers` | Security headers Netlify would read. Ignored by GitHub Pages; harmless. |
 | `docs/.nojekyll` | Tells GitHub Pages to serve the folder as-is. Keep it. |
-| `.github/workflows/snapshot.yml` | The job that saves a copy of every team's sheet. Runs every six hours; commits only when a tab changed. |
+| `.github/workflows/snapshot.yml` | The job that saves a copy of every team's sheet. Runs once a day; commits only when a tab changed, and writes a plain-English list of what changed to `changes/<team>/<date>.md`. |
 | `tests/` | The check suite and its fixture sheets. `npm install`, `npm test`. |
 | `ARCHITECTURE.md` | How the code is put together, the reasoning behind each rule, and how to add to it. |
 | `DEPLOY.md` | Click-by-click setup, about 20 minutes, once. Also the sheet's rules, the Rinks, Sponsors and MyHockey columns, and troubleshooting. |

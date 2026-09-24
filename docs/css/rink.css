@@ -436,4 +436,6 @@ body.post-open{overflow:hidden}
   text-transform:uppercase; padding:12px 10px; cursor:pointer;
   color:var(--on-gold); background:var(--gold); border:1px solid var(--gold)}
 .postacts button:hover,.postacts button:focus-visible{filter:brightness(1.06); outline:none}
+/* With Share and Download side by side, Download is the plain one. */
+.postacts button+button{color:var(--ink); background:transparent; border-color:var(--rule)}
 .postnote{margin:12px 16px 0; font-size:12px; color:var(--ink-2)}

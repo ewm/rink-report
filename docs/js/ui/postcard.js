@@ -340,10 +340,7 @@ function redraw() {
       "Gameday post preview, " + templateByKey(choice.tpl).name + ", " + kit.SIZES[choice.size].label
     );
 
-    note(
-      kit.W + " x " + card.h + ". " +
-        (canShareFiles() ? "Share sends it straight to Instagram." : "Saves as a PNG to your downloads.")
-    );
+    note(kit.W + " x " + card.h + ". " + howToPost());
   });
 }
 
@@ -430,6 +427,10 @@ function onPanelClick(e) {
     redraw();
   }
 
+  if (what === "download" && current) {
+    savePost(panel.querySelector(".postcanvas"), current, false);
+  }
+
   if (what === "nophoto") {
     dropPhoto();
     showPhotoState();
@@ -510,6 +511,40 @@ function fileNameFor(g) {
 }
 
 /**
+ * Whether this is an iPhone or iPad.
+ *
+ * iPadOS reports itself as a Mac, so a Mac with a touch screen counts too.
+ *
+ * @returns {boolean}
+ */
+function isApple() {
+  var ua = navigator.userAgent || "";
+
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+/**
+ * The line under the post saying how to get it into Instagram.
+ *
+ * Instagram does not always show up in the share sheet for a picture that
+ * comes from a web page, so the route that always works is: put the picture
+ * in the phone's photos, then post it from the Instagram app.
+ *
+ * @returns {string}
+ */
+function howToPost() {
+  if (isApple() && canShareFiles()) {
+    return "Tap Share, then Save Image. It goes to Photos, ready to post from Instagram.";
+  }
+
+  if (canShareFiles()) {
+    return "Download puts it in your Downloads. Instagram's photo picker finds it there.";
+  }
+
+  return "Download saves a PNG. Send it to your phone to post it.";
+}
+
+/**
  * Whether this browser can hand a PNG file to another app.
  *
  * Matters because a download link for a generated image does nothing useful
@@ -527,12 +562,14 @@ function canShareFiles() {
 }
 
 /**
- * Saves or shares the drawn post.
+ * Shares or downloads the drawn post.
  *
  * @param {HTMLCanvasElement} canvas
  * @param {Object} g
+ * @param {boolean} share - Open the share sheet when the browser has one.
+ *                          False always downloads.
  */
-function savePost(canvas, g) {
+function savePost(canvas, g, share) {
   var name = fileNameFor(g);
 
   canvas.toBlob(function (blob) {
@@ -541,7 +578,7 @@ function savePost(canvas, g) {
       return;
     }
 
-    if (canShareFiles()) {
+    if (share && canShareFiles()) {
       var file = new File([blob], name, { type: "image/png" });
 
       if (navigator.canShare({ files: [file] })) {
@@ -642,9 +679,8 @@ function openPost(key) {
       "</div>" +
       '<p class="postnote">Drawing&hellip;</p>' +
       '<div class="postacts">' +
-        '<button type="button" data-act="postsave">' +
-          (canShareFiles() ? "Share image" : "Save image") +
-        "</button>" +
+        (canShareFiles() ? '<button type="button" data-act="postsave">Share</button>' : "") +
+        '<button type="button" data-post="download">Download</button>' +
       "</div>" +
     "</div>";
 
@@ -675,7 +711,7 @@ function saveOpenPost() {
     return;
   }
 
-  savePost(panel.querySelector(".postcanvas"), current);
+  savePost(panel.querySelector(".postcanvas"), current, true);
 }
 
 export { openPost, closePost, saveOpenPost, postKey };

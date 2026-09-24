@@ -646,7 +646,7 @@ post" button. It opens a panel where the manager picks:
   their ice." away. The box changes it for this post; the switch under it
   takes it off.
 
-Then Share (phone) or Save (laptop) makes the PNG. No web address on it.
+Then Share or Download makes the PNG. No web address on it.
 
 The last template and size picked are kept in localStorage
 (`checktherink.post`) so the next post opens the same way. The photo is
@@ -709,10 +709,22 @@ wide), and `logo.png` otherwise. Both are same-origin, and the photo is a
 `blob:` URL made from the file on the phone, so the canvas is never
 tainted and `toBlob` works. The photo is never uploaded anywhere.
 
-Saving splits by what the browser can do. Where `navigator.canShare` takes
-files, the button opens the share sheet, which is the only route that ends
-in Instagram on an iPhone; a download link for a generated image does
-nothing useful there. Everywhere else it downloads a PNG named like
+Instagram does not reliably show up in the share sheet for a picture that
+comes from a web page (tried Sept 24 2026: the sheet opened, Instagram was
+not in it). So the panel does not promise a straight path to Instagram. The
+route that works is to get the picture into the phone's photos and post it
+from the Instagram app, and the line under the post says how for each
+device:
+
+- iPhone: Share, then Save Image, which puts it in Photos. A download link
+  on an iPhone lands in the Files app, where Instagram cannot see it, so
+  Share stays the first button there.
+- Android: Download, which lands in Downloads, where Instagram's photo
+  picker looks.
+- Laptop: Download, then send it to the phone.
+
+Share only appears where `navigator.canShare` takes files. Download always
+appears and always downloads (`savePost(..., false)`). Files are named like
 `wings-vs-cheektowaga-warriors-2026-09-28-feed.png`.
 
 `?admin` is tidiness, not security. Everything the page holds is public

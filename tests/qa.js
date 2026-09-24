@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (374 checks, ~2 minutes)
+//   npm test         (377 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1243,6 +1243,15 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const [pr,,pb] = withPhoto.photo.split(',').map(Number);
     ok(pr>80 && pr>pb*2, 'the chosen photo fills the photo area, tinted: '+withPhoto.photo+' (was '+noPhoto.photo+')');
     ok(!(await r.page.$eval('[data-post="nophoto"]', b=>b.hidden)), 'Remove photo shows once there is a photo');
+
+    // Download is always there and always downloads, whatever the phone.
+    ok((await r.page.$$eval('[data-post="download"]', b=>b.length))===1, 'a Download button on the panel');
+    const [dl] = await Promise.all([
+      r.page.waitForEvent('download', {timeout:5000}).catch(()=>null),
+      r.page.click('[data-post="download"]')
+    ]);
+    ok(dl && /^wings-vs-.+-feed\.png$/.test(dl.suggestedFilename()), 'Download saves a PNG named for the game and size: '+(dl ? dl.suggestedFilename() : 'no download'));
+    ok(/Download saves a PNG|Download puts it|Save Image/.test(await r.page.$eval('.postnote', n=>n.textContent)), 'the note says how to get it into Instagram');
 
     const png = await r.page.evaluate(()=>new Promise(res=>{
       document.querySelector('.postcanvas').toBlob(b=>res(b ? b.size : 0), 'image/png');

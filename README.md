@@ -170,7 +170,9 @@ Add `?admin` to the address for two more things:
 - A "Gameday post" button on every game of ours still to be played. Pick a
   template (Blueline, Echo or Faceoff), a size (Instagram feed, square or
   story), add a photo from your phone if you like, and edit the hype line.
-  On a phone Share opens the share sheet; on a laptop it downloads a PNG.
+  Download saves the PNG; on a phone Share opens the share sheet too. To
+  post it, get it into your photos (iPhone: Share, then Save Image) and
+  post from the Instagram app.
 - A Coaches Corner card on the league view: record, scoring trends by month,
   close games, how much of the scoring comes from the top two, penalty
   minutes, and a "Copy as text" button. It names no player, because anyone
@@ -194,7 +196,7 @@ JSDoc docblock on every function, and comments that carry only the rule a
 reader needs. The reasoning lives in `ARCHITECTURE.md`. No em-dashes.
 
 `tests/` boots the real page in a headless browser with every sheet request
-answered from fixture CSVs and runs 374 checks. `npm install` once, then
+answered from fixture CSVs and runs 377 checks. `npm install` once, then
 `npm test` after any change.
 
 To deploy a change, drag the changed files onto the repo's upload page and

@@ -8,7 +8,7 @@ and gives the same answer every time.
 
     cd tests
     npm install        # once — pulls Playwright and a headless Chromium
-    npm test           # 358 checks, about two minutes
+    npm test           # 374 checks, about two minutes
 
 Screenshots of the views land in `out/` after a run (light and dark, phone
 width) — worth a glance when a change is visual.
@@ -29,6 +29,10 @@ width) — worth a glance when a change is visual.
   Google Calendar links on the next-game card (dates, title, escaped location,
   link back), the whole-season `.ics`, and the crest. Rinks over both routes,
   and the Rinks tab missing entirely.
+- The gameday post panel on `?admin`: each template and size draws at the
+  right dimensions in the club colors, the hype line box and switch redraw
+  it, a photo from the picker lands in the photo area and still exports,
+  and the last template and size are remembered.
 
 ## Fixtures
 

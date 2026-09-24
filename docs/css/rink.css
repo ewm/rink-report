@@ -405,11 +405,35 @@ body.post-open{overflow:hidden}
   text-transform:uppercase; padding:6px 10px; cursor:pointer;
   color:var(--on-navy); background:transparent; border:1px solid rgba(255,255,255,.5)}
 .posthead button:hover,.posthead button:focus-visible{background:rgba(255,255,255,.16); outline:none}
-/* The canvas is 1080 square whatever it is shown at; only the export size matters. */
-.postcanvas{display:block; width:100%; height:auto; background:var(--navy)}
-.postacts{display:flex; gap:8px; padding:14px 16px 0}
+/* The canvas is drawn at full export size (1080 wide) whatever it is shown
+   at. A Story is 1920 tall, so the preview is capped to the screen height
+   and narrows to keep its shape rather than pushing the buttons off screen. */
+.poststage{display:flex; justify-content:center; padding:14px 16px 0}
+.postcanvas{display:block; max-width:100%; max-height:58vh; width:auto; height:auto;
+  background:var(--navy); box-shadow:0 1px 0 var(--hair)}
+.postopts{padding:14px 16px 0; display:flex; flex-direction:column; gap:10px}
+.postrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.postlbl{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-2); min-width:72px}
+.postseg{flex:1; display:flex}
+.postseg button{flex:1; padding:9px 6px}
+.postfile,.postplain{font:inherit; font-size:12px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:10px 12px; cursor:pointer;
+  color:var(--ink); background:transparent; border:1px solid var(--rule)}
+.postfile input{position:absolute; width:1px; height:1px; opacity:0; overflow:hidden}
+.postfile:focus-within,.postfile:hover,.postplain:hover,.postplain:focus-visible{background:var(--tint); outline:none}
+.postphotoname{margin:-4px 0 0; font-size:12px; color:var(--ink-2); overflow-wrap:anywhere}
+.posthype{font:inherit; font-size:16px; padding:10px 12px; width:100%;
+  color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:0}
+.posthype:disabled{opacity:.5}
+.postcheck{display:flex; align-items:center; gap:8px; font-size:14px; color:var(--ink)}
+.postcheck input{width:18px; height:18px; margin:0}
+/* Sticky, so Share stays in reach while the photo and hype line are edited
+   under a tall Story preview. */
+.postacts{position:sticky; bottom:0; display:flex; gap:8px; padding:14px 16px;
+  margin-top:14px; background:var(--paper); border-top:1px solid var(--hair)}
 .postacts button{flex:1; font:inherit; font-size:12px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; padding:12px 10px; cursor:pointer;
   color:var(--on-gold); background:var(--gold); border:1px solid var(--gold)}
 .postacts button:hover,.postacts button:focus-visible{filter:brightness(1.06); outline:none}
-.postnote{margin:10px 16px 16px; font-size:12px; color:var(--ink-2)}
+.postnote{margin:12px 16px 0; font-size:12px; color:var(--ink-2)}

@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (358 checks, ~2 minutes)
+//   npm test         (374 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1145,8 +1145,8 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await r.ctx.close();
   }
 
-  // 27. The gameday post card
-  console.log('\n[27] gameday post card');
+  // 27. The gameday post panel: three templates, three sizes, a photo, a hype line
+  console.log('\n[27] gameday post panel');
   {
     const plain = await openPage(browser, BASE, {schedule:'scored'});
     ok((await plain.page.$$eval('.postbtn', b=>b.length))===0, 'no post button without ?admin');
@@ -1162,43 +1162,120 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(rows.length>0 && rows.filter(x=>x.btn).length>0, 'admin mode puts buttons on the card ('+rows.filter(x=>x.btn).length+' of '+rows.length+' rows)');
     ok(rows.every(x=>x.btn === (x.ours && !x.done)), 'a button on every unplayed game of ours, and on nothing else');
 
-    await r.page.click('.postbtn');
-    await r.page.waitForFunction(()=>{
+    // The note reads "1080 x ..." once a draw has finished.
+    const drawn = ()=>r.page.waitForFunction(()=>{
       const n=document.querySelector('.postnote');
-      return n && !/Drawing/.test(n.textContent);
+      return n && /^1080 x/.test(n.textContent);
     }, null, {timeout:8000});
-
-    const card = await r.page.evaluate(()=>{
+    const pick = async (group, v)=>{
+      await r.page.click('[data-post="'+group+'"][data-v="'+v+'"]');
+      await r.page.waitForTimeout(150);
+    };
+    const look = ()=>r.page.evaluate(()=>{
       const c = document.querySelector('.postcanvas');
       const ctx = c.getContext('2d');
       const at = (x,y)=>{ const d=ctx.getImageData(x,y,1,1).data; return d[0]+','+d[1]+','+d[2]; };
-      // A quarter of the square, sampled, to prove it is not one flat colour.
       const seen = new Set();
-      for (let x=20; x<1080; x+=60) for (let y=20; y<1080; y+=60) seen.add(at(x,y));
-      return {w:c.width, h:c.height, rule:at(540,192), head:at(700,40), foot:at(540,1050),
-              colours:seen.size, outside:!document.querySelector('#app .postwrap')};
+      for (let x=20; x<1080; x+=60) for (let y=20; y<c.height; y+=60) seen.add(at(x,y));
+      const pressed = g=>{ const b=document.querySelector('[data-post="'+g+'"][aria-pressed="true"]'); return b ? b.getAttribute('data-v') : ''; };
+      return {w:c.width, h:c.height, tl:at(20,20), bl:at(20,c.height-20), chip:at(80,80),
+              photo:at(540,200), colours:seen.size, url:c.toDataURL(),
+              tpl:pressed('tpl'), size:pressed('size'),
+              outside:!document.querySelector('#app .postwrap')};
     });
-    ok(card.w===1080 && card.h===1080, 'the canvas is a 1080 square: '+card.w+'x'+card.h);
-    ok(card.rule==='252,213,30' && card.foot==='252,213,30', 'gold bar under the header and gold slab at the foot: '+card.rule+' / '+card.foot);
-    ok(card.head!=='252,213,30', 'the header itself is navy, not a gold band: '+card.head);
-    ok(card.colours>3, 'the card actually drew something ('+card.colours+' distinct sampled colours)');
-    ok(card.outside, 'the panel is a sibling of #app, so a poll cannot wipe the canvas mid-draw');
+    const NAVY='0,48,135', GOLD='252,213,30';
 
-    // A PNG really comes out of it.
+    await r.page.click('.postbtn');
+    await drawn();
+
+    let card = await look();
+    ok((await r.page.$$eval('[data-post="tpl"]', b=>b.map(x=>x.textContent).join('|')))==='Blueline|Echo|Faceoff', 'the picker offers Blueline, Echo and Faceoff');
+    ok((await r.page.$$eval('[data-post="size"]', b=>b.map(x=>x.textContent).join('|')))==='Feed 4:5|Square|Story 9:16', 'and Feed, Square and Story');
+    ok(card.tpl==='blueline' && card.size==='feed', 'a first visit opens on Blueline at Feed 4:5: '+card.tpl+' / '+card.size);
+    ok(card.w===1080 && card.h===1350, 'Feed is 1080 x 1350: '+card.w+'x'+card.h);
+    ok(card.chip===GOLD && card.bl===NAVY, 'Blueline: gold tag top left, club navy along the foot: '+card.chip+' / '+card.bl);
+    ok(card.colours>3, 'the post actually drew something ('+card.colours+' distinct sampled colours)');
+    ok(card.outside, 'the panel is a sibling of #app, so a poll cannot wipe the canvas mid-draw');
+    ok((await r.page.$eval('.posthype', i=>i.value))==='Take their ice.', 'an away game starts with "Take their ice."');
+
+    await pick('size','square');
+    card = await look();
+    ok(card.h===1080 && card.size==='square', 'Square is 1080 x 1080: '+card.h);
+    await pick('size','story');
+    card = await look();
+    ok(card.h===1920 && card.size==='story', 'Story is 1080 x 1920: '+card.h);
+
+    await pick('tpl','echo');
+    card = await look();
+    ok(card.bl===GOLD && card.tpl==='echo', 'Echo: the gold matchup bar across the foot: '+card.bl);
+    await pick('tpl','faceoff');
+    card = await look();
+    ok(card.tl===GOLD && card.bl===NAVY, 'Faceoff: a gold card with the navy date strip at the foot: '+card.tl+' / '+card.bl);
+
+    // The hype line: typing changes the post, the switch takes it off.
+    await pick('tpl','blueline');
+    await pick('size','feed');
+    const before = (await look()).url;
+    await r.page.fill('.posthype', 'Protect the barn');
+    await r.page.waitForTimeout(200);
+    const typed = (await look()).url;
+    ok(typed!==before, 'typing a new hype line redraws the post');
+    await r.page.uncheck('.posthypeon');
+    await r.page.waitForTimeout(200);
+    const hidden = (await look()).url;
+    ok(hidden!==typed && await r.page.$eval('.posthype', i=>i.disabled), 'the switch takes the hype line off and greys the box');
+    await r.page.check('.posthypeon');
+    await r.page.waitForTimeout(200);
+    ok((await look()).url===typed, 'and switching it back on puts the same line back');
+
+    // A photo from the phone. Made here as a flat red PNG, so the check can
+    // see it come through the club tint.
+    const noPhoto = await look();
+    const red = await r.page.evaluate(()=>{
+      const c=document.createElement('canvas'); c.width=400; c.height=300;
+      const x=c.getContext('2d'); x.fillStyle='#DC1414'; x.fillRect(0,0,400,300);
+      return c.toDataURL('image/png').split(',')[1];
+    });
+    await r.page.setInputFiles('.postfile input', {name:'rink.png', mimeType:'image/png', buffer:Buffer.from(red,'base64')});
+    await r.page.waitForFunction(()=>/rink\.png/.test(document.querySelector('.postphotoname').textContent), null, {timeout:5000});
+    await r.page.waitForTimeout(200);
+    let withPhoto = await look();
+    const [pr,,pb] = withPhoto.photo.split(',').map(Number);
+    ok(pr>80 && pr>pb*2, 'the chosen photo fills the photo area, tinted: '+withPhoto.photo+' (was '+noPhoto.photo+')');
+    ok(!(await r.page.$eval('[data-post="nophoto"]', b=>b.hidden)), 'Remove photo shows once there is a photo');
+
     const png = await r.page.evaluate(()=>new Promise(res=>{
       document.querySelector('.postcanvas').toBlob(b=>res(b ? b.size : 0), 'image/png');
     }));
-    ok(png>5000, 'toBlob returns a real PNG, so logo.png did not taint the canvas ('+png+' bytes)');
+    ok(png>5000, 'toBlob returns a real PNG with the photo and crest on it, so nothing tainted the canvas ('+png+' bytes)');
 
+    await r.page.click('[data-post="nophoto"]');
+    await r.page.waitForTimeout(200);
+    ok((await look()).photo===noPhoto.photo, 'Remove photo puts the club-color block back');
+
+    // Template and size are remembered for the next post.
+    await pick('tpl','faceoff');
+    await pick('size','square');
     await r.page.keyboard.press('Escape');
     await r.page.waitForTimeout(120);
     ok((await r.page.$$eval('.postwrap', n=>n.length))===0, 'Escape closes the panel');
 
     await r.page.click('.postbtn');
-    await r.page.waitForTimeout(250);
+    await drawn();
+    card = await look();
+    ok(card.tpl==='faceoff' && card.size==='square' && card.h===1080, 'the next post opens on the last template and size: '+card.tpl+' / '+card.size);
+
     await r.page.click('[data-act="postclose"]');
     await r.page.waitForTimeout(120);
     ok((await r.page.$$eval('.postwrap', n=>n.length))===0, 'and so does the Close button');
+
+    // A home game starts with the other line.
+    // The row key is date|time|away|home, so a key ending in our name is a home game.
+    await r.page.click('.postbtn[data-g$="|West Seneca Wings"]');
+    await drawn();
+    const homeLine = await r.page.$eval('.posthype', i=>i.value);
+    ok(homeLine==='Protect the barn.', 'a home game starts with "Protect the barn.": '+homeLine);
+    ok(r.errors.length===0, 'no page errors through all of it: '+r.errors.join(' | '));
     await r.ctx.close();
   }
 
@@ -1299,8 +1376,8 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     }
     const r = await openPage(browser, BASE+'?admin', {teamsJs, schedule:'scored'});
     await r.page.click('.postbtn');
-    await r.page.waitForFunction(()=>{ const n=document.querySelector('.postnote'); return n && !/Drawing/.test(n.textContent); }, null, {timeout:8000});
-    const px = await r.page.evaluate(()=>{ const d=document.querySelector('.postcanvas').getContext('2d').getImageData(1060,300,1,1).data; return d[0]+','+d[1]+','+d[2]; });
+    await r.page.waitForFunction(()=>{ const n=document.querySelector('.postnote'); return n && /^1080 x/.test(n.textContent); }, null, {timeout:8000});
+    const px = await r.page.evaluate(()=>{ const c=document.querySelector('.postcanvas'); const d=c.getContext('2d').getImageData(20,c.height-20,1,1).data; return d[0]+','+d[1]+','+d[2]; });
     ok(/^(19\d|20\d),/.test(px), 'the gameday post is drawn on the club red, not Wings navy: '+px);
     await r.ctx.close();
   }

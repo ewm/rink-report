@@ -1,9 +1,13 @@
 /**
- * Component: the gameday post card.
+ * Component: the gameday post panel.
  *
- * A 1080x1080 PNG for Instagram, drawn on a canvas from one upcoming game.
  * Opened from a schedule row when the page is in admin mode (?admin), so a
- * parent never sees the button.
+ * parent never sees the button. The manager picks a template and a size,
+ * adds a photo from their phone if they want one, edits the hype line, and
+ * shares or saves a PNG for Instagram.
+ *
+ * The three templates live in ui/post/ and each draws onto a canvas. This
+ * file owns the panel, the choices, the fonts, the crest and the photo.
  *
  * The panel lives outside #app on purpose. render() writes #app in one go
  * and would throw away a canvas mid-draw on the next poll, so this module
@@ -11,50 +15,89 @@
  * See ARCHITECTURE.md, "Gameday post card".
  */
 import { state } from "../state.js";
-import { countdownText, daysUntil, dateObj } from "../util/dates.js";
+import { dateObj } from "../util/dates.js";
+import { esc } from "../util/text.js";
+import * as kit from "./post/kit.js";
+import blueline from "./post/blueline.js";
+import echo from "./post/echo.js";
+import faceoff from "./post/faceoff.js";
 
-/** The square Instagram wants. Everything below is in these pixels. */
-var SIZE = 1080;
+/** The templates, in the order the picker shows them. */
+var TEMPLATES = [blueline, echo, faceoff];
 
-/** Page margin. The gold bands run full width; type stays inside this. */
-var PAD = 84;
-
-/*
- * The card's colors. They start as the Wings' and are swapped for the
- * team's club colors (from theme.js, via teams.js) each time a card is
- * drawn. GROUND is the square, BAND the stripes and diamond, ON_BAND the
- * type set on a stripe, ON_GROUND the team names, ACCENT_ON_GROUND the
- * club name and event tag set straight on the square.
- */
-var GROUND = "#003087";
-var BAND = "#FCD51E";
-var ON_BAND = "#003087";
-var ON_GROUND = "#FFFFFF";
-var ACCENT_ON_GROUND = "#FCD51E";
+/** Where the last template and size picked are remembered, per phone. */
+var PREFS_KEY = "checktherink.post";
 
 /**
- * Picks up this team's club colors, when theme.js found the team in
- * teams.js. Otherwise the card keeps the Wings' navy and gold.
+ * The fonts the templates draw with. The page itself only loads Barlow
+ * Condensed 700, so these are fetched the first time a panel opens and a
+ * parent never downloads them.
  */
-function useClubColors() {
-  var club = window.CHECK_THE_RINK_CLUB;
-
-  if (!club || !club.card) {
-    return;
-  }
-
-  GROUND = club.card.ground;
-  BAND = club.card.band;
-  ON_BAND = club.card.onBand;
-  ON_GROUND = club.card.onGround;
-  ACCENT_ON_GROUND = club.card.accentOnGround;
-}
+var FONT_CSS =
+  "https://fonts.googleapis.com/css2?family=Anton" +
+  "&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&display=swap";
 
 /** The open panel, or null. One at a time. */
 var panel = null;
 
 /** The game the open panel is drawing. */
 var current = null;
+
+/** The panel's choices. Template and size carry over between posts. */
+var choice = { tpl: "blueline", size: "feed", hype: "", showHype: true };
+
+/**
+ * The photo picked for this visit, as {img, url, name}, or null.
+ *
+ * It stays on the phone: it is read from the file picker and drawn, never
+ * sent anywhere. It carries over to the next post until removed, since a
+ * manager making posts for a weekend usually wants the same one.
+ */
+var photo = null;
+
+/** The crest, once loaded, so it is fetched once per visit. */
+var crestLoad = null;
+
+/** The font load, so the stylesheet is added once per visit. */
+var fontLoad = null;
+
+/**
+ * Reads the remembered template and size.
+ */
+function loadPrefs() {
+  try {
+    var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+
+    if (templateByKey(saved.tpl)) {
+      choice.tpl = saved.tpl;
+    }
+
+    if (kit.SIZES[saved.size]) {
+      choice.size = saved.size;
+    }
+  } catch (e) {}
+}
+
+/**
+ * Remembers the template and size for next time.
+ */
+function savePrefs() {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ tpl: choice.tpl, size: choice.size }));
+  } catch (e) {}
+}
+
+/**
+ * @param {string} key
+ * @returns {Object|null} The template module with that key.
+ */
+function templateByKey(key) {
+  return (
+    TEMPLATES.filter(function (t) {
+      return t.key === key;
+    })[0] || null
+  );
+}
 
 /**
  * Finds a game by the key a schedule row carries.
@@ -88,49 +131,83 @@ function postKey(g) {
 }
 
 /**
- * Loads the web fonts the canvas draws with.
+ * Whether we are the home team in this game.
+ *
+ * @param {Object} g
+ * @returns {boolean}
+ */
+function atHome(g) {
+  return g.home === (state.data.config.teamName || "");
+}
+
+/**
+ * The hype line a game starts with, before the manager edits it.
+ *
+ * @param {Object} g
+ * @returns {string}
+ */
+function defaultHype(g) {
+  return atHome(g) ? "Protect the barn." : "Take their ice.";
+}
+
+/**
+ * Loads the fonts the templates need, then waits for the ones they use.
  *
  * Canvas does not wait for a webfont the way the DOM does: draw too early
- * and the card comes out in Times. These are the same families the page
- * already loads, so this resolves from cache in the normal case.
+ * and the post comes out in a fallback face. document.fonts.load only knows
+ * a family once its stylesheet has arrived, so this waits for the
+ * stylesheet first. Never rejects; a missing font means a fallback, not a
+ * broken panel.
  *
  * @returns {Promise}
  */
 function loadFonts() {
-  if (!document.fonts || !document.fonts.load) {
-    return Promise.resolve();
+  if (fontLoad) {
+    return fontLoad;
   }
 
-  var wanted = [
-    '700 120px "Barlow Condensed"',
-    '700 40px "Barlow"',
-    '400 40px "Barlow"',
-    '600 60px "Chivo Mono"'
-  ];
+  fontLoad = new Promise(function (resolve) {
+    var link = document.createElement("link");
 
-  return Promise.all(
-    wanted.map(function (f) {
-      return document.fonts.load(f).catch(function () {});
-    })
-  );
-}
+    link.rel = "stylesheet";
+    link.href = FONT_CSS;
+    link.onload = resolve;
+    link.onerror = resolve;
+    document.head.appendChild(link);
 
-/**
- * Loads the club crest, if the site has one.
- *
- * logo.png is same-origin, so drawing it does not taint the canvas and the
- * PNG still exports. A missing crest is not an error: the card just runs
- * without it.
- *
- * @returns {Promise<HTMLImageElement|null>}
- */
-function loadCrest() {
-  return new Promise(function (resolve) {
-    if (!state.logoOk) {
-      resolve(null);
+    // Slow network: give up waiting and draw with what is there.
+    setTimeout(resolve, 4000);
+  }).then(function () {
+    if (!document.fonts || !document.fonts.load) {
       return;
     }
 
+    var wanted = [
+      '400 100px "Anton"',
+      '600 100px "Barlow Condensed"',
+      '700 100px "Barlow Condensed"',
+      '800 100px "Barlow Condensed"',
+      'italic 800 100px "Barlow Condensed"'
+    ];
+
+    return Promise.all(
+      wanted.map(function (f) {
+        return document.fonts.load(f).catch(function () {});
+      })
+    );
+  });
+
+  return fontLoad;
+}
+
+/**
+ * Loads one image from this site. Resolves null when it is not there.
+ *
+ * @param {string} src
+ * @returns {Promise<HTMLImageElement|null>}
+ */
+function loadImage(src) {
+  return new Promise(function (resolve) {
     var img = new Image();
 
     img.onload = function () {
@@ -141,496 +218,279 @@ function loadCrest() {
       resolve(null);
     };
 
-    img.src = "logo.png";
+    img.src = src;
   });
 }
 
 /**
- * Sets a font on the context, with letter spacing where the browser has it.
+ * Loads the club crest.
  *
- * ctx.letterSpacing is recent. Where it is missing the type simply sits
- * tight, which is a smaller loss than not drawing at all.
+ * A team folder can hold a post-logo.png, a larger copy of the crest for
+ * the posts; the page's logo.png is sized for the masthead and goes soft at
+ * 300px wide. Without one, logo.png is used. Both are same-origin, so the
+ * canvas stays exportable. No crest at all is not an error.
  *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} font - A CSS font shorthand.
- * @param {string} [spacing] - e.g. "0.2em".
+ * @returns {Promise<HTMLImageElement|null>}
  */
-function setFont(ctx, font, spacing) {
-  ctx.font = font;
+function loadCrest() {
+  if (crestLoad) {
+    return crestLoad;
+  }
 
-  try {
-    ctx.letterSpacing = spacing || "0px";
-  } catch (e) {}
-}
-
-/**
- * The largest size at or below start that fits text into maxWidth.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} text
- * @param {number} maxWidth
- * @param {number} start - Size to try first, in px.
- * @param {number} min - Smallest size worth trying.
- * @param {Function} fontAt - size -> CSS font shorthand.
- * @returns {number} The size to use.
- */
-function fitSize(ctx, text, maxWidth, start, min, fontAt) {
-  var size = start;
-
-  while (size > min) {
-    setFont(ctx, fontAt(size));
-
-    if (ctx.measureText(text).width <= maxWidth) {
-      return size;
+  crestLoad = loadImage("post-logo.png").then(function (big) {
+    if (big) {
+      return big;
     }
 
-    size -= 4;
-  }
+    return state.logoOk ? loadImage("logo.png") : null;
+  });
 
-  return min;
+  return crestLoad;
 }
 
 /**
- * Breaks text into at most two lines that each fit maxWidth.
- *
- * "Niagara Jr. Cataracts" on one line at a readable size does not fit a
- * 1080px square, and shrinking it to fit makes the opponent smaller than
- * the rink name. Two lines keep it loud.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} text
- * @param {number} maxWidth
- * @returns {string[]} One or two lines.
- */
-function twoLines(ctx, text, maxWidth) {
-  if (ctx.measureText(text).width <= maxWidth) {
-    return [text];
-  }
-
-  var words = text.split(/\s+/);
-
-  if (words.length < 2) {
-    return [text];
-  }
-
-  var best = null;
-  var bestGap = Infinity;
-
-  // Split at whichever gap leaves the two lines closest in width.
-  for (var i = 1; i < words.length; i++) {
-    var a = words.slice(0, i).join(" ");
-    var b = words.slice(i).join(" ");
-    var gap = Math.abs(ctx.measureText(a).width - ctx.measureText(b).width);
-
-    if (gap < bestGap) {
-      bestGap = gap;
-      best = [a, b];
-    }
-  }
-
-  return best;
-}
-
-/**
- * The long date, the way a poster says it.
+ * "SAT · OCT 3", the way the templates set a date.
  *
  * @param {string} iso
- * @returns {string} e.g. "FRIDAY, SEPTEMBER 18".
+ * @returns {string}
  */
-function longDate(iso) {
+function shortDate(iso) {
   var d = dateObj(iso);
 
   if (!d) {
     return "";
   }
 
-  var days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-  var months = [
-    "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
-    "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
-  ];
+  var days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  var months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-  return days[d.getDay()] + ", " + months[d.getMonth()] + " " + d.getDate();
+  return days[d.getDay()] + " · " + months[d.getMonth()] + " " + d.getDate();
 }
 
 /**
- * Paints the ground: navy, with a faint diagonal hatch.
+ * Our name as the post sets it: the short name from teams.js ("Wings")
+ * when there is one, the full team name otherwise.
  *
- * Flat navy across 1080 square reads as a placeholder. The hatch is barely
- * there at full size and gives the square some weave in a feed.
- *
- * @param {CanvasRenderingContext2D} ctx
- */
-function drawGround(ctx) {
-  ctx.fillStyle = GROUND;
-  ctx.fillRect(0, 0, SIZE, SIZE);
-
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.05)";
-  ctx.lineWidth = 3;
-
-  for (var x = -SIZE; x < SIZE * 2; x += 28) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x + SIZE, SIZE);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-/**
- * The header: crest on the left, club name beside it, gold rule under.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {HTMLImageElement|null} crest
- * @param {string} club
- * @returns {number} Where the header ends, which is where the bar starts.
- */
-function drawHeader(ctx, crest, club) {
-  var ruleY = 176;
-  var left = PAD;
-
-  if (crest && crest.naturalWidth) {
-    var h = 108;
-    var w = (crest.naturalWidth / crest.naturalHeight) * h;
-
-    ctx.drawImage(crest, PAD, (ruleY - h) / 2, w, h);
-    left = PAD + w + 30;
-  }
-
-  ctx.fillStyle = ACCENT_ON_GROUND;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-
-  var size = fitSize(ctx, club, SIZE - left - PAD, 54, 24, function (s) {
-    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-  });
-
-  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', "0.12em");
-  ctx.fillText(club, left, ruleY / 2);
-
-  return ruleY;
-}
-
-/**
- * The line across the top of the hype bar.
- *
- * "GAMEDAY TODAY" reads badly, and "GAMEDAY" on its own is wrong for a game
- * three weeks out, so the wording follows how far off the game is.
- *
- * @param {Object} g - The game.
  * @returns {string}
  */
-function hypeText(g) {
-  var n = daysUntil(g.date);
+function ourName() {
+  var club = window.CHECK_THE_RINK_CLUB;
 
-  if (n === null || n < 0 || n === 0) {
-    return "GAMEDAY";
+  if (club && club.team && club.team.short) {
+    return club.team.short;
   }
 
-  if (n === 1) {
-    return "GAMEDAY TOMORROW";
-  }
-
-  return "GAMEDAY " + countdownText(g.date);
+  return state.data.config.teamName || "Us";
 }
 
 /**
- * The sheared gold bar under the header, carrying the hype line.
+ * Everything a template needs to draw one post.
  *
- * Full bleed and tilted. A level band would just be a second header; the
- * tilt is what makes the square read as a poster instead of a notice.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} text
- * @returns {number} The lowest y the bar reaches.
- */
-function drawHypeBar(ctx, text) {
-  var lift = 26;
-  var top = 176;
-  var height = 124;
-
-  ctx.fillStyle = BAND;
-  ctx.beginPath();
-  ctx.moveTo(0, top);
-  ctx.lineTo(SIZE, top - lift);
-  ctx.lineTo(SIZE, top - lift + height);
-  ctx.lineTo(0, top + height);
-  ctx.closePath();
-  ctx.fill();
-
-  var size = fitSize(ctx, text, SIZE - PAD * 2, 76, 34, function (s) {
-    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-  });
-  var tracking = 0.16;
-
-  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
-  ctx.fillStyle = ON_BAND;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, SIZE / 2 + (size * tracking) / 2, top + height / 2 - lift / 2);
-
-  return top + height;
-}
-
-/**
- * A small outlined tag, centered. Used for the showcase or tournament name.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} text
- * @param {number} y - Middle of the tag.
- */
-function drawTag(ctx, text, y) {
-  var tracking = 0.18;
-
-  setFont(ctx, '700 26px "Barlow", sans-serif', tracking + "em");
-
-  var trail = 26 * tracking;
-  var w = ctx.measureText(text).width - trail + 44;
-  var h = 50;
-
-  ctx.save();
-  ctx.globalAlpha = 0.8;
-  ctx.strokeStyle = BAND;
-  ctx.lineWidth = 2;
-  ctx.strokeRect((SIZE - w) / 2, y - h / 2, w, h);
-  ctx.restore();
-
-  ctx.fillStyle = ACCENT_ON_GROUND;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, SIZE / 2 + trail / 2, y + 1);
-}
-
-/** How tall drawDivider draws, for the layout to budget with. */
-var DIVIDER_H = 156;
-
-/**
- * The VS or AT divider: a gold diamond between two rules.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} word
- * @param {number} y - Middle of the diamond.
- */
-function drawDivider(ctx, word, y) {
-  var half = 55;
-  var reach = half * Math.SQRT2 + 30;
-
-  ctx.fillStyle = BAND;
-  ctx.fillRect(PAD, y - 3, SIZE / 2 - reach - PAD, 6);
-  ctx.fillRect(SIZE / 2 + reach, y - 3, SIZE - PAD - (SIZE / 2 + reach), 6);
-
-  ctx.save();
-  ctx.translate(SIZE / 2, y);
-  ctx.rotate(Math.PI / 4);
-  ctx.fillStyle = BAND;
-  ctx.fillRect(-half, -half, half * 2, half * 2);
-  ctx.restore();
-
-  var size = 62;
-  var tracking = 0.1;
-
-  setFont(ctx, '700 ' + size + 'px "Barlow Condensed", sans-serif', tracking + "em");
-  ctx.fillStyle = ON_BAND;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(word, SIZE / 2 + (size * tracking) / 2, y + 2);
-}
-
-/**
- * Works out how a team name wants to be set, without drawing it.
- *
- * Layout has to be measured before anything is painted. The first version of
- * this file drew each name at a fixed y, and a name that wrapped to two lines
- * ran straight through the VS divider.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} name - Already uppercased.
- * @param {number} maxSize - Largest size to try.
- * @returns {{lines: string[], size: number, lineH: number, height: number}}
- */
-function measureTeam(ctx, name, maxSize) {
-  var inner = SIZE - PAD * 2;
-
-  setFont(ctx, '700 ' + maxSize + 'px "Barlow Condensed", sans-serif', "0.01em");
-
-  var lines = twoLines(ctx, name, inner);
-  var size = maxSize;
-
-  lines.forEach(function (l) {
-    size = Math.min(
-      size,
-      fitSize(ctx, l, inner, maxSize, 40, function (s) {
-        return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-      })
-    );
-  });
-
-  var lineH = size * 0.92;
-
-  return { lines: lines, size: size, lineH: lineH, height: lines.length * lineH };
-}
-
-/**
- * Paints a measured team name, from the top of its block down.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {Object} m - A measureTeam result.
- * @param {number} top
- * @param {string} colour
- */
-function paintTeam(ctx, m, top, colour) {
-  setFont(ctx, '700 ' + m.size + 'px "Barlow Condensed", sans-serif', "0.01em");
-  ctx.fillStyle = colour;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  m.lines.forEach(function (l, i) {
-    ctx.fillText(l, SIZE / 2, top + m.lineH * (i + 0.5));
-  });
-}
-
-/**
- * Sets the matchup between two y bounds: our name, the divider, theirs.
- *
- * Both names are stepped down together until the stack fits the space the
- * header and the foot slab leave. Stepping them together keeps the two teams
- * the same weight, which is the point of a matchup graphic.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {string} us - Our club, uppercased.
- * @param {string} them - The opponent, uppercased.
- * @param {string} word - "VS" or "AT".
- * @param {number} top - Highest y the stack may use.
- * @param {number} bottom - Lowest y the stack may use.
- */
-function drawMatchup(ctx, us, them, word, top, bottom) {
-  var room = bottom - top;
-  var dividerH = DIVIDER_H;
-  var gap = 26;
-  var ourMax = 116;
-  var theirMax = 132;
-  var a;
-  var b;
-  var total;
-
-  // Step down until it fits, or until shrinking further would not help.
-  while (true) {
-    a = measureTeam(ctx, us, ourMax);
-    b = measureTeam(ctx, them, theirMax);
-    total = a.height + b.height + dividerH + gap * 2;
-
-    if (total <= room || ourMax <= 46) {
-      break;
-    }
-
-    ourMax -= 6;
-    theirMax -= 6;
-  }
-
-  var y = top + Math.max(0, (room - total) / 2);
-
-  paintTeam(ctx, a, y, ON_GROUND);
-  y += a.height + gap;
-
-  drawDivider(ctx, word, y + dividerH / 2);
-  y += dividerH + gap;
-
-  paintTeam(ctx, b, y, ON_GROUND);
-}
-
-/**
- * The angled gold slab across the foot, and the when and where on it.
- *
- * The slope is the one piece of movement on the square. Straight edges
- * everywhere read as a table; one angle reads as a jersey stripe.
- *
- * @param {CanvasRenderingContext2D} ctx
  * @param {Object} g - The game.
+ * @param {HTMLImageElement|null} crest
+ * @returns {Object}
  */
-function drawFoot(ctx, g) {
-  var leftY = 838;
-  var rightY = 778;
+function cardFor(g, crest) {
+  var home = atHome(g);
+  var opponent = (home ? g.away : g.home) || "TBD";
+  var label = g.event ? g.event : home ? "Home game" : "Away game";
+  var quote = choice.showHype ? choice.hype.trim() : "";
 
-  ctx.fillStyle = BAND;
-  ctx.beginPath();
-  ctx.moveTo(0, leftY);
-  ctx.lineTo(SIZE, rightY);
-  ctx.lineTo(SIZE, SIZE);
-  ctx.lineTo(0, SIZE);
-  ctx.closePath();
-  ctx.fill();
+  return {
+    h: kit.SIZES[choice.size].h,
+    us: ourName().toUpperCase(),
+    opponent: opponent.toUpperCase(),
+    vsWord: home ? "VS" : "@",
+    label: label.toUpperCase(),
+    date: shortDate(g.date),
+    time: (g.time || "TBD").toUpperCase(),
+    rink: (g.rink || "").toUpperCase(),
+    quote: quote.toUpperCase(),
+    crest: crest,
+    photo: photo ? photo.img : null,
+    colors: kit.colors()
+  };
+}
 
-  var inner = SIZE - PAD * 2;
-
-  ctx.fillStyle = ON_BAND;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  var dateText = longDate(g.date);
-  var dateSize = fitSize(ctx, dateText, inner, 78, 34, function (s) {
-    return '700 ' + s + 'px "Barlow Condensed", sans-serif';
-  });
-
-  setFont(ctx, '700 ' + dateSize + 'px "Barlow Condensed", sans-serif', "0.04em");
-  ctx.fillText(dateText, SIZE / 2, 945);
-
-  var bits = [];
-
-  if (g.time) {
-    bits.push("PUCK DROP " + g.time);
-  }
-
-  if (g.rink) {
-    bits.push(g.rink);
-  }
-
-  var detail = bits.join("  \u00b7  ").toUpperCase();
-
-  if (!detail) {
+/**
+ * Draws the open panel's post with the current choices.
+ */
+function redraw() {
+  if (!panel || !current) {
     return;
   }
 
-  var detailSize = fitSize(ctx, detail, inner, 44, 22, function (s) {
-    return '600 ' + s + 'px "Chivo Mono", monospace';
-  });
+  loadCrest().then(function (crest) {
+    if (!panel) {
+      return;
+    }
 
-  setFont(ctx, '600 ' + detailSize + 'px "Chivo Mono", monospace', "0.02em");
-  ctx.fillText(detail, SIZE / 2, 1022);
+    var canvas = panel.querySelector(".postcanvas");
+    var card = cardFor(current, crest);
+    var ctx = canvas.getContext("2d");
+
+    canvas.width = kit.W;
+    canvas.height = card.h;
+    ctx.clearRect(0, 0, kit.W, card.h);
+
+    templateByKey(choice.tpl).draw(ctx, card);
+
+    canvas.setAttribute(
+      "aria-label",
+      "Gameday post preview, " + templateByKey(choice.tpl).name + ", " + kit.SIZES[choice.size].label
+    );
+
+    note(
+      kit.W + " x " + card.h + ". " +
+        (canShareFiles() ? "Share sends it straight to Instagram." : "Saves as a PNG to your downloads.")
+    );
+  });
 }
 
 /**
- * Draws the whole card onto a canvas.
+ * The on/off state of a set of picker buttons.
  *
- * @param {HTMLCanvasElement} canvas
- * @param {Object} g - The game.
- * @param {HTMLImageElement|null} crest
+ * @param {string} group - "tpl" or "size".
  */
-function draw(canvas, g, crest) {
-  var ctx = canvas.getContext("2d");
-  var us = state.data.config.teamName || "";
-  var atHome = g.home === us;
-  var opponent = (atHome ? g.away : g.home) || "TBD";
+function markPressed(group) {
+  panel.querySelectorAll('[data-post="' + group + '"]').forEach(function (b) {
+    b.setAttribute("aria-pressed", b.getAttribute("data-v") === choice[group] ? "true" : "false");
+  });
+}
 
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+/**
+ * Shows the photo's name and whether Remove applies.
+ */
+function showPhotoState() {
+  var name = panel.querySelector(".postphotoname");
+  var remove = panel.querySelector('[data-post="nophoto"]');
 
-  useClubColors();
-  drawGround(ctx);
-  drawHeader(ctx, crest, us.toUpperCase());
+  name.textContent = photo ? photo.name : "No photo. The photo area shows club color.";
+  remove.hidden = !photo;
+}
 
-  var barBottom = drawHypeBar(ctx, hypeText(g));
-  var heroTop = barBottom + 34;
-
-  if (g.event) {
-    drawTag(ctx, g.event.toUpperCase(), barBottom + 54);
-    heroTop = barBottom + 108;
+/**
+ * Takes the file the manager picked and draws with it.
+ *
+ * @param {File} file
+ */
+function usePhoto(file) {
+  if (!file || !/^image\//.test(file.type)) {
+    note("That file is not a photo.");
+    return;
   }
 
-  drawMatchup(ctx, us.toUpperCase(), opponent.toUpperCase(), atHome ? "VS" : "AT", heroTop, 766);
+  var url = URL.createObjectURL(file);
 
-  drawFoot(ctx, g);
+  loadImage(url).then(function (img) {
+    if (!img) {
+      URL.revokeObjectURL(url);
+      note("That photo could not be opened on this browser. Try a JPEG.");
+      return;
+    }
+
+    dropPhoto();
+    photo = { img: img, url: url, name: file.name || "Photo" };
+
+    if (panel) {
+      showPhotoState();
+      redraw();
+    }
+  });
+}
+
+/**
+ * Forgets the photo and frees its memory.
+ */
+function dropPhoto() {
+  if (photo) {
+    URL.revokeObjectURL(photo.url);
+    photo = null;
+  }
+}
+
+/**
+ * Picker buttons inside the panel: template, size, remove photo.
+ *
+ * @param {Event} e
+ */
+function onPanelClick(e) {
+  var btn = e.target.closest("[data-post]");
+
+  if (!btn) {
+    return;
+  }
+
+  var what = btn.getAttribute("data-post");
+
+  if (what === "tpl" || what === "size") {
+    choice[what] = btn.getAttribute("data-v");
+    savePrefs();
+    markPressed(what);
+    redraw();
+  }
+
+  if (what === "nophoto") {
+    dropPhoto();
+    showPhotoState();
+    redraw();
+  }
+}
+
+/**
+ * The file picker and the show-hype switch.
+ *
+ * @param {Event} e
+ */
+function onPanelChange(e) {
+  if (e.target.matches(".postfile input")) {
+    usePhoto(e.target.files && e.target.files[0]);
+
+    // Clears the picker so choosing the same file again still fires.
+    e.target.value = "";
+  }
+
+  if (e.target.matches(".posthypeon")) {
+    choice.showHype = e.target.checked;
+    panel.querySelector(".posthype").disabled = !choice.showHype;
+    redraw();
+  }
+}
+
+/** A redraw waiting for the next frame, while the hype line is typed. */
+var typing = 0;
+
+/**
+ * The hype line box, redrawn once per frame at most while typing.
+ *
+ * @param {Event} e
+ */
+function onPanelInput(e) {
+  if (!e.target.matches(".posthype")) {
+    return;
+  }
+
+  choice.hype = e.target.value;
+  cancelAnimationFrame(typing);
+  typing = requestAnimationFrame(redraw);
+}
+
+/**
+ * The picker's buttons for one group.
+ *
+ * @param {string} group - "tpl" or "size".
+ * @param {Array<{v: string, label: string}>} items
+ * @returns {string} HTML.
+ */
+function pickerButtons(group, items) {
+  return items
+    .map(function (it) {
+      return (
+        '<button type="button" data-post="' + group + '" data-v="' + it.v + '" aria-pressed="' +
+        (choice[group] === it.v) + '">' + esc(it.label) + "</button>"
+      );
+    })
+    .join("");
 }
 
 /**
@@ -640,10 +500,10 @@ function draw(canvas, g, crest) {
  * @returns {string}
  */
 function fileNameFor(g) {
-  var us = state.data.config.teamName || "gameday";
-  var other = (g.home === us ? g.away : g.home) || "game";
+  var us = ourName();
+  var other = (atHome(g) ? g.away : g.home) || "game";
 
-  return (us + "-vs-" + other + "-" + g.date)
+  return (us + "-vs-" + other + "-" + g.date + "-" + choice.size)
     .replace(/[^A-Za-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase() + ".png";
@@ -667,7 +527,7 @@ function canShareFiles() {
 }
 
 /**
- * Saves or shares the drawn card.
+ * Saves or shares the drawn post.
  *
  * @param {HTMLCanvasElement} canvas
  * @param {Object} g
@@ -736,7 +596,18 @@ function openPost(key) {
   }
 
   closePost();
+  loadPrefs();
   current = g;
+  choice.hype = defaultHype(g);
+  choice.showHype = true;
+
+  var templates = TEMPLATES.map(function (t) {
+    return { v: t.key, label: t.name };
+  });
+
+  var sizes = Object.keys(kit.SIZES).map(function (s) {
+    return { v: s, label: kit.SIZES[s].label };
+  });
 
   panel = document.createElement("div");
   panel.className = "postwrap";
@@ -750,35 +621,45 @@ function openPost(key) {
         '<span class="eyebrow">Gameday post</span>' +
         '<button type="button" data-act="postclose">Close</button>' +
       "</div>" +
-      '<canvas class="postcanvas" width="' + SIZE + '" height="' + SIZE + '"></canvas>' +
+      '<div class="postopts">' +
+        '<div class="postrow"><span class="postlbl">Template</span>' +
+          '<div class="seg postseg">' + pickerButtons("tpl", templates) + "</div></div>" +
+        '<div class="postrow"><span class="postlbl">Size</span>' +
+          '<div class="seg postseg">' + pickerButtons("size", sizes) + "</div></div>" +
+      "</div>" +
+      '<div class="poststage"><canvas class="postcanvas" width="' + kit.W + '" height="' +
+        kit.SIZES[choice.size].h + '"></canvas></div>' +
+      '<div class="postopts">' +
+        '<div class="postrow">' +
+          '<label class="postfile">Choose photo<input type="file" accept="image/*"></label>' +
+          '<button type="button" class="postplain" data-post="nophoto" hidden>Remove photo</button>' +
+        "</div>" +
+        '<p class="postphotoname"></p>' +
+        '<label class="postlbl" for="posthype">Hype line</label>' +
+        '<input type="text" id="posthype" class="posthype" maxlength="60" value="' +
+          esc(choice.hype) + '">' +
+        '<label class="postcheck"><input type="checkbox" class="posthypeon" checked> Show the hype line</label>' +
+      "</div>" +
+      '<p class="postnote">Drawing&hellip;</p>' +
       '<div class="postacts">' +
         '<button type="button" data-act="postsave">' +
           (canShareFiles() ? "Share image" : "Save image") +
         "</button>" +
       "</div>" +
-      '<p class="postnote">Drawing&hellip;</p>' +
     "</div>";
+
+  panel.addEventListener("click", onPanelClick);
+  panel.addEventListener("change", onPanelChange);
+  panel.addEventListener("input", onPanelInput);
 
   document.body.appendChild(panel);
   document.body.classList.add("post-open");
+  showPhotoState();
 
-  var canvas = panel.querySelector(".postcanvas");
-
-  Promise.all([loadFonts(), loadCrest()]).then(function (res) {
-    if (!panel) {
-      return;
-    }
-
-    draw(canvas, g, res[1]);
-    note(
-      canShareFiles()
-        ? "1080 x 1080. Share sends it straight to Instagram."
-        : "1080 x 1080 PNG. Saves to your downloads."
-    );
-  });
+  loadFonts().then(redraw);
 }
 
-/** Closes the panel, if one is open. */
+/** Closes the panel, if one is open. The photo is kept for the next post. */
 function closePost() {
   if (panel) {
     panel.remove();

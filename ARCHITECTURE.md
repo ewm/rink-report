@@ -39,6 +39,7 @@ docs/
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
                       one component per card, each (state) -> HTML string
+    ui/post/          the gameday post templates, drawn on a canvas
 .github/workflows/    snapshot.yml, the job that writes each team's data/,
                       and sheet-changes.py, its daily change list
 changes/              <team>/<date>.md, what changed in the sheet each day
@@ -631,42 +632,88 @@ changing those two lines.
 ## Gameday post card
 
 Add `?admin` to the URL and every unplayed game of ours grows a "Gameday
-post" button. It opens a panel that draws a 1080 x 1080 PNG for Instagram:
-crest and club name, a tilted full-bleed gold bar carrying the hype line,
-the matchup with both clubs set the same weight either side of a gold VS or
-AT diamond, and the date and puck drop on an angled gold slab across the
-foot. Nothing is level except the header, which is what separates a poster
-from a notice. No web address on it.
+post" button. It opens a panel where the manager picks:
 
-The hype line follows how far off the game is: "GAMEDAY" today, "GAMEDAY
-TOMORROW", then "GAMEDAY IN 3 DAYS" or "GAMEDAY IN 2 WEEKS" from
-`countdownText()`. "GAMEDAY" alone on a game three weeks out would be a
-lie, and "GAMEDAY TODAY" reads badly. `ui/postcard.js` owns it end to end, canvas only, no library and no
-build step.
+- **Template**: Blueline, Echo or Faceoff. These are the three directions
+  from the Claude Design file (`Gameday Post.dc.html`, 1a to 1c), redrawn on
+  a canvas.
+- **Size**: Feed 4:5 (1080 x 1350), Square (1080 x 1080) or Story 9:16
+  (1080 x 1920).
+- **Photo**: "Choose photo" opens the phone's photo picker. Without one,
+  the photo area is a hatched block of club color, so the post still looks
+  finished.
+- **Hype line**: starts as "Protect the barn." for a home game and "Take
+  their ice." away. The box changes it for this post; the switch under it
+  takes it off.
 
-The matchup is measured before anything is painted. Both names step down in
-size together until the stack fits between the header and the slab. The
-first cut drew each name at a fixed y and a name that wrapped to two lines
-ran straight through the divider.
+Then Share (phone) or Save (laptop) makes the PNG. No web address on it.
 
-Three things about that file are deliberate:
+The last template and size picked are kept in localStorage
+(`checktherink.post`) so the next post opens the same way. The photo is
+kept until the page is closed, since a weekend of posts usually wants the
+same one; the hype line resets per game.
+
+### Where the code is
+
+```
+ui/postcard.js      the panel: picker, photo, hype line, fonts, crest, save
+ui/post/kit.js      shared drawing: sizes, club colors, type fitting, the
+                    photo area, the crest, chips, the tilted quote box
+ui/post/blueline.js photo on top fading into a club-color panel
+ui/post/echo.js     full-bleed photo, stacked GAME DAY with outline echoes
+ui/post/faceoff.js  accent-color card, slanted photo band, vs badge
+```
+
+A template is a module exporting `{key, name, draw(ctx, card)}`. `card` is
+built once by `cardFor()` in postcard.js and holds everything already
+worked out: height, our short name, the opponent, "VS" or "@", the tag
+("HOME GAME", "AWAY GAME", or the event name at a showcase), the date as
+"SAT · OCT 3", time, rink, hype line, crest, photo and colors. Templates
+never read `state`. Adding a fourth template is a new file in `ui/post/`
+and one line in the `TEMPLATES` list.
+
+### Colors and names
+
+The designs were drawn in Wings navy and gold. On the canvas every color
+comes from the club's two colors in teams.js, through theme.js
+(`window.CHECK_THE_RINK_CLUB.card`), so another club's posts come out in
+its own colors. The photo tint is the club's main color lightened a
+little, laid over the photo with multiply. Our name is the team's `short`
+name from teams.js ("Wings"), or the full team name when it has none.
+
+### Things that are deliberate
 
 The panel is appended to `<body>`, not to `#app`. `render()` rewrites `#app`
 in one innerHTML write, so a poll landing mid-draw would throw the canvas
-away.
+away. The panel's own controls use `data-post` and are handled inside
+postcard.js; only Close and Save go through app.js (`data-act`).
 
-It waits on `document.fonts.load` before drawing. Canvas does not hold off
-for a webfont the way the DOM does, and a card drawn too early comes out in
-Times.
+Type is laid out from cap heights, not font sizes. Every word on a post is
+in capitals, and working from the height of an "H" keeps the gaps the same
+between Anton and Barlow Condensed.
 
-`logo.png` is same-origin, so drawing the crest leaves the canvas
-exportable. A crest served from another host would taint it and `toBlob`
-would throw.
+Layout is worked out from the foot up. The hype line can take one to three
+lines and a long opponent can take two, so the photo gets whatever height
+is left instead of type running into it. Names shrink until they fit; a
+rink that still does not fit is cut with an ellipsis, as in the design.
+
+The page only loads Barlow Condensed 700. Anton and the other Barlow
+Condensed weights are added the first time a panel opens, so parents never
+download them. Canvas does not wait for a webfont the way the DOM does, so
+the panel waits for that stylesheet and then `document.fonts.load` before
+drawing. A post drawn too early comes out in a fallback face.
+
+The crest is `post-logo.png` in the team folder when there is one, a
+larger copy for the posts (the masthead `logo.png` goes soft at 300px
+wide), and `logo.png` otherwise. Both are same-origin, and the photo is a
+`blob:` URL made from the file on the phone, so the canvas is never
+tainted and `toBlob` works. The photo is never uploaded anywhere.
 
 Saving splits by what the browser can do. Where `navigator.canShare` takes
 files, the button opens the share sheet, which is the only route that ends
 in Instagram on an iPhone; a download link for a generated image does
-nothing useful there. Everywhere else it downloads a PNG.
+nothing useful there. Everywhere else it downloads a PNG named like
+`wings-vs-cheektowaga-warriors-2026-09-28-feed.png`.
 
 `?admin` is tidiness, not security. Everything the page holds is public
 either way; the flag only keeps a button out of a parent's way.

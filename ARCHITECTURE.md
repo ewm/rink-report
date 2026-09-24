@@ -41,6 +41,8 @@ docs/
                       and sheet-changes.py, its daily change list
 changes/              <team>/<date>.md, what changed in the sheet each day
 tests/                Playwright suite + fixtures; see tests/README.md
+workbench/            templates, handouts, sheet copies, old builds.
+                      git ignores it; see workbench/README.md
 ```
 
 Modules are native ES modules (`<script type="module">`). Every phone that

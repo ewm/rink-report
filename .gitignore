@@ -1,3 +1,6 @@
 .DS_Store
 *.swp
 deploy.sh
+
+# Templates, handouts, sheet copies and old builds. Kept on the Mac, never pushed.
+workbench/

@@ -15,7 +15,7 @@ You need: a Google account, and a free GitHub account (email signup, no card).
 ## Part 1: Get the sheet live (8 minutes)
 
 **1. Upload the template to Drive.**
-Go to drive.google.com, drag in `Rink-Report-Schedule-Template.xlsx`.
+Go to drive.google.com, drag in `Rink-Report-Schedule-Template.xlsx`. It isn't on GitHub; Eric keeps it in `workbench/templates/` and sends it on request.
 
 **2. Convert it to a real Google Sheet.**
 Double-click the file. It opens in preview or in Sheets in xlsx mode. Use **File → Save as Google Sheets**. That makes a second file, the one you'll actually use. The `.xlsx` original can sit there or go in the trash.

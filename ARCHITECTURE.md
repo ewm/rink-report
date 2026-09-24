@@ -27,12 +27,14 @@ docs/
     app.js            entry point: boot, load(), the poll, the cache, clicks
     state.js          RINK_CONFIG, the feature switches, the store, notify()
     render.js         composes components into one innerHTML write
-    util/             text.js  dates.js  csv.js        no app knowledge
+    util/             text.js  dates.js  csv.js  clipboard.js
+                      no app knowledge
     sheet/routes.js   read one tab: raw export, tab name, then the saved copy
     shape/            settings.js  teams.js  games.js  stats.js  rinks.js
                       sponsors.js
                       CSV rows -> objects, plus manager warnings
     model/            game.js  standings.js  rating.js  views.js  links.js
+                      gamelog.js  coach.js
                       what the data means: records, tiebreaks, tabs,
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
@@ -668,6 +670,40 @@ nothing useful there. Everywhere else it downloads a PNG.
 
 `?admin` is tidiness, not security. Everything the page holds is public
 either way; the flag only keeps a button out of a parent's way.
+
+## Coaches Corner
+
+Also on `?admin`, on the league view only: a card of team-level trends for
+the manager to pass to the coach. `model/coach.js` works the numbers out,
+`ui/coach.js` draws them.
+
+- Record, goals for and against, and league play on its own line when the
+  season also has showcase or tournament games.
+- The run the team is on, counted back from the latest game ("No loss in
+  the last 7").
+- Goals for and against per game, and how the one-goal games and ties went.
+- How much of the scoring comes from the top two scorers, for the season and
+  for the last five games, plus how many kids have scored and have a point.
+- Penalty minutes per game.
+- A month-by-month table, once there are two months to compare.
+
+Results come from the Schedule tab, our finished games with scrimmages left
+out, the same as the standings. Scoring comes from the Player Stats tab: the
+season totals, and the game log for the last five games.
+
+**It names no player.** `?admin` hides the card but does not protect it: one
+parent who adds it to the address sees everything. So the card only says
+what anyone could add up from the public page, and "two players have 16 of
+the 35 goals" never says which two. Anything about a named kid belongs in a
+private note to the coach, not here.
+
+"Copy as text" puts the same lines on the clipboard as plain text, for an
+email or a text message. The card and the text are built from one list
+(`points()`), so they cannot disagree. `util/clipboard.js` falls back to the
+old copy command where the clipboard API is missing. The button has its own
+class, `.coachbtn`: the gameday post code and its tests look for `.postbtn`,
+and a Copy button with that class sat first on the page and caught their
+click.
 
 ## Results order
 

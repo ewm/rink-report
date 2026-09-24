@@ -381,10 +381,16 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
    The button sits in a schedule row's meta block; the panel it opens is a
    sibling of #app, not a child, because render() rewrites #app wholesale and
    would throw away a canvas mid-draw on the next poll. */
-.postbtn{font:inherit; font-size:10px; font-weight:700; letter-spacing:.1em;
+.postbtn,.coachbtn{font:inherit; font-size:10px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; margin-top:4px; padding:4px 8px; cursor:pointer;
   color:var(--navy-ink); background:transparent; border:1px solid var(--hair)}
-.postbtn:hover,.postbtn:focus-visible{border-color:var(--navy-ink); outline:none}
+.postbtn:hover,.postbtn:focus-visible,.coachbtn:hover,.coachbtn:focus-visible{border-color:var(--navy-ink); outline:none}
+
+/* Coaches Corner (?admin only) */
+.coachlist{margin:0 0 14px; padding-left:18px; font-size:14px; line-height:1.5; color:var(--ink-2)}
+.coachlist li{margin:0 0 6px}
+/* Its own class, not .postbtn: the gameday post code and tests look for .postbtn. */
+.coach .foot .coachbtn{margin-left:6px}
 
 body.post-open{overflow:hidden}
 

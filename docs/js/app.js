@@ -18,6 +18,8 @@ import { shapeSponsors } from "./shape/sponsors.js";
 import { played } from "./model/game.js";
 import { tickFresh } from "./ui/frame.js";
 import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
+import { coachText } from "./ui/coach.js";
+import { copyText } from "./util/clipboard.js";
 import { ago, timeKey, todayISO } from "./util/dates.js";
 import { bare, norm } from "./util/text.js";
 
@@ -367,6 +369,23 @@ document.addEventListener("click", function (e) {
 
   if (a === "postsave") {
     saveOpenPost();
+  }
+
+  if (a === "coachcopy") {
+    copyText(coachText()).then(function (done) {
+      if (!done) {
+        return;
+      }
+
+      // Say "Copied" on the button for two seconds, then put it back.
+      state.coachCopied = true;
+      render();
+
+      setTimeout(function () {
+        state.coachCopied = false;
+        render();
+      }, 2000);
+    });
   }
 
   if (a === "refresh") {

@@ -5,7 +5,7 @@
  * string. render() decides which components a view needs, joins them, and
  * skips the DOM write entirely when nothing changed since last time.
  */
-import { DIAG, on, state } from "./state.js";
+import { ADMIN, DIAG, on, state } from "./state.js";
 import { buildViews, currentView, leagueView, barKeyFor, teamsInView } from "./model/views.js";
 import { rulesFor, standings } from "./model/standings.js";
 import { nextGameHtml } from "./ui/nextgame.js";
@@ -14,6 +14,7 @@ import { resultsHtml } from "./ui/results.js";
 import { eventsHtml, crumbHtml } from "./ui/events.js";
 import { statsHtml } from "./ui/stats.js";
 import { sponsorsHtml } from "./ui/sponsors.js";
+import { coachHtml } from "./ui/coach.js";
 import {
   mastheadHtml,
   viewBarHtml,
@@ -96,6 +97,11 @@ function render() {
       // An event opened from the list has no button of its own, so show a crumb.
       if (v.event && barKeyFor(views, v) === "events") {
         h += crumbHtml(v);
+      }
+
+      // The manager's own card, on the league view only, and only on ?admin.
+      if (ADMIN && !v.event) {
+        h += coachHtml();
       }
 
       h += standingsHtml(v, st, rules);

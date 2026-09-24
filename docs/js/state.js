@@ -105,6 +105,7 @@ function offList() {
  *   division's other games are one tap away.
  * statsScope: "all" or "league", the switch on the Stats page.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
+ * coachCopied: true for a moment after the Coaches Corner text was copied.
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
  * statsNote / rinksNote / sponsorsNote: why an optional tab is missing, for ?check.
  * logoOk: whether logo.png exists (probed once).
@@ -146,6 +147,7 @@ var state = {
       return true;
     }
   })(),
+  coachCopied: false,
   diagLog: [],
   routeUsed: [],
   headerMap: [],

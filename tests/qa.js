@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (340 checks, ~2 minutes)
+//   npm test         (358 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1523,6 +1523,57 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(t.nocap.startsWith('A,B'), 'teams who never met: all-games differential with no 8-goal cap (12 beats 9): '+t.nocap);
     ok(t.level.startsWith('A=,B='), 'identical records who never met are shown level: '+t.level);
     await r.ctx.close();
+  }
+
+  // 35. Coaches Corner (?admin only, team numbers, no names)
+  console.log('\n[35] coaches corner');
+  {
+    const plain = await openPage(browser, BASE, {});
+    ok((await plain.page.$$eval('.coach', c=>c.length))===0, 'no Coaches Corner without ?admin');
+    await plain.ctx.close();
+
+    // The fixtures hold the five August showcase games: 3-5, 6-0, 2-5, 8-2, 3-2.
+    const r = await openPage(browser, BASE+'?admin', {});
+    ok(r.errors.length===0, 'no page errors with the card on: '+r.errors.join(' | '));
+    const card = await r.page.evaluate(()=>{
+      const c=document.querySelector('.coach');
+      return c ? { text:c.textContent, items:[...c.querySelectorAll('.coachlist li')].map(li=>li.textContent), table:!!c.querySelector('table') } : null;
+    });
+    ok(!!card, 'the card is on the league view with ?admin');
+    ok(card && card.items[0]==='Record 3-2-0 in 5 games. Goals 22 for, 14 against (+8).', 'record line adds up the showcase: '+(card&&card.items[0]));
+    // Aug 29 ended with the loss to Sylvania, then two wins on Aug 30.
+    ok(card && card.items.includes('Won the last 2 in a row.'), 'the run is counted back from the latest game');
+    ok(card && card.items.includes('1 game decided by one goal or tied: 1-0-0.'), 'close games: only the 3-2 win');
+    ok(card && !card.table, 'no month table with only one month played');
+    ok((await r.page.$$eval('.coach .postbtn', b=>b.length))===0, 'the copy button is not a .postbtn, so it never catches a gameday-post click');
+    ok(card && !card.items.some(t=>/^League play/.test(t)), 'no league line before a league game');
+
+    const roster = ['Luke G.','Evan C.','Connor P.','Andrew M.','Stephen D.'];
+    ok(card && roster.every(n=>card.text.indexOf(n)===-1), 'the card names no player');
+
+    const txt = await r.page.evaluate(async ()=>(await import('/js/ui/coach.js')).coachText());
+    ok(/^COACHES CORNER \(through Sun Aug 30\)\n/.test(txt), 'copied text opens with the heading and date');
+    ok(txt.indexOf('- Record 3-2-0 in 5 games.')!==-1, 'copied text carries the same lines as the card');
+    ok(roster.every(n=>txt.indexOf(n)===-1), 'copied text names no player');
+
+    await r.page.click('[data-act="coachcopy"]');
+    await r.page.waitForTimeout(200);
+    ok(/Copied/.test(await r.page.textContent('[data-act="coachcopy"]')), 'the button says Copied after a tap');
+    await r.page.waitForTimeout(2300);
+    ok(/Copy as text/.test(await r.page.textContent('[data-act="coachcopy"]')), 'and goes back after two seconds');
+    await r.ctx.close();
+
+    // A September league game (6-2 over Southtowns) with its log rows.
+    const L = await openPage(browser, BASE+'?admin', {leagueLog:true});
+    const lc = await L.page.evaluate(()=>{
+      const c=document.querySelector('.coach');
+      return { items:[...c.querySelectorAll('.coachlist li')].map(li=>li.textContent),
+               rows:[...c.querySelectorAll('tbody tr')].map(tr=>[...tr.children].map(td=>td.textContent).join('|')) };
+    });
+    ok(lc.items[0]==='Record 4-2-0 in 6 games. Goals 28 for, 16 against (+12).', 'the league win joins the record: '+lc.items[0]);
+    ok(lc.items.includes('League play: 1-0-0, 6 for and 2 against. The other 5 games were showcases and tournaments.'), 'league play gets its own line');
+    ok(lc.rows.length===2 && lc.rows[0]==='August|5|3-2-0|4.4|2.8' && lc.rows[1]==='September|1|1-0-0|6|2', 'month table, August then September: '+lc.rows.join(' / '));
+    await L.ctx.close();
   }
 
   await browser.close(); sNew.close();

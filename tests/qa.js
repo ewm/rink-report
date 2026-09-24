@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (378 checks, ~2 minutes)
+//   npm test         (404 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1664,6 +1664,105 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(lc.items.includes('League play: 1-0-0, 6 for and 2 against. The other 5 games were showcases and tournaments.'), 'league play gets its own line');
     ok(lc.rows.length===2 && lc.rows[0]==='August|5|3-2-0|4.4|2.8' && lc.rows[1]==='September|1|1-0-0|6|2', 'month table, August then September: '+lc.rows.join(' / '));
     await L.ctx.close();
+  }
+
+  // 36. Practice ideas inside the Coaches Corner card
+  console.log('\n[36] practice ideas');
+  {
+    // The fixture skaters have 24 penalty minutes in 5 games (4.8 a game).
+    // Nothing else crosses a line: 4.4 goals for, 2.8 against, the top two
+    // have 9 of 22 goals, and only one close game.
+    const r = await openPage(browser, BASE+'?admin', {});
+    const pr = await r.page.evaluate(()=>{
+      const b=document.querySelector('.coach .practice');
+      return b ? { text:b.textContent,
+                   focus:[...b.querySelectorAll('.pfocus')].map(f=>f.dataset.focus),
+                   why:[...b.querySelectorAll('.pwhy')].map(p=>p.textContent),
+                   drills:b.querySelectorAll('.drills li').length } : null;
+    });
+    ok(!!pr, 'practice ideas sit inside the Coaches Corner card');
+    ok(pr && pr.focus.join(',')==='penalties', 'only the penalty focus fires on the fixtures: '+(pr&&pr.focus.join(',')));
+    ok(pr && pr.why[0]==='4.8 penalty minutes a game.', 'the reason quotes the team number: '+(pr&&pr.why[0]));
+    ok(pr && pr.drills===2, 'two drills under the focus');
+    ok(pr && /written ahead of time/.test(pr.text), 'the block says the drills were written ahead of time');
+    const roster = ['Luke G.','Evan C.','Connor P.','Andrew M.','Stephen D.','Chase M.'];
+    ok(pr && roster.every(n=>pr.text.indexOf(n)===-1), 'practice ideas name no player');
+
+    const txt = await r.page.evaluate(async ()=>(await import('/js/ui/coach.js')).coachText());
+    ok(txt.indexOf('\nPRACTICE IDEAS\n1. Cut the penalties. 4.8 penalty minutes a game.\n')!==-1, 'copied text carries the practice ideas');
+    ok(/Scrimmages are left out\. Team numbers only\.$/.test(txt), 'copied text still ends with the footnote');
+
+    // The picker on its own, with made-up summaries.
+    const t = await r.page.evaluate(async ()=>{
+      const { practicePicks } = await import('/js/model/practice.js');
+      const keys = sum => practicePicks(sum).map(p=>p.key).join(',');
+      const m = (label,gp,gf,ga) => ({label,gp,gf,ga,w:0,l:0,t:0});
+      const base = { all:{gp:10,gf:40,ga:20,w:6,l:2,t:2}, months:[m('September',10,40,20)],
+                     close:{gp:2,w:1,l:0,t:1}, scoring:null };
+
+      // Close to the real first ten games: August 22-14 in 5, September 13-7
+      // in 5, 8 of the last 13 goals from two players, 63.5 PIM in 10.
+      const season = { all:{gp:10,gf:35,ga:21,w:5,l:2,t:3},
+                       months:[m('August',5,22,14), m('September',5,13,7)],
+                       close:{gp:4,w:1,l:0,t:3},
+                       scoring:{ season:{top2:12,total:35,scorers:10}, recent:{top2:8,total:13,scorers:5},
+                                 recentGames:5, skaters:13, withPoint:12, pim:63.5, pimGames:10 } };
+      const sp = practicePicks(season);
+
+      return {
+        empty: practicePicks(null).length,
+        quiet: keys(base),
+        season: sp.map(p=>p.key).join(','),
+        seasonWhy: sp.map(p=>p.why),
+        closeOnly: keys(Object.assign({}, base, { close:{gp:4,w:1,l:1,t:2} })),
+        closeOk: keys(Object.assign({}, base, { close:{gp:4,w:2,l:1,t:1} })),
+        gaHigh: keys(Object.assign({}, base, { all:{gp:5,gf:20,ga:17,w:2,l:3,t:0}, months:[m('September',5,20,17)] })),
+        gaRise: practicePicks(Object.assign({}, base, { months:[m('August',4,16,6), m('September',4,16,12)] })).map(p=>p.why).join(' '),
+        lowGf: practicePicks(Object.assign({}, base, { all:{gp:6,gf:14,ga:10,w:3,l:3,t:0}, months:[m('September',6,14,10)] })).map(p=>p.why).join(' '),
+        oneGameMonth: keys(Object.assign({}, base, { months:[m('August',9,40,18), m('September',1,0,2)] })),
+        fewGoals: keys(Object.assign({}, base, { scoring:{ season:{top2:4,total:5,scorers:2}, recent:null, recentGames:5, skaters:13, withPoint:4, pim:5, pimGames:5 } })),
+        seasonSpread: practicePicks(Object.assign({}, base, { scoring:{ season:{top2:12,total:20,scorers:6}, recent:{top2:2,total:6,scorers:4}, recentGames:5, skaters:13, withPoint:9, pim:5, pimGames:5 } })).map(p=>p.why).join(' ')
+      };
+    });
+    ok(t.empty===0, 'no summary, no ideas');
+    ok(t.quiet==='sharp', 'nothing stands out: one "keep the basics sharp" entry: '+t.quiet);
+    ok(t.season==='finishing,spread,penalties', 'the first ten games pick finishing, spread and penalties, three at most: '+t.season);
+    ok(t.seasonWhy[0]==='Goals a game fell from 4.4 in August to 2.6 in September.', 'scoring drop reason: '+t.seasonWhy[0]);
+    ok(t.seasonWhy[1]==='Two players have 8 of the 13 goals in the last 5 games.', 'recent scoring share reason: '+t.seasonWhy[1]);
+    ok(t.seasonWhy[2]==='6.4 penalty minutes a game.', 'penalty reason rounds to one place: '+t.seasonWhy[2]);
+    ok(t.closeOnly==='close', 'close games fire when under half were wins: '+t.closeOnly);
+    ok(t.closeOk==='sharp', 'two wins in four close games is fine: '+t.closeOk);
+    ok(t.gaHigh.split(',')[0]==='defense', 'goals against over 3 a game comes first: '+t.gaHigh);
+    ok(t.gaRise==='Goals against went from 1.5 a game in August to 3 in September.', 'goals against rising month to month: '+t.gaRise);
+    ok(t.lowGf==='The team scores 2.3 goals a game.', 'low scoring over the season: '+t.lowGf);
+    ok(t.oneGameMonth==='sharp', 'a one-game month is not compared with the one before');
+    ok(t.fewGoals==='sharp', 'under six goals, the top-two share is not judged');
+    ok(t.seasonSpread==='Two players have 12 of the 20 goals this season.', 'falls back to the season share when the last games are spread out: '+t.seasonSpread);
+
+    const lib = await r.page.evaluate(async ()=>{
+      const { practicePicks } = await import('/js/model/practice.js');
+      const m = (label,gp,gf,ga) => ({label,gp,gf,ga});
+      // Three summaries that between them fire every focus and the fallback.
+      const every = [
+        { all:{gp:5,gf:10,ga:20}, months:[m('Sept',5,10,20)], close:{gp:1,w:0,l:1,t:0}, scoring:null },
+        { all:{gp:5,gf:30,ga:10}, months:[m('Sept',5,30,10)], close:{gp:3,w:0,l:1,t:2},
+          scoring:{ season:{top2:20,total:30}, recent:null, recentGames:5, pim:30, pimGames:5 } },
+        { all:{gp:10,gf:40,ga:20}, months:[m('Sept',10,40,20)], close:{gp:0,w:0,l:0,t:0}, scoring:null }
+      ];
+      const drills = [];
+      every.forEach(s=>practicePicks(s).forEach(p=>p.drills.forEach(d=>drills.push(Object.assign({focus:p.key}, d)))));
+      return drills;
+    });
+    const focuses = [...new Set(lib.map(d=>d.focus))].sort().join(',');
+    ok(focuses==='close,defense,finishing,penalties,sharp,spread', 'every focus area has drills: '+focuses);
+    ok(lib.every(d=>d.ice==='half' || (d.ice==='full' && d.half)), 'every full-ice drill says how to run it on half ice');
+    ok(lib.every(d=>(d.name+d.how+(d.half||'')).indexOf('\u2014')===-1), 'no em-dashes in the drill text');
+
+    // Phone width: the block must not push the page sideways.
+    await r.page.setViewportSize({width:360, height:800});
+    const wide = await r.page.evaluate(()=>document.documentElement.scrollWidth);
+    ok(wide<=360, 'no sideways scroll at phone width with the practice block: '+wide);
+    await r.ctx.close();
   }
 
   await browser.close(); sNew.close();

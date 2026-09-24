@@ -392,6 +392,21 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
 /* Its own class, not .postbtn: the gameday post code and tests look for .postbtn. */
 .coach .foot .coachbtn{margin-left:6px}
 
+/* Practice ideas, inside the Coaches Corner card */
+.practice{margin:16px 0 14px; padding-top:14px; border-top:1px solid var(--hair)}
+.practice h3{margin:0 0 4px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--ink-3)}
+.practice .pnote{margin:0 0 12px; font-size:12px; line-height:1.5; color:var(--ink-3)}
+.pfocus{margin:0 0 14px}
+.pfocus h4{margin:0; font-size:15px; font-weight:700; color:var(--ink)}
+.pfocus .pwhy{margin:2px 0 6px; font-size:13px; color:var(--ink-2)}
+.drills{margin:0; padding-left:18px; font-size:14px; line-height:1.5; color:var(--ink-2)}
+.drills li{margin:0 0 8px}
+.drills b{color:var(--ink)}
+.drills .ice{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); border:1px solid var(--hair); padding:1px 5px; margin-left:4px; white-space:nowrap}
+.drills .how,.drills .half{display:block}
+.drills .half{font-size:13px; color:var(--ink-3)}
+
 body.post-open{overflow:hidden}
 
 .postwrap{position:fixed; inset:0; z-index:50; display:flex; align-items:flex-start;

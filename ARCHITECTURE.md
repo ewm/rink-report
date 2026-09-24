@@ -764,6 +764,38 @@ class, `.coachbtn`: the gameday post code and its tests look for `.postbtn`,
 and a Copy button with that class sat first on the page and caught their
 click.
 
+## Practice ideas
+
+Inside the Coaches Corner card, under the month table: up to three focus
+areas for the next practice, each with the team number that picked it and
+two drills. `model/practice.js` holds the rules and the drills;
+`ui/coach.js` draws them and adds them to "Copy as text".
+
+**No AI runs on the page.** The site is static on GitHub Pages, and calling
+an AI service from it would put a paid key where anyone can read it. So the
+drills were written ahead of time and the page picks them by rule. The
+block says so in one line.
+
+The checks, in order. The first three that apply are shown:
+
+1. Tighten up in our end: goals against up a goal a game on the month
+   before, or over 3 a game for the season.
+2. Finish our chances: goals for down a goal a game on the month before,
+   or under 3 a game for the season.
+3. Get more players scoring: two players with half the goals or more, in
+   the last five games first, then the season. Needs 6 goals to judge.
+4. Cut the penalties: 4 penalty minutes a game or more.
+5. Win the close ones: 3 or more one-goal games and ties, fewer than half
+   of them wins.
+
+Month comparisons need 2 games in each month. When nothing applies, one
+"Keep the basics sharp" entry shows instead of an empty block.
+
+Ice time varies, so every drill is tagged Half ice or Full ice, and every
+full-ice drill says how to run it on half ice. Reasons use team numbers
+only, the same rule as the rest of the card. The thresholds are named
+constants at the top of `model/practice.js`.
+
 ## Results order
 
 The card opens on **Ours**, not All. A parent opens the page to find out

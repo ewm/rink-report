@@ -3,10 +3,12 @@
  *
  * Team-level trends from model/coach.js, drawn as a short list and a
  * month-by-month table, plus a button that copies the same thing as plain
- * text for an email or a text message. No player is named anywhere on it.
- * See ARCHITECTURE.md, "Coaches Corner".
+ * text for an email or a text message. Below the numbers, practice ideas
+ * picked from them (model/practice.js). No player is named anywhere on it.
+ * See ARCHITECTURE.md, "Coaches Corner" and "Practice ideas".
  */
 import { coachSummary } from "../model/coach.js";
+import { practicePicks } from "../model/practice.js";
 import { state } from "../state.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -220,6 +222,84 @@ function monthLines(sum) {
 }
 
 /**
+ * "Half ice" or "Full ice", for a drill's tag.
+ *
+ * @param {Object} d - A drill from model/practice.js.
+ * @returns {string}
+ */
+function iceLabel(d) {
+  return d.ice === "full" ? "Full ice" : "Half ice";
+}
+
+/**
+ * The practice ideas as plain lines, for the copied text.
+ *
+ * @param {Object} sum - From coachSummary().
+ * @returns {string[]}
+ */
+function practiceLines(sum) {
+  var lines = [];
+
+  practicePicks(sum).forEach(function (p, i) {
+    lines.push(i + 1 + ". " + p.title + ". " + p.why);
+
+    p.drills.forEach(function (d) {
+      var line = "   - " + d.name + " (" + iceLabel(d).toLowerCase() + "): " + d.how;
+
+      if (d.half) {
+        line += " Half ice: " + d.half;
+      }
+
+      lines.push(line);
+    });
+  });
+
+  return lines;
+}
+
+/**
+ * The practice ideas block inside the card.
+ *
+ * @param {Object} sum - From coachSummary().
+ * @returns {string}
+ */
+function practiceHtml(sum) {
+  var picks = practicePicks(sum);
+
+  if (!picks.length) {
+    return "";
+  }
+
+  var h =
+    '<div class="practice"><h3>Practice ideas</h3>' +
+    '<p class="pnote">Picked by the page from the numbers above, out of drills written ahead of time. A starting point, not a plan. Use what fits the ice you have.</p>';
+
+  picks.forEach(function (p) {
+    h += '<div class="pfocus" data-focus="' + esc(p.key) + '">';
+    h += "<h4>" + esc(p.title) + "</h4>";
+    h += '<p class="pwhy">' + esc(p.why) + "</p>";
+    h += '<ul class="drills">';
+
+    p.drills.forEach(function (d) {
+      h += "<li><b>" + esc(d.name) + '</b> <span class="ice">' + esc(iceLabel(d)) + "</span>";
+      h += '<span class="how">' + esc(d.how) + "</span>";
+
+      if (d.half) {
+        h += '<span class="half">Half ice: ' + esc(d.half) + "</span>";
+      }
+
+      h += "</li>";
+    });
+
+    h += "</ul></div>";
+  });
+
+  h += "</div>";
+
+  return h;
+}
+
+/**
  * The whole card as plain text, for the Copy button.
  *
  * @returns {string} "" before our first finished game.
@@ -245,6 +325,13 @@ function coachText() {
       lines.push("- " + m);
     });
   }
+
+  lines.push("");
+  lines.push("PRACTICE IDEAS");
+
+  practiceLines(sum).forEach(function (l) {
+    lines.push(l);
+  });
 
   lines.push("");
   lines.push("Scrimmages are left out. Team numbers only.");
@@ -300,6 +387,8 @@ function coachHtml() {
 
     h += "</tbody></table></div>";
   }
+
+  h += practiceHtml(sum);
 
   h +=
     '<p class="foot">Shown because the address has ?admin. Anyone who adds that can see it, so it names no players. ' +

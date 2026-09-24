@@ -186,7 +186,7 @@ JSDoc docblock on every function, and comments that carry only the rule a
 reader needs. The reasoning lives in `ARCHITECTURE.md`. No em-dashes.
 
 `tests/` boots the real page in a headless browser with every sheet request
-answered from fixture CSVs and runs 336 checks. `npm install` once, then
+answered from fixture CSVs and runs 335 checks. `npm install` once, then
 `npm test` after any change.
 
 To deploy a change, drag the changed files onto the repo's upload page and

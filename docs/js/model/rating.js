@@ -1,66 +1,37 @@
 /**
- * Team rating: how many goals better or worse than an average team in the
- * same table, from who each team played and by how much.
+ * Team rating: how many goals a game better or worse than an average team
+ * in the same table, from who each team played and by how much.
  *
  * The idea is MyHockey Rankings' (opponent strength plus goal margin,
- * averaged over games) with four changes for a youth season.
+ * averaged over games) with two changes for a youth season: every team
+ * starts with two average games, and all ratings are solved together.
  * See ARCHITECTURE.md, "Team rating".
  */
-import { dateObj } from "../util/dates.js";
 import { bare } from "../util/text.js";
 
 /**
- * The tuning knobs. Starting points, meant to be checked against real
- * results once the season has enough of them. See the peer review of
- * Sept 23 2026 for how each one was tested.
+ * The tuning knobs. Tested on simulated seasons in September 2026; see
+ * Rink-Report-Rating-Peer-Review-2026-09-23.md and ARCHITECTURE.md.
  *
  * ghostGames must stay above 0: at 0 the rounds flip back and forth and
- * never settle. halfLifeDays at 0 or below switches the fade off.
+ * never settle.
  */
 var RATING = {
-  fullGoals: 3, // goals 1 to 3 of a margin count in full
-  halfGoals: 6, // goals 4 to 6 count half; past this they count nothing
+  cap: 8, // a margin counts up to 8 goals, the same cap the USA Hockey tiebreak uses
   ghostGames: 2, // every team starts with this many games at league average
-  halfLifeDays: 60, // a game this much older than the table's latest game counts half
   maxRounds: 200,
   settled: 0.0005 // stop once no rating moves more than this in a round
 };
 
 /**
- * A goal margin with the blowout taken out of it. A 3-goal win is worth 3,
- * a 6-goal win 4.5, and anything bigger still 4.5.
+ * A goal margin, capped. A 5-goal win is worth 5, and a 12-0 win is worth
+ * 8, the same as 8-0.
  *
  * @param {number} m - Our goals minus theirs.
  * @returns {number}
  */
-function softMargin(m) {
-  var a = Math.abs(m);
-  var full = Math.min(a, RATING.fullGoals);
-  var half = Math.max(0, Math.min(a, RATING.halfGoals) - RATING.fullGoals) / 2;
-
-  return (m < 0 ? -1 : 1) * (full + half);
-}
-
-/**
- * How much a game counts by its age, measured back from the latest game in
- * the same table (not from today, or every rating would shrink a little each
- * day with no new games). The latest game counts 1, a game halfLifeDays
- * older counts a half, twice that a quarter. An unreadable date counts 1.
- *
- * @param {string} iso - The game date.
- * @param {Date|null} latest - The latest game date in the table.
- * @returns {number}
- */
-function ageWeight(iso, latest) {
-  var d = dateObj(iso);
-
-  if (!d || !latest || RATING.halfLifeDays <= 0) {
-    return 1;
-  }
-
-  var age = Math.max(0, Math.round((latest - d) / 86400000));
-
-  return Math.pow(0.5, age / RATING.halfLifeDays);
+function cappedMargin(m) {
+  return Math.max(-RATING.cap, Math.min(RATING.cap, m));
 }
 
 /**
@@ -77,40 +48,32 @@ function hasScores(g) {
 /**
  * Ratings for every team that has played at least one of the games.
  *
- * Each team's rating is the weighted average, over its games, of the
- * opponent's rating plus the softened margin, with ghostGames extra games
- * at 0 in the average. Because every rating leans on the others, all of
- * them are recomputed together, round after round, until they stop moving.
- * After each round they are shifted so the average team sits at 0.
+ * Each team's rating is the average, over its games, of the opponent's
+ * rating plus the capped margin, with ghostGames extra games at 0 in the
+ * average. Because every rating leans on the others, all of them are
+ * recomputed together, round after round, until they stop moving. After
+ * each round they are shifted so the average team sits at 0.
+ *
+ * Every game counts the same whatever its date, so a rating only changes
+ * when a score comes in.
  *
  * The caller passes only the games that count (played, not a scrimmage,
  * not a bracket game at an event, both teams in the table).
  *
- * @param {Object[]} games - Counted games: {home, away, hs, as, date}.
+ * @param {Object[]} games - Counted games: {home, away, hs, as}.
  * @returns {Object} Team name to rating, rounded to one decimal.
  */
 function ratings(games) {
   var links = bare();
   var names = [];
-  var latest = null;
   var i;
 
   games = games.filter(hasScores);
 
-  // The latest game date sets "now" for the fade.
-  for (i = 0; i < games.length; i++) {
-    var day = dateObj(games[i].date);
-
-    if (day && (!latest || day > latest)) {
-      latest = day;
-    }
-  }
-
-  // Each team's list of {opp, margin, weight}, one entry per game.
+  // Each team's list of {opp, margin}, one entry per game.
   for (i = 0; i < games.length; i++) {
     var g = games[i];
-    var w = ageWeight(g.date, latest);
-    var m = softMargin(g.hs - g.as);
+    var m = cappedMargin(g.hs - g.as);
 
     if (!links[g.home]) {
       links[g.home] = [];
@@ -122,8 +85,8 @@ function ratings(games) {
       names.push(g.away);
     }
 
-    links[g.home].push({ opp: g.away, margin: m, weight: w });
-    links[g.away].push({ opp: g.home, margin: -m, weight: w });
+    links[g.home].push({ opp: g.away, margin: m });
+    links[g.away].push({ opp: g.home, margin: -m });
   }
 
   var r = bare();
@@ -138,14 +101,12 @@ function ratings(games) {
 
     names.forEach(function (n) {
       var sum = 0;
-      var weights = RATING.ghostGames;
 
       links[n].forEach(function (e) {
-        sum += e.weight * (r[e.opp] + e.margin);
-        weights += e.weight;
+        sum += r[e.opp] + e.margin;
       });
 
-      next[n] = sum / weights;
+      next[n] = sum / (links[n].length + RATING.ghostGames);
       total += next[n];
     });
 
@@ -177,4 +138,4 @@ function ratings(games) {
   return out;
 }
 
-export { RATING, ratings, softMargin };
+export { RATING, ratings, cappedMargin };

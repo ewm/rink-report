@@ -461,32 +461,42 @@ comparator; add a sequence.
 ## Team rating
 
 The Rtg column in every standings table, from `model/rating.js`. It answers
-"how many goals better or worse than an average team in this table is this
-team, once you count who they played." +1.5 is stronger than +0.5, and the
-gap between two teams is a cautious guess at the margin between them (real
-margins run about a third bigger; see the guide paragraph below).
+"how many goals a game better or worse than an average team in this table
+is this team, once you count who they played." +1.0 is about a goal a game
+better than average, and subtracting two teams' ratings gives roughly the
+margin you would expect between them.
 
 It is the MyHockey Rankings idea (each game is worth the opponent's rating
 plus the goal margin, and a team's rating is the average of its games) with
-four changes, all in the `RATING` block at the top of the file:
+these rules, all in the `RATING` block at the top of the file:
 
-- **Margins are softened.** Goals 1 to 3 of a margin count in full, goals 4
-  to 6 count half, anything past 6 counts nothing. A 12-0 win is worth 4.5,
-  the same as 6-0. MHR caps at 7, so one blowout is worth seven 1-goal wins.
+- **Margins count up to 8 goals.** The same cap the USA Hockey tiebreak
+  uses, which is the rule the league already applies to goal differential.
+  A 12-0 win is worth 8, the same as 8-0. MHR caps at 7.
 - **Two ghost games.** Every team starts with two games at exactly average.
   After three real games they still hold a team near the middle; after
   twenty they barely register. This is what keeps one early result from
-  deciding the table.
-- **Old games fade.** A game 60 days older than the table's latest game
-  counts half, 120 days older a quarter. Kids get better between October and
-  February. Age is measured from the latest game, not from today: measured
-  from today, every rating shrank a little each day with no new games, and an
-  event table kept fading for months after the event. A game with a score
-  that is not a finite number is dropped before any of this.
+  deciding the table, and it is where most of the gain over MHR comes from.
+- **Every game counts the same.** No fading of older games, so a rating
+  only changes when a score comes in.
 - **Solved together.** Every rating depends on the others, so all of them
   are recomputed round after round (up to 200, usually far fewer) until no
   rating moves more than 0.0005, and after each round they are shifted so
-  the average team sits at 0.
+  the average team sits at 0. `ghostGames` must stay above 0 or the rounds
+  never settle.
+- **Bad scores are dropped.** A game whose score is not a finite number is
+  left out before anything else, or it would turn every rating into 0.0.
+
+How it got here (September 2026). The first version trimmed margins hard
+(goals 1 to 3 in full, 4 to 6 at half, nothing past 6) and faded games by
+age with a 60-day half-life. Two peer reviews and a follow-up simulation
+(Youth Hockey/Rink-Report-Rating-Peer-Review-2026-09-23.md) showed that in a
+league with real blowouts the trimming threw away information: predictions
+were worse, a 1.0 gap meant about 1.5 goals instead of 1, and a team beating
+everyone 9-1 topped out around +3.4. With a straight 8-goal cap and no fade,
+predictions were the best of every version tested, a 1.0 gap is about 1
+goal, and that dominant team reads about +6. The fade helped nothing in any
+test and made ratings drift on days with no games, so it was removed.
 
 The rating uses exactly the games the table counts: `standings()` collects
 them as it tallies and hands them to `ratings()`. So an event table rates
@@ -496,20 +506,15 @@ team with no game yet shows a dash, not 0.0, because 0.0 would claim it is
 average. Rounding is done on the size and the sign put back, so two
 mirror-image teams always show mirror-image ratings.
 
-The numbers in `RATING` are starting points. Once a season has enough
-results, check them: for each game, did the higher-rated team (rated from
-the games before it) win? Change one knob at a time.
+Once a season has enough results, check the knobs against it: for each
+game, did the higher-rated team (rated from the games before it) win, and
+was the margin close to the rating gap? Change one knob at a time.
 
 Under each table that has a score in it, `ratingNoteHtml()` in
 `ui/standings.js` prints a short guide for parents: what the number is, that
-0.0 is average, that the gap between two teams is a cautious guess at the
-margin, and the fairness rules. "Cautious" is deliberate. Both peer reviews
-(Youth Hockey/Rink-Report-Rating-Peer-Review-2026-09-23.md) found a 1.0 gap
-works out to about 1.3 goals in a typical league, because the softened
-margin trims blowouts and the ghost games hold new teams near 0. The guide
-used to promise "+1.0 is about a goal" and was changed rather than the
-margin curve, which is kept for sportsmanship. It is its own block, not
-folded into the tiebreak sentence, so it reads as a key.
+0.0 is average and +1.0 is about a goal a game better, how to size up a game
+by subtracting, and the two rules (8-goal cap, two average games). It is its
+own block, not folded into the tiebreak sentence, so it reads as a key.
 
 The column shows goals with one decimal (+0.8), on purpose. A whole-number
 version (tenths, +8) was tried and dropped: it sat next to the +/- column,
@@ -788,7 +793,7 @@ right place: labels match by prefix and order disambiguates.
 ## Testing
 
 `tests/qa.js` boots the real page in headless Chromium with every Google
-request answered from `tests/fixtures/`, drives it, and checks the DOM: 336
+request answered from `tests/fixtures/`, drives it, and checks the DOM: 335
 checks across the read routes, the Events tab in three calendar situations,
 the Stats tab, directions and calendar links, sponsors, MyHockey links, the
 feature switches, the team rating, the September 2026 review fixes (PM face-off, team-name

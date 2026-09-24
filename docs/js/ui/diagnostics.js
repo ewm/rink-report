@@ -87,7 +87,7 @@ function rinksLine() {
 function diagHtml() {
   var L = [];
 
-  L.push("<b>Rink Report setup check</b>\n");
+  L.push("<b>Check The Rink setup check</b>\n");
   L.push(
     "Sheet ID     " +
       (CFG.sheetId && CFG.sheetId.indexOf("PASTE") === -1

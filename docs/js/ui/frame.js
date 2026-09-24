@@ -43,7 +43,7 @@ function mastheadHtml(v, rec) {
     headline = cfg.teamName;
   } else {
     kicker = busy ? "Loading" : v.stats ? "Player stats" : v.events ? v.label : "Live standings";
-    headline = v.event ? v.label : cfg.leagueName || "Rink Report";
+    headline = v.event ? v.label : cfg.leagueName || "Check The Rink";
   }
 
   h += '<div class="txt"><div class="eyebrow">' + esc(kicker) + "</div>";

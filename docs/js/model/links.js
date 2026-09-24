@@ -343,7 +343,7 @@ function icsFile(games) {
     [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Rink Report//EN",
+      "PRODID:-//Check The Rink//EN",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
       body,

@@ -29,12 +29,13 @@ import { diagHtml } from "./ui/diagnostics.js";
 
 /**
  * Names the browser tab, the bookmark and the home-screen shortcut after the
- * team, from the Settings tab, instead of the generic "Rink Report".
+ * team, from the Settings tab. Until the sheet loads, the tab shows the
+ * title written in the team's index.html.
  *
  * @param {string} teamName
  */
 function setTitle(teamName) {
-  var title = teamName ? teamName + " | Check The Rink" : "Rink Report";
+  var title = teamName ? teamName + " | Check The Rink" : "Check The Rink";
 
   if (document.title !== title) {
     document.title = title;

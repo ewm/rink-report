@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (377 checks, ~2 minutes)
+//   npm test         (378 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1329,6 +1329,10 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(look.club, 'theme.js found the team in teams.js by its folder');
     ok(look.mast==='rgb(0, 48, 135)' && look.rule==='rgb(252, 213, 30)', 'masthead is club navy with the gold rule: '+look.mast+' / '+look.rule);
     ok(look.title==='West Seneca Wings | Check The Rink', 'browser tab named after the team: '+look.title);
+    // The title in the file is what shows before the sheet loads, and what a
+    // bookmark or a shared link picks up. It must not say the old name.
+    const rawTitle = (fs.readFileSync(path.join(SITE_DIR,TEAM,'index.html'),'utf8').match(/<title>([^<]*)<\/title>/)||[])[1];
+    ok(rawTitle==='West Seneca Wings | Check The Rink', 'the tab says the team name before the sheet loads too: '+rawTitle);
     ok(look.themeColor==='#003087', 'phone browser bar in the club main color: '+look.themeColor);
     ok(look.manifest, 'home-screen manifest linked');
     ok(look.home==='../', 'All teams row links back to the landing page: '+look.home);

@@ -776,7 +776,17 @@ an AI service from it would put a paid key where anyone can read it. So the
 drills were written ahead of time and the page picks them by rule. The
 block says so in one line.
 
-The checks, in order. The first three that apply are shown:
+**Skating and skills comes first, every week.** Game stats say nothing
+about skating or puck skills, so no rule could ever pick that work. Instead
+`skillsFor()` shows one of six sets (edges, crossovers and turns, stops and
+starts, puck control, passing on the move, backward skating), changing each
+Monday and going round the list in order. Each set is three half-ice drills,
+two skating and one puck (or one skating and two puck), tagged Skating or
+Puck skills, for a 10 to 15 minute warm-up. The week is counted from the
+local calendar date in UTC days, so a time change never moves the Monday.
+
+After the warm-up come the focus areas the numbers point to. The checks, in
+order. The first three that apply are shown:
 
 1. Tighten up in our end: goals against up a goal a game on the month
    before, or over 3 a game for the season.

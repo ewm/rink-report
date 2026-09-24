@@ -8,7 +8,7 @@
  * See ARCHITECTURE.md, "Coaches Corner" and "Practice ideas".
  */
 import { coachSummary } from "../model/coach.js";
-import { practicePicks } from "../model/practice.js";
+import { practicePicks, skillsFor } from "../model/practice.js";
 import { state } from "../state.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -222,13 +222,59 @@ function monthLines(sum) {
 }
 
 /**
- * "Half ice" or "Full ice", for a drill's tag.
+ * A drill's tag: "Skating" or "Puck skills" for the weekly warm-up,
+ * "Half ice" or "Full ice" for the rest.
  *
  * @param {Object} d - A drill from model/practice.js.
  * @returns {string}
  */
-function iceLabel(d) {
+function drillTag(d) {
+  if (d.kind) {
+    return d.kind === "puck" ? "Puck skills" : "Skating";
+  }
+
   return d.ice === "full" ? "Full ice" : "Half ice";
+}
+
+/**
+ * This week's skating and skills set, on the page's own clock.
+ *
+ * @returns {Object}
+ */
+function thisWeek() {
+  return skillsFor(new Date());
+}
+
+/**
+ * The line under the warm-up heading: when, how long, and what it covers.
+ *
+ * @param {Object} sk - From skillsFor().
+ * @returns {string}
+ */
+function skillsWhy(sk) {
+  return (
+    "Week of " +
+    fmtDate(sk.weekOf) +
+    ": " +
+    sk.theme.toLowerCase() +
+    ". Every practice, 10 to 15 minutes, half ice. A new set each Monday."
+  );
+}
+
+/**
+ * One drill as a plain line, for the copied text.
+ *
+ * @param {Object} d
+ * @returns {string}
+ */
+function drillLine(d) {
+  var line = "   - " + d.name + " (" + drillTag(d).toLowerCase() + "): " + d.how;
+
+  if (d.half) {
+    line += " Half ice: " + d.half;
+  }
+
+  return line;
 }
 
 /**
@@ -238,19 +284,18 @@ function iceLabel(d) {
  * @returns {string[]}
  */
 function practiceLines(sum) {
-  var lines = [];
+  var sk = thisWeek();
+  var lines = [sk.title + ". " + skillsWhy(sk)];
+
+  sk.drills.forEach(function (d) {
+    lines.push(drillLine(d));
+  });
 
   practicePicks(sum).forEach(function (p, i) {
     lines.push(i + 1 + ". " + p.title + ". " + p.why);
 
     p.drills.forEach(function (d) {
-      var line = "   - " + d.name + " (" + iceLabel(d).toLowerCase() + "): " + d.how;
-
-      if (d.half) {
-        line += " Half ice: " + d.half;
-      }
-
-      lines.push(line);
+      lines.push(drillLine(d));
     });
   });
 
@@ -258,40 +303,52 @@ function practiceLines(sum) {
 }
 
 /**
- * The practice ideas block inside the card.
+ * One focus area: heading, the reason, and its drills.
+ *
+ * @param {Object} p - {key, title, why, drills}.
+ * @returns {string}
+ */
+function focusHtml(p) {
+  var h = '<div class="pfocus" data-focus="' + esc(p.key) + '">';
+
+  h += "<h4>" + esc(p.title) + "</h4>";
+  h += '<p class="pwhy">' + esc(p.why) + "</p>";
+  h += '<ul class="drills">';
+
+  p.drills.forEach(function (d) {
+    h += "<li><b>" + esc(d.name) + '</b> <span class="ice">' + esc(drillTag(d)) + "</span>";
+    h += '<span class="how">' + esc(d.how) + "</span>";
+
+    if (d.half) {
+      h += '<span class="half">Half ice: ' + esc(d.half) + "</span>";
+    }
+
+    h += "</li>";
+  });
+
+  h += "</ul></div>";
+
+  return h;
+}
+
+/**
+ * The practice ideas block inside the card: the weekly skating and skills
+ * warm-up first, then the focus areas the numbers point to.
  *
  * @param {Object} sum - From coachSummary().
  * @returns {string}
  */
 function practiceHtml(sum) {
-  var picks = practicePicks(sum);
-
-  if (!picks.length) {
-    return "";
-  }
+  var sk = thisWeek();
 
   var h =
     '<div class="practice"><h3>Practice ideas</h3>' +
-    '<p class="pnote">Picked by the page from the numbers above, out of drills written ahead of time. A starting point, not a plan. Use what fits the ice you have.</p>';
+    '<p class="pnote">The skating and skills set changes every Monday. The rest is picked by the page from the numbers above. All drills were written ahead of time. A starting point, not a plan.</p>';
 
-  picks.forEach(function (p) {
-    h += '<div class="pfocus" data-focus="' + esc(p.key) + '">';
-    h += "<h4>" + esc(p.title) + "</h4>";
-    h += '<p class="pwhy">' + esc(p.why) + "</p>";
-    h += '<ul class="drills">';
+  h += focusHtml({ key: sk.key, title: sk.title, why: skillsWhy(sk), drills: sk.drills });
 
-    p.drills.forEach(function (d) {
-      h += "<li><b>" + esc(d.name) + '</b> <span class="ice">' + esc(iceLabel(d)) + "</span>";
-      h += '<span class="how">' + esc(d.how) + "</span>";
-
-      if (d.half) {
-        h += '<span class="half">Half ice: ' + esc(d.half) + "</span>";
-      }
-
-      h += "</li>";
-    });
-
-    h += "</ul></div>";
+  practicePicks(sum).forEach(function (p) {
+    h += focusHtml(p);
   });
 
   h += "</div>";

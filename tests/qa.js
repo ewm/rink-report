@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (404 checks, ~2 minutes)
+//   npm test         (415 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1681,15 +1681,19 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
                    drills:b.querySelectorAll('.drills li').length } : null;
     });
     ok(!!pr, 'practice ideas sit inside the Coaches Corner card');
-    ok(pr && pr.focus.join(',')==='penalties', 'only the penalty focus fires on the fixtures: '+(pr&&pr.focus.join(',')));
-    ok(pr && pr.why[0]==='4.8 penalty minutes a game.', 'the reason quotes the team number: '+(pr&&pr.why[0]));
-    ok(pr && pr.drills===2, 'two drills under the focus');
+    ok(pr && pr.focus.join(',')==='skills,penalties', 'skating and skills first, then only the penalty focus fires on the fixtures: '+(pr&&pr.focus.join(',')));
+    // The frozen clock says Thu Sept 10 2026, so the week began Mon Sept 7.
+    ok(pr && pr.why[0]==='Week of Mon Sep 7: backward skating. Every practice, 10 to 15 minutes, half ice. A new set each Monday.', 'the warm-up names its week and set: '+(pr&&pr.why[0]));
+    ok(pr && pr.why[1]==='4.8 penalty minutes a game.', 'the reason quotes the team number: '+(pr&&pr.why[1]));
+    ok(pr && pr.drills===5, 'three warm-up drills and two under the focus: '+(pr&&pr.drills));
     ok(pr && /written ahead of time/.test(pr.text), 'the block says the drills were written ahead of time');
     const roster = ['Luke G.','Evan C.','Connor P.','Andrew M.','Stephen D.','Chase M.'];
     ok(pr && roster.every(n=>pr.text.indexOf(n)===-1), 'practice ideas name no player');
 
     const txt = await r.page.evaluate(async ()=>(await import('/js/ui/coach.js')).coachText());
-    ok(txt.indexOf('\nPRACTICE IDEAS\n1. Cut the penalties. 4.8 penalty minutes a game.\n')!==-1, 'copied text carries the practice ideas');
+    ok(txt.indexOf('\nPRACTICE IDEAS\nSkating and skills. Week of Mon Sep 7: backward skating.')!==-1, 'copied text opens the practice ideas with the weekly warm-up');
+    ok(txt.indexOf('   - Backward crossovers (skating): ')!==-1 && txt.indexOf('   - Pivot and pass (puck skills): ')!==-1, 'copied warm-up drills carry their skating or puck tag');
+    ok(txt.indexOf('\n1. Cut the penalties. 4.8 penalty minutes a game.\n')!==-1, 'copied text carries the numbered focus areas');
     ok(/Scrimmages are left out\. Team numbers only\.$/.test(txt), 'copied text still ends with the footnote');
 
     // The picker on its own, with made-up summaries.
@@ -1757,6 +1761,34 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(focuses==='close,defense,finishing,penalties,sharp,spread', 'every focus area has drills: '+focuses);
     ok(lib.every(d=>d.ice==='half' || (d.ice==='full' && d.half)), 'every full-ice drill says how to run it on half ice');
     ok(lib.every(d=>(d.name+d.how+(d.half||'')).indexOf('\u2014')===-1), 'no em-dashes in the drill text');
+
+    // The weekly warm-up on its own.
+    const w = await r.page.evaluate(async ()=>{
+      const { skillsFor } = await import('/js/model/practice.js');
+      const on = (y,m,d,h) => skillsFor(new Date(y,m-1,d,h||12));
+      const seen = [];
+      for (let i=0; i<6; i++) seen.push(on(2026,9,7+i*7).theme);
+      const sets = [];
+      for (let i=0; i<6; i++) sets.push(on(2026,9,7+i*7).drills);
+      return {
+        sun: on(2026,9,13).weekOf, mon: on(2026,9,14).weekOf,
+        sunTheme: on(2026,9,13).theme, monTheme: on(2026,9,14).theme,
+        late: on(2026,9,13,23).weekOf, early: on(2026,9,14,0).weekOf,
+        newYear: on(2027,1,1).weekOf,
+        seen: seen,
+        repeat: on(2026,9,7).theme===on(2026,10,19).theme,
+        mix: sets.every(ds=>ds.length===3 && ds.some(d=>d.kind==='skating') && ds.some(d=>d.kind==='puck')),
+        text: sets.flat().map(d=>d.name+d.how).join(' ')
+      };
+    });
+    ok(w.sun==='2026-09-07' && w.mon==='2026-09-14', 'the week turns over on Monday: '+w.sun+' / '+w.mon);
+    ok(w.sunTheme!==w.monTheme, 'and the set changes with it: '+w.sunTheme+' / '+w.monTheme);
+    ok(w.late==='2026-09-07' && w.early==='2026-09-14', 'late Sunday night and just after midnight Monday land in the right weeks');
+    ok(w.newYear==='2026-12-28', 'a week that crosses New Year starts on its Monday: '+w.newYear);
+    ok(new Set(w.seen).size===6, 'six weeks in a row, six different sets: '+w.seen.join(', '));
+    ok(w.repeat, 'week seven comes back round to the first set');
+    ok(w.mix, 'every set has three drills with skating and puck work in it');
+    ok(w.text.indexOf('\u2014')===-1, 'no em-dashes in the warm-up text');
 
     // Phone width: the block must not push the page sideways.
     await r.page.setViewportSize({width:360, height:800});

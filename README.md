@@ -175,8 +175,8 @@ Add `?admin` to the address for two more things:
   post from the Instagram app.
 - A Coaches Corner card on the league view: record, scoring trends by month,
   close games, how much of the scoring comes from the top two, penalty
-  minutes, practice ideas picked from those numbers (half-ice and full-ice
-  drills), and a "Copy as text" button. It names no player, because anyone
+  minutes, practice ideas (a skating and skills warm-up that changes every
+  Monday, plus drills picked from those numbers), and a "Copy as text" button. It names no player, because anyone
   who adds `?admin` to the address can see it.
 
 Parents never see either one unless they add `?admin` themselves.
@@ -197,7 +197,7 @@ JSDoc docblock on every function, and comments that carry only the rule a
 reader needs. The reasoning lives in `ARCHITECTURE.md`. No em-dashes.
 
 `tests/` boots the real page in a headless browser with every sheet request
-answered from fixture CSVs and runs 404 checks. `npm install` once, then
+answered from fixture CSVs and runs 415 checks. `npm install` once, then
 `npm test` after any change.
 
 To deploy a change, drag the changed files onto the repo's upload page and

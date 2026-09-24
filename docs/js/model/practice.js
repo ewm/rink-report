@@ -1,10 +1,14 @@
 /**
  * Practice ideas for the Coaches Corner card, on ?admin.
  *
- * The drills below were written ahead of time. The page picks the ones that
- * match what the team numbers show (scoring fell, penalties are high, and
- * so on), so nothing is sent anywhere and no AI runs on the page. Like the
- * rest of the card, the reasons use team numbers only and name no player.
+ * Two parts. A skating and skills warm-up that shows every week and changes
+ * each Monday, because game stats can't tell us anything about skating.
+ * Then the focus areas the team numbers point to (scoring fell, penalties
+ * are high, and so on).
+ *
+ * Every drill was written ahead of time and the page only picks, so nothing
+ * is sent anywhere and no AI runs on the page. Like the rest of the card,
+ * the reasons use team numbers only and name no player.
  * See ARCHITECTURE.md, "Practice ideas".
  */
 
@@ -153,6 +157,156 @@ var FOCUS = {
     ]
   }
 };
+
+/**
+ * The weekly skating and skills sets, one per week in turn.
+ *
+ * Each has two skating drills and one puck drill, all on half ice, about
+ * 4 to 5 minutes each. kind is "skating" or "puck", for the drill's tag.
+ */
+var SKILL_SETS = [
+  {
+    theme: "Edges",
+    drills: [
+      {
+        name: "Edge circles",
+        how:
+          "Glide around a faceoff circle on one foot, inside edge, then outside edge. Both feet, both directions. Knees bent, chest up.",
+        kind: "skating"
+      },
+      {
+        name: "Figure 8s",
+        how:
+          "Figure 8s around two cones without stopping. Stay low and lean into the turns.",
+        kind: "skating"
+      },
+      {
+        name: "Heads-up stickhandling",
+        how:
+          "Stickhandle through a line of cones. Coach holds up fingers at the end and each player calls out the number, so eyes stay up.",
+        kind: "puck"
+      }
+    ]
+  },
+  {
+    theme: "Crossovers and turns",
+    drills: [
+      {
+        name: "Circle crossovers",
+        how:
+          "Crossovers around the faceoff circles, both directions. Push hard with the leg that goes under, not just the one that steps over.",
+        kind: "skating"
+      },
+      {
+        name: "Turn on the whistle",
+        how:
+          "Skate forward. On the whistle, turn to backward without slowing down. Next whistle, back to forward. Turn both ways.",
+        kind: "skating"
+      },
+      {
+        name: "Crossovers with a puck",
+        how:
+          "Crossovers around the circle carrying the puck. Forehand going one way, backhand going the other.",
+        kind: "puck"
+      }
+    ]
+  },
+  {
+    theme: "Stops and starts",
+    drills: [
+      {
+        name: "Blue line to blue line",
+        how:
+          "Sprint, stop at the blue line, sprint back. Face the same wall every time so both sides of the stop get work. First three strides short and quick.",
+        kind: "skating"
+      },
+      {
+        name: "Tight turns at the dots",
+        how:
+          "Skate to each faceoff dot and turn tight around it, stick on the ice, then burst out of the turn.",
+        kind: "skating"
+      },
+      {
+        name: "Stop and go with a puck",
+        how:
+          "Same stops and starts, carrying a puck. Keep it on the stick through the stop and take it with you on the first stride.",
+        kind: "puck"
+      }
+    ]
+  },
+  {
+    theme: "Puck control",
+    drills: [
+      {
+        name: "Backward C-cuts",
+        how:
+          "Backward the length of half ice using C-cuts, one leg then the other. Butt down, back straight, stick on the ice.",
+        kind: "skating"
+      },
+      {
+        name: "Toe drags through cones",
+        how:
+          "Pull the puck across the body with the toe of the blade at each cone. Start slow, then add speed.",
+        kind: "puck"
+      },
+      {
+        name: "Protect it on the boards",
+        how:
+          "In pairs along the boards. One carries, the other leans in with light pressure. The carrier keeps their body between the checker and the puck for 15 seconds, then switch.",
+        kind: "puck"
+      }
+    ]
+  },
+  {
+    theme: "Passing on the move",
+    drills: [
+      {
+        name: "Mohawk turns",
+        how:
+          "Open the hips heel to heel and glide sideways, then turn up ice. Both directions. This is how D walk the blue line.",
+        kind: "skating"
+      },
+      {
+        name: "Backward partner passing",
+        how:
+          "Pairs, one skating forward, one backward, passing the length of half ice. Switch at the end.",
+        kind: "puck"
+      },
+      {
+        name: "Take it on the backhand",
+        how:
+          "Receive a pass on the backhand and move it on in one smooth motion. Both sides of the ice so everyone gets both hands.",
+        kind: "puck"
+      }
+    ]
+  },
+  {
+    theme: "Backward skating",
+    drills: [
+      {
+        name: "Backward crossovers",
+        how:
+          "Backward crossovers around the circles, both directions. Look up ice, not at your feet.",
+        kind: "skating"
+      },
+      {
+        name: "Pivot and go",
+        how:
+          "Skate backward. On the whistle, open up and pivot to forward and sprint to the boards. Pivot both ways.",
+        kind: "skating"
+      },
+      {
+        name: "Pivot and pass",
+        how:
+          "Skate backward with a puck, pivot to forward, and hit a partner with a pass on the tape.",
+        kind: "puck"
+      }
+    ]
+  }
+];
+
+/** A Monday, as days since 1970-01-01. Weeks are counted from it. */
+var MONDAY_ZERO = 4;
 
 /**
  * One decimal place, dropping a trailing ".0": 2.8, 3.
@@ -400,4 +554,36 @@ function practicePicks(sum) {
   return picks;
 }
 
-export { practicePicks };
+/**
+ * This week's skating and skills set. The set changes every Monday and
+ * goes round the list in order, so no two weeks in a row repeat.
+ *
+ * @param {Date} now - Today (the page passes new Date()).
+ * @returns {{key: string, title: string, theme: string, weekOf: string, drills: Object[]}}
+ */
+function skillsFor(now) {
+  // Count days in UTC from the local calendar date, so a time change never
+  // moves the week boundary.
+  var day = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000;
+  var sinceMonday = (((day - MONDAY_ZERO) % 7) + 7) % 7;
+  var week = Math.floor((day - MONDAY_ZERO) / 7);
+  var set = SKILL_SETS[((week % SKILL_SETS.length) + SKILL_SETS.length) % SKILL_SETS.length];
+
+  var monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - sinceMonday);
+  var weekOf =
+    monday.getFullYear() +
+    "-" +
+    String(monday.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(monday.getDate()).padStart(2, "0");
+
+  return {
+    key: "skills",
+    title: "Skating and skills",
+    theme: set.theme,
+    weekOf: weekOf,
+    drills: set.drills
+  };
+}
+
+export { practicePicks, skillsFor };

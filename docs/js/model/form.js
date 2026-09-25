@@ -193,7 +193,7 @@ function goalieForm(name) {
 }
 
 /**
- * The emoji for a level, with the reason in its tooltip.
+ * The emoji for a level, with the reason for the label in ui/formtip.js.
  *
  * @param {string} level - "hot", "warm" or "cold".
  * @param {string} why - Plain text for the tooltip, already safe for HTML.
@@ -205,7 +205,7 @@ function formBadge(level, why) {
   return (
     '<span class="form form-' +
     level +
-    '" title="' +
+    '" tabindex="0" data-why="' +
     look.word +
     ": " +
     why +

@@ -174,7 +174,12 @@ tr.us td.pts{color:var(--us-ink); font-weight:700}
   font-variant-numeric:tabular-nums; font-size:12px; font-weight:600}
 /* Hot, warm, cold next to a name on the Stats page, ?admin only. The
    inline-block needs its own text-indent for the same reason .rank does. */
-.form{display:inline-block; text-indent:0; margin-left:4px; font-size:13px; line-height:1; cursor:help}
+.form{display:inline-block; text-indent:0; margin-left:4px; font-size:13px; line-height:1; cursor:default; outline:none}
+/* The label ui/formtip.js shows on hover or tap. */
+.formtip{position:fixed; z-index:50; max-width:240px; padding:6px 9px; border-radius:6px;
+  background:var(--ink); color:var(--paper); font-size:12px; line-height:1.35; font-weight:600;
+  white-space:normal; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.formtip[hidden]{display:none}
 /* ---- team names that open the club's MyHockey Rankings page ----
    Set by the "MyHockey link" column on the Teams tab. The name keeps its own
    colour and weight (our gold row stays gold); a hairline underline and a

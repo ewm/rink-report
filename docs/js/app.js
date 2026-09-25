@@ -19,11 +19,13 @@ import { played } from "./model/game.js";
 import { tickFresh } from "./ui/frame.js";
 import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
 import { coachText } from "./ui/coach.js";
+import { initFormTip } from "./ui/formtip.js";
 import { copyText } from "./util/clipboard.js";
 import { ago, timeKey, todayISO } from "./util/dates.js";
 import { bare, norm } from "./util/text.js";
 
 onChange(render);
+initFormTip();
 
 /**
  * The three tabs the page works without. Each names the feature switch that

@@ -882,8 +882,10 @@ says 45, every GAA comes out about 7 percent high.
 ### Hot and cold
 
 On ?admin, each name on the Stats page gets an emoji: 🔥 hot, ☀️ warm,
-🧊 cold. `model/form.js` works it out and `ui/stats.js` draws it, with the
-reason in the tooltip. Parents never see it.
+🧊 cold. `model/form.js` works it out and `ui/stats.js` draws it. Hovering or
+tapping the emoji shows the reason in a small label (`ui/formtip.js`), not a
+browser title tooltip, which is slow on a mouse and never shows on a phone.
+Parents never see any of it.
 
 Skaters are judged on points in the team's last 5 games: 5 or more is hot,
 2 to 4 is warm, 0 or 1 is cold. Nobody gets one until the log holds 5 games.

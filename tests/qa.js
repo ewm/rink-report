@@ -133,6 +133,8 @@ async function openPage(browser, url, opts){
     if(which==='stats' && opts.leagueLog) body = body.split('8/30/2026').join('9/13/2026');
     // A tie in the goalie log: the Sylvania game, which the totals block still counts as a loss.
     if(which==='stats' && opts.ties) body = body.replace('Andrew M.,42,,5,L', 'Andrew M.,42,,5,T');
+    // Any other one-off change to the stats tab, as a function of its text.
+    if(which==='stats' && opts.statsEdit) body = opts.statsEdit(body);
     // A sheet that slipped back to a full name, which the page must still shorten.
     if(which==='stats' && opts.fullName) body = body.split('Luke G.').join('Testy McTestface');
     if(which==='schedule' && opts.eventPeriods){
@@ -1795,6 +1797,68 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const wide = await r.page.evaluate(()=>document.documentElement.scrollWidth);
     ok(wide<=360, 'no sideways scroll at phone width with the practice block: '+wide);
     await r.ctx.close();
+  }
+
+  // 37. Hot, warm and cold on the Stats page (?admin only)
+  console.log('\n[37] hot warm cold');
+  {
+    const FIRE='\u{1F525}', SUN='\u2600\uFE0F', ICE='\u{1F9CA}';
+    const look = async (url, opts) => {
+      const r = await openPage(browser, url, opts);
+      await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+      const got = await r.page.evaluate(()=>{
+        const rows = {};
+        document.querySelectorAll('.card tbody tr').forEach(tr=>{
+          const td = tr.children[0];
+          const f = td.querySelector('.form');
+          const name = [...td.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
+          rows[name] = f ? { emoji:f.textContent, why:f.getAttribute('title') } : null;
+        });
+        return { rows, keys:[...document.querySelectorAll('.formkey')].map(p=>p.textContent) };
+      });
+      got.errors = r.errors;
+      await r.ctx.close();
+      return got;
+    };
+
+    let v = await look(BASE, {});
+    ok(Object.values(v.rows).every(x=>x===null) && v.keys.length===0, 'no emojis and no key without ?admin');
+
+    // The fixture log holds exactly five games, so every point in it counts.
+    v = await look(BASE+'?admin', {});
+    ok(v.errors.length===0, 'no page errors with the emojis on: '+v.errors.join(' | '));
+    ok(v.rows['Luke G.'] && v.rows['Luke G.'].emoji===FIRE, 'Luke G., 7 points in 5 games, is hot');
+    ok(v.rows['Luke G.'] && v.rows['Luke G.'].why==='Hot: 7 points in the last 5 games', 'the tooltip says why: '+(v.rows['Luke G.']||{}).why);
+    ok(v.rows['Rory O.'] && v.rows['Rory O.'].emoji===SUN, 'Rory O., 4 points, is warm');
+    ok(v.rows['Gus F.'] && v.rows['Gus F.'].emoji===ICE, 'Gus F., 1 point, is cold');
+    ok(v.rows['Vincent D.'] && v.rows['Vincent D.'].emoji===ICE && /0 points/.test(v.rows['Vincent D.'].why), 'a skater with no log rows is cold at 0 points');
+    ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].emoji===SUN, 'Andrew M., 3.21 lately vs 2.41 season, is warm: '+JSON.stringify(v.rows['Andrew M.']));
+    ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].why==='Warm: 3.21 GAA in the last 3 games, 2.41 for the season', 'goalie tooltip names both numbers');
+    ok(v.rows['Stephen D.']===null, 'a goalie with one game gets no emoji');
+    ok(v.keys.length===2 && v.keys.every(k=>/Only on \?admin/.test(k)), 'both tables explain the emojis');
+    ok(v.keys.every(k=>k.indexOf('\u2014')===-1), 'no em-dashes in the key');
+
+    // Only the last five games count: a sixth game pushes Aug 28 out.
+    const evanB = b => b.replace('Evan B.,,,1.5', 'Evan B.,2,1,1.5');
+    v = await look(BASE+'?admin', {statsEdit:evanB});
+    ok(v.rows['Evan B.'] && v.rows['Evan B.'].emoji===FIRE, 'Evan B. with 3 more points on Aug 28 is hot (7)');
+    const sixth = b => evanB(b).replace('Evan B.,2,1,1.5,,,,,,,,,,', 'Evan B.,2,1,1.5,,9/6/2026,Test Club,32,Stephen D.,45,,1,W,');
+    v = await look(BASE+'?admin', {statsEdit:sixth});
+    ok(v.rows['Evan B.'] && v.rows['Evan B.'].emoji===SUN && /4 points/.test(v.rows['Evan B.'].why),
+      'with a sixth game logged, Aug 28 drops out and Evan B. is warm (4): '+JSON.stringify(v.rows['Evan B.']));
+    ok(v.rows['Stephen D.']===null, 'a goalie with two games still gets no emoji');
+
+    // Fewer than five games in the log: nobody is judged yet.
+    v = await look(BASE+'?admin', {statsEdit:b=>b.replace('Sylvania N-Stars 2014,29,Andrew M.', 'Macomb Mavericks 2014,29,Andrew M.')});
+    const sk = ['Luke G.','Rory O.','Gus F.'].map(n=>v.rows[n]);
+    ok(sk.every(x=>x===null), 'no skater emojis with only four games logged');
+    ok(v.keys.length===1, 'and no skater key, only the goalie one');
+
+    // Goalies: a full goal a game either way.
+    v = await look(BASE+'?admin', {statsEdit:b=>b.replace('Stoney Creek 2014,29,Andrew M.,42,,2,W', 'Stoney Creek 2014,29,Andrew M.,42,,6,W')});
+    ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].emoji===ICE, 'six against in his last game makes Andrew M. cold: '+JSON.stringify(v.rows['Andrew M.']));
+    v = await look(BASE+'?admin', {statsEdit:b=>b.replace('Andrew M.,42,19,0,W', 'Andrew M.,42,19,8,W')});
+    ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].emoji===FIRE, 'a bad early game and a good last three make Andrew M. hot: '+JSON.stringify(v.rows['Andrew M.']));
   }
 
   await browser.close(); sNew.close();

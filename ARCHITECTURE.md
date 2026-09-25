@@ -34,7 +34,7 @@ docs/
                       sponsors.js
                       CSV rows -> objects, plus manager warnings
     model/            game.js  standings.js  rating.js  views.js  links.js
-                      gamelog.js  coach.js
+                      gamelog.js  coach.js  practice.js  form.js
                       what the data means: records, tiebreaks, tabs,
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
@@ -878,6 +878,28 @@ would be a claim the tab cannot make.
 The minutes in the sheet and the Period length have to describe the same
 game. If the goalie log records 42 minutes for a full game while the setting
 says 45, every GAA comes out about 7 percent high.
+
+### Hot and cold
+
+On ?admin, each name on the Stats page gets an emoji: 🔥 hot, ☀️ warm,
+🧊 cold. `model/form.js` works it out and `ui/stats.js` draws it, with the
+reason in the tooltip. Parents never see it.
+
+Skaters are judged on points in the team's last 5 games: 5 or more is hot,
+2 to 4 is warm, 0 or 1 is cold. Nobody gets one until the log holds 5 games.
+The log only has a skater row when the kid scores or takes a penalty, and it
+does not record who missed a game, so a kid who sat out counts as 0 points.
+
+Goalies are judged on GAA over their own last 3 games against their season
+GAA, both counted the way the GAA column is (share of a full game). A full
+goal a game better is hot, a full goal worse is cold, anything between is
+warm. A goalie needs 4 or more games, or the two numbers are the same games.
+
+The emoji always looks at all games, whichever of League / All games is on
+screen. The list of games comes from the goalie log (a goalie gets a row
+every game), and a skater row is matched to a game by date and opponent, or
+by date alone when only one game that day is in the window. The numbers are
+the constants at the top of `model/form.js`.
 
 ## Directions and calendar links
 

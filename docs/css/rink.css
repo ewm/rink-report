@@ -172,6 +172,9 @@ tr.us td.pts{color:var(--us-ink); font-weight:700}
    negative indent to its own digit and push it out of view. */
 .rank{display:inline-block; width:24px; text-indent:0; color:var(--ink-2);
   font-variant-numeric:tabular-nums; font-size:12px; font-weight:600}
+/* Hot, warm, cold next to a name on the Stats page, ?admin only. The
+   inline-block needs its own text-indent for the same reason .rank does. */
+.form{display:inline-block; text-indent:0; margin-left:4px; font-size:13px; line-height:1; cursor:help}
 /* ---- team names that open the club's MyHockey Rankings page ----
    Set by the "MyHockey link" column on the Teams tab. The name keeps its own
    colour and weight (our gold row stays gold); a hairline underline and a

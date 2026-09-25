@@ -1812,7 +1812,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
           const td = tr.children[0];
           const f = td.querySelector('.form');
           const name = [...td.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
-          rows[name] = f ? { emoji:f.textContent, why:f.getAttribute('title') } : null;
+          rows[name] = f ? { emoji:f.textContent, why:f.getAttribute('data-why') } : null;
         });
         return { rows, keys:[...document.querySelectorAll('.formkey')].map(p=>p.textContent) };
       });
@@ -1835,6 +1835,33 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].emoji===SUN, 'Andrew M., 3.21 lately vs 2.41 season, is warm: '+JSON.stringify(v.rows['Andrew M.']));
     ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].why==='Warm: 3.21 GAA in the last 3 games, 2.41 for the season', 'goalie tooltip names both numbers');
     ok(v.rows['Stephen D.']===null, 'a goalie with one game gets no emoji');
+
+    // The reason shows in a label on hover (mouse) and on tap (phone), not
+    // in a browser title tooltip, which shows nothing useful on a phone.
+    {
+      const r = await openPage(browser, BASE+'?admin', {});
+      await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+      const label = () => r.page.evaluate(()=>{
+        const t=document.querySelector('.formtip');
+        if(!t || t.hidden) return null;
+        const b=t.getBoundingClientRect();
+        return { text:t.textContent, inside: b.left>=0 && b.right<=innerWidth && b.top>=0 && b.bottom<=innerHeight };
+      });
+      ok((await r.page.$$eval('.form[title]', x=>x.length))===0, 'no title attribute, so no stray browser tooltip');
+      await r.page.hover('.form');
+      let t = await label();
+      ok(t && t.text==='Hot: 7 points in the last 5 games' && t.inside, 'hovering the first emoji shows its reason on screen: '+JSON.stringify(t));
+      await r.page.mouse.move(5, 5); await r.page.waitForTimeout(50);
+      ok((await label())===null, 'moving away hides it');
+      const last = (await r.page.$$('.form')).pop();
+      await last.scrollIntoViewIfNeeded();
+      await last.click();
+      t = await label();
+      ok(t && /^Warm: /.test(t.text) && t.inside, 'a tap on the goalie emoji shows its reason: '+JSON.stringify(t));
+      await r.page.click('h2');
+      ok((await label())===null, 'a tap elsewhere hides it');
+      await r.ctx.close();
+    }
     ok(v.keys.length===2 && v.keys.every(k=>/Only on \?admin/.test(k)), 'both tables explain the emojis');
     ok(v.keys.every(k=>k.indexOf('\u2014')===-1), 'no em-dashes in the key');
 

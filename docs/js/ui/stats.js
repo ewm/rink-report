@@ -6,8 +6,9 @@
  * League switch is on, from the game log restricted to league play. The sheet
  * does the adding; the two things figured here are GAA, from the sheet's own
  * GA and minutes and the league's game length, and the W-L-T record, which
- * needs the log because the sheet counts no ties. See ARCHITECTURE.md,
- * "Stats".
+ * needs the log because the sheet counts no ties. On ?admin each name also
+ * gets a hot, warm or cold emoji from model/form.js. See ARCHITECTURE.md,
+ * "Stats" and "Hot and cold".
  */
 import {
   canSplitByScope,
@@ -17,7 +18,8 @@ import {
   leagueSkaters,
   recordFromLog
 } from "../model/gamelog.js";
-import { state } from "../state.js";
+import { formBadge, goalieForm, skaterForm } from "../model/form.js";
+import { ADMIN, state } from "../state.js";
 import { esc } from "../util/text.js";
 
 /**
@@ -169,6 +171,47 @@ function scopeSeg() {
 }
 
 /**
+ * The hot, warm or cold emoji for a skater, on ?admin only.
+ *
+ * @param {Object} form - From skaterForm(), keyed by short name.
+ * @param {string} name - The skater's short name.
+ * @returns {string} HTML, or "".
+ */
+function skaterBadge(form, name) {
+  var f = form[name];
+
+  if (!f) {
+    return "";
+  }
+
+  var why = f.points + " point" + (f.points === 1 ? "" : "s") + " in the last 5 games";
+
+  return " " + formBadge(f.level, why);
+}
+
+/**
+ * The hot, warm or cold emoji for a goalie, on ?admin only.
+ *
+ * @param {string} name - The goalie's short name.
+ * @returns {string} HTML, or "".
+ */
+function goalieBadge(name) {
+  if (!ADMIN) {
+    return "";
+  }
+
+  var f = goalieForm(name);
+
+  if (!f) {
+    return "";
+  }
+
+  var why = fmtGaa(f.recent) + " GAA in the last 3 games, " + fmtGaa(f.season) + " for the season";
+
+  return " " + formBadge(f.level, why);
+}
+
+/**
  * The Skaters and In net cards, or "" when there are no stats.
  *
  * @returns {string} HTML.
@@ -222,6 +265,11 @@ function statsHtml() {
   // the game count drops the word "through" rather than crowding a phone.
   var through = gp ? (seg ? "" : "Through ") + gp + " game" + (gp === 1 ? "" : "s") : "Season";
 
+  // Hot, warm and cold are the manager's read on who is on a run. They look
+  // at the last five games whichever scope is on screen.
+  var form = ADMIN ? skaterForm() : {};
+  var showForm = Object.keys(form).length > 0;
+
   if (skaters.length) {
     h +=
       '<section class="card skaters"><div class="card-h"><h2>Skaters</h2><span class="eyebrow">' +
@@ -239,6 +287,7 @@ function statsHtml() {
         (p.no !== null ? esc(fmtNum(p.no)) : "") +
         "</span>" +
         esc(p.name) +
+        skaterBadge(form, p.name) +
         "</td>" +
         "<td>" +
         fmtNum(p.gp) +
@@ -260,6 +309,13 @@ function statsHtml() {
       "Sorted by points, then goals. PIM counts each 1:30 minor as 1.5." +
       (league ? " GP is the team's league games, so a missed game is not taken off." : "") +
       "</p>";
+
+    if (showForm) {
+      h +=
+        '<p class="foot formkey">\uD83D\uDD25 5 or more points in the last 5 games, \u2600\uFE0F 2 to 4, \uD83E\uDDCA 0 or 1. ' +
+        "The log does not say who missed a game, so a kid who sat out counts as 0. Only on ?admin.</p>";
+    }
+
     h += "</div></section>";
   }
 
@@ -282,6 +338,7 @@ function statsHtml() {
         (g.no !== null ? esc(fmtNum(g.no)) : "") +
         "</span>" +
         esc(g.name) +
+        goalieBadge(g.name) +
         "</td>" +
         "<td>" +
         fmtNum(g.gp) +
@@ -307,6 +364,16 @@ function statsHtml() {
       " minutes" +
       (mixedLengths() ? ", and of whatever the Schedule tab says for an event that runs a different clock" : "") +
       '. Record is wins-losses-ties. Saves are not listed because most scoresheets do not record shots.</p>';
+
+    var goalieForms = ADMIN && goalies.some(function (g) {
+      return goalieForm(g.name) !== null;
+    });
+
+    if (goalieForms) {
+      h +=
+        '<p class="foot formkey">\uD83D\uDD25 \u2600\uFE0F \uD83E\uDDCA compare GAA over a goalie\'s last 3 games to their season GAA. ' +
+        "A full goal a game better is hot, a full goal worse is cold. A goalie needs 4 or more games to get one. Only on ?admin.</p>";
+    }
     h += "</div></section>";
   }
 

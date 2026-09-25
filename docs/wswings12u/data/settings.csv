@@ -11,4 +11,4 @@
 ,,,,,At least one game on the Schedule,OK
 ,,,,,Every game has a date,OK
 ,,,,,Every Schedule row reads OK in column K,OK
-,,,,,No game left out of its event,FIX - a game sits on an event day with a blank Event cell
+,,,,,No game left out of its event,OK

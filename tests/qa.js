@@ -1811,7 +1811,8 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
         document.querySelectorAll('.card tbody tr').forEach(tr=>{
           const td = tr.children[0];
           const f = td.querySelector('.form');
-          const name = [...td.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
+          const btn = td.querySelector('.pname');
+          const name = btn ? btn.textContent.trim() : [...td.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
           rows[name] = f ? { emoji:f.textContent, why:f.getAttribute('data-why') } : null;
         });
         return { rows, keys:[...document.querySelectorAll('.formkey')].map(p=>p.textContent) };
@@ -1886,6 +1887,103 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].emoji===ICE, 'six against in his last game makes Andrew M. cold: '+JSON.stringify(v.rows['Andrew M.']));
     v = await look(BASE+'?admin', {statsEdit:b=>b.replace('Andrew M.,42,19,0,W', 'Andrew M.,42,19,8,W')});
     ok(v.rows['Andrew M.'] && v.rows['Andrew M.'].emoji===FIRE, 'a bad early game and a good last three make Andrew M. hot: '+JSON.stringify(v.rows['Andrew M.']));
+  }
+
+  console.log('\n[38] player pages');
+  {
+    // Without ?admin the names are plain text and nothing opens.
+    {
+      const r = await openPage(browser, BASE, {});
+      await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+      ok((await r.page.$$eval('.pname', x=>x.length))===0, 'no name buttons for parents');
+      ok((await r.page.$$eval('.phead', x=>x.length))===0, 'no player page for parents');
+      await r.ctx.close();
+    }
+
+    const r = await openPage(browser, BASE+'?admin', {});
+    await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
+    const names = await r.page.$$eval('.pname', x=>x.map(b=>b.textContent.trim()));
+    ok(names.length===15 && names[0]==='Luke G.' && names.indexOf('Andrew M.')!==-1, 'every skater and goalie is a button: '+names.length);
+
+    // A skater: header numbers match the totals table, one row per team game.
+    await r.page.click('.pname[data-v="Luke G."]'); await r.page.waitForTimeout(150);
+    let v = await r.page.evaluate(()=>({
+      head: document.querySelector('.phead') && document.querySelector('.phead').textContent.replace(/\s+/g,' ').trim(),
+      tiles: [...document.querySelectorAll('.ptile')].map(t=>t.querySelector('span').textContent+'='+t.querySelector('b').textContent),
+      rows: [...document.querySelectorAll('.plog tbody tr')].map(tr=>[...tr.children].map(td=>td.textContent.replace(/\s+/g,' ').trim())),
+      notes: [...document.querySelectorAll('.pnotes div')].map(d=>d.querySelector('dt').textContent+': '+d.querySelector('dd').textContent),
+      tables: document.querySelectorAll('.card.skaters').length,
+      crumb: document.querySelector('.crumb button') && document.querySelector('.crumb button').textContent.trim(),
+      top: window.scrollY
+    }));
+    ok(v.head && /^15\s*Luke G\./.test(v.head) && /Skater/.test(v.head), 'header shows number, name and Skater: '+v.head);
+    ok(v.tiles.join(' ')==='GP=5 G=6 A=1 Pts=7 PIM=0 Pts/GP=1.40', 'tiles carry the season line: '+v.tiles.join(' '));
+    ok(v.tables===0, 'the Stats tables are replaced by the page');
+    ok(v.rows.length===5, 'one row per team game, five in the fixture: '+v.rows.length);
+    ok(v.rows[0][0].indexOf('vs Stoney Creek Warriors')===0 && /Sun Aug 30/.test(v.rows[0][0]) && /Showcase/.test(v.rows[0][0]), 'newest game first with date and event: '+v.rows[0][0]);
+    ok(v.rows[0][1]==='W 3-2', 'result reads from our side: '+v.rows[0][1]);
+    // Two games on Aug 29: the opponent typed in the log picks the right one.
+    const macomb = v.rows.find(x=>/Macomb/.test(x[0]));
+    const sylvania = v.rows.find(x=>/Sylvania/.test(x[0]));
+    ok(macomb && macomb.slice(1).join(' ')==='W 6-0 2 0 2 0', 'Aug 29 at Macomb: 2 goals: '+(macomb&&macomb.join('|')));
+    ok(sylvania && sylvania.slice(1).join(' ')==='L 2-5 1 0 1 0', 'Aug 29 vs Sylvania: 1 goal, not mixed up with Macomb: '+(sylvania&&sylvania.join('|')));
+    ok(v.notes[0]==='Best game: 2 G at Macomb Mavericks, Sat Aug 29' || v.notes[0]==='Best game: 2 G at Middlesex Islanders, Sun Aug 30', 'best game named: '+v.notes[0]);
+    ok(v.notes.indexOf('Games with a point: 5 of 5')!==-1, 'games with a point: '+v.notes.join(' | '));
+    ok(v.notes.indexOf('Point streak: 5 games and counting')!==-1, 'point streak counts back from the latest game');
+    ok(v.notes.every(n=>n.indexOf('—')===-1), 'no em-dashes in the notes');
+    ok(v.crumb==='← Player stats', 'crumb leads back: '+v.crumb);
+    ok(v.top===0, 'the page opens scrolled to the top');
+
+    // The Stats tab stays lit while a player is open, and the record chip stays.
+    const lit = await r.page.$eval('.viewbar button[aria-pressed="true"]', b=>b.getAttribute('data-v'));
+    ok(lit==='stats', 'the Stats button stays lit while a player is open: '+lit);
+
+    // Back to the tables.
+    await r.page.click('.crumb button'); await r.page.waitForTimeout(100);
+    ok((await r.page.$$eval('.card.skaters', x=>x.length))===1 && (await r.page.$$eval('.phead', x=>x.length))===0, 'crumb returns to the tables');
+
+    // A goalie page.
+    await r.page.click('.pname[data-v="Andrew M."]'); await r.page.waitForTimeout(150);
+    v = await r.page.evaluate(()=>({
+      head: document.querySelector('.phead').textContent.replace(/\s+/g,' ').trim(),
+      tiles: [...document.querySelectorAll('.ptile')].map(t=>t.querySelector('span').textContent+'='+t.querySelector('b').textContent),
+      rows: [...document.querySelectorAll('.plog tbody tr')].map(tr=>[...tr.children].map(td=>td.textContent.replace(/\s+/g,' ').trim())),
+      notes: [...document.querySelectorAll('.pnotes div')].map(d=>d.querySelector('dt').textContent+': '+d.querySelector('dd').textContent),
+      body: document.body.textContent
+    }));
+    ok(/^29\s*Andrew M\./.test(v.head) && /Goalie/.test(v.head), 'goalie header: '+v.head);
+    ok(v.tiles.join(' ')==='GP=4 Min=168 GA=9 GAA=2.41 SO=1 Record=3-1-0', 'goalie tiles, GAA per 45 minute game: '+v.tiles.join(' '));
+    ok(v.rows.length===4, 'one row per game in net: '+v.rows.length);
+    const shutout = v.rows.find(x=>/Macomb/.test(x[0]));
+    ok(shutout && shutout[3]==='0 SO', 'the Macomb shutout is tagged: '+(shutout&&shutout.join('|')));
+    ok(v.notes[0]==='Best game: 0 against in 42 min at Macomb Mavericks, Sat Aug 29', 'goalie best game: '+v.notes[0]);
+    ok(v.notes.indexOf('Shutouts: 1')!==-1, 'shutouts counted');
+    ok(!/SV%|1\.000/.test(v.body), 'no save percentage anywhere on the page');
+
+    // Switching tabs closes the page; coming back shows the tables, not the player.
+    await r.page.click('.viewbar button[data-v="league"]'); await r.page.waitForTimeout(100);
+    await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(100);
+    ok((await r.page.$$eval('.phead', x=>x.length))===0, 'changing tab closes the player page');
+
+    // A skater with no log rows at all still gets a page of zeros.
+    await r.page.click('.pname[data-v="Gus F."]').catch(()=>{}); await r.page.waitForTimeout(150);
+    const gus = await r.page.evaluate(()=>({
+      rows: document.querySelectorAll('.plog tbody tr').length,
+      notes: [...document.querySelectorAll('.pnotes div')].map(d=>d.querySelector('dd').textContent)
+    }));
+    ok(gus.rows===5, 'a quiet skater still lists every team game: '+gus.rows);
+
+    await r.page.screenshot({path:path.join(OUT,'shot_player_light.png'), fullPage:true});
+    ok(r.errors.length===0, 'no page errors on the player pages: '+r.errors.join(' | '));
+    await r.ctx.close();
+
+    {
+      const d = await openPage(browser, BASE+'?admin', {scheme:'dark'});
+      await d.page.click('.viewbar button[data-v="stats"]'); await d.page.waitForTimeout(100);
+      await d.page.click('.pname[data-v="Luke G."]'); await d.page.waitForTimeout(150);
+      await d.page.screenshot({path:path.join(OUT,'shot_player_dark.png'), fullPage:true});
+      await d.ctx.close();
+    }
   }
 
   await browser.close(); sNew.close();

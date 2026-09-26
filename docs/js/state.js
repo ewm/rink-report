@@ -104,6 +104,7 @@ function offList() {
  *   opens the page to find out when their own kid plays next, and the
  *   division's other games are one tap away.
  * statsScope: "all" or "league", the switch on the Stats page.
+ * player: the short name whose page is open on the Stats view (?admin), or null.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * coachCopied: true for a moment after the Coaches Corner text was copied.
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
@@ -139,6 +140,7 @@ var state = {
   viewKey: null,
   filterOurs: true,
   statsScope: "all",
+  player: null,
   // Open by default. A reader who folds it keeps it folded on that phone only.
   sponsorsOpen: (function () {
     try {

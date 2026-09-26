@@ -13,6 +13,7 @@ import { standingsHtml } from "./ui/standings.js";
 import { resultsHtml } from "./ui/results.js";
 import { eventsHtml, crumbHtml } from "./ui/events.js";
 import { statsHtml } from "./ui/stats.js";
+import { playerHtml } from "./ui/player.js";
 import { sponsorsHtml } from "./ui/sponsors.js";
 import { coachHtml } from "./ui/coach.js";
 import {
@@ -91,7 +92,11 @@ function render() {
     h += viewBarHtml(views, barKeyFor(views, v));
 
     if (v.stats) {
-      h += statsHtml();
+      // A player's page, on ?admin. A name the sheet no longer has falls
+      // back to the tables.
+      var pageHtml = ADMIN && state.player ? playerHtml(state.player) : "";
+
+      h += pageHtml || statsHtml();
     } else if (v.events) {
       h += eventsHtml(views);
     } else {

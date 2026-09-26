@@ -212,6 +212,21 @@ function goalieBadge(name) {
 }
 
 /**
+ * A player's name, as a button that opens their page on ?admin and plain
+ * text otherwise.
+ *
+ * @param {string} name - The short name.
+ * @returns {string} HTML.
+ */
+function nameCell(name) {
+  if (!ADMIN) {
+    return esc(name);
+  }
+
+  return '<button type="button" class="pname" data-act="player" data-v="' + esc(name) + '">' + esc(name) + "</button>";
+}
+
+/**
  * The Skaters and In net cards, or "" when there are no stats.
  *
  * @returns {string} HTML.
@@ -286,7 +301,7 @@ function statsHtml() {
         '<tr><td><span class="rank">' +
         (p.no !== null ? esc(fmtNum(p.no)) : "") +
         "</span>" +
-        esc(p.name) +
+        nameCell(p.name) +
         skaterBadge(form, p.name) +
         "</td>" +
         "<td>" +
@@ -337,7 +352,7 @@ function statsHtml() {
         '<tr><td><span class="rank">' +
         (g.no !== null ? esc(fmtNum(g.no)) : "") +
         "</span>" +
-        esc(g.name) +
+        nameCell(g.name) +
         goalieBadge(g.name) +
         "</td>" +
         "<td>" +

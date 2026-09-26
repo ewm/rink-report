@@ -34,7 +34,7 @@ docs/
                       sponsors.js
                       CSV rows -> objects, plus manager warnings
     model/            game.js  standings.js  rating.js  views.js  links.js
-                      gamelog.js  coach.js  practice.js  form.js
+                      gamelog.js  coach.js  practice.js  form.js  player.js
                       what the data means: records, tiebreaks, tabs,
                       and the directions / calendar links built from a game
     ui/               frame.js (masthead, bar, banners, status, footer) and
@@ -902,6 +902,33 @@ screen. The list of games comes from the goalie log (a goalie gets a row
 every game), and a skater row is matched to a game by date and opponent, or
 by date alone when only one game that day is in the window. The numbers are
 the constants at the top of `model/form.js`.
+
+### Player pages
+
+On ?admin, every name on the Stats tables is a button. Tapping one puts
+`state.player` on the store and `render()` draws `ui/player.js` in place of
+the tables: a header strip with the sheet's own season line (so the page
+agrees with the table it came from), a game-by-game table, and a few season
+notes. The crumb, or changing tab, clears `state.player`. Parents never see
+any of it: `nameCell()` in `ui/stats.js` prints plain text without ?admin
+and `render()` never asks for the page.
+
+`model/player.js` builds the game lines. The team's finished games come
+from the Schedule tab, so a skater gets one line per game whether or not
+the log has a row for them (a quiet game and a missed game both read as
+zeros; the footnote says so). A log row finds its game by date, and on a
+two-game day by whichever schedule name shares the most word stems with the
+opponent as typed (`likeness()`: the first four letters of each word, so
+"Norflok Knights" still finds Norfolk Knights and "Southtowns 12U Martino"
+finds Southtown Stars). A row that matches no game is kept as its own line,
+marked "not on the schedule". Goalies get a line per log row, since the
+goalie log is complete.
+
+The season notes are worked out from those lines: best game (most points,
+goals breaking the tie; for a goalie fewest against, then most minutes),
+games with a point, multi-point games, the current point streak counting
+back from the latest game, and the league-only line when there is one. The
+header's GAA and record use the same functions as the Stats table.
 
 ## Directions and calendar links
 

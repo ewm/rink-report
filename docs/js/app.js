@@ -344,6 +344,17 @@ document.addEventListener("click", function (e) {
 
   if (a === "view") {
     state.viewKey = el.getAttribute("data-v");
+    state.player = null;
+    render();
+
+    try {
+      window.scrollTo(0, 0);
+    } catch (err) {}
+  }
+
+  // A name on the Stats table opens that player's page; an empty value closes it.
+  if (a === "player") {
+    state.player = el.getAttribute("data-v") || null;
     render();
 
     try {

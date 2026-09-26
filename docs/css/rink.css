@@ -252,6 +252,37 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .tag.w{background:var(--gold); border-color:var(--gold); color:var(--on-gold)}
 .tag.l{color:var(--ink-3)}
 
+/* ---- player pages (?admin only) ----
+   Opened by tapping a name on the Stats table. Same program treatment: a
+   header strip of numbers divided by hairlines, then the game log. */
+.pname{font:inherit; background:transparent; border:0; padding:0 0 1px; color:inherit; cursor:pointer;
+  text-indent:0; border-bottom:1.5px solid var(--hair); text-align:left}
+.pname:hover,.pname:focus-visible{border-bottom-color:var(--navy-ink); outline:none}
+.phead{display:flex; align-items:baseline; gap:12px; padding:14px 0 12px}
+.phead .pno{font-size:30px; font-weight:700; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.phead h2{font-size:30px; text-transform:none; letter-spacing:0}
+.phead .form{font-size:18px}
+.phead .eyebrow{margin-left:auto}
+.ptiles{display:grid; grid-template-columns:repeat(6,1fr); border-top:1px solid var(--hair); border-bottom:1px solid var(--hair)}
+.ptile{padding:10px 4px; border-left:1px solid var(--hair); text-align:center; min-width:0}
+.ptile:first-child{border-left:0}
+.ptile b{display:block; font-size:24px; font-weight:700; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums}
+.ptile.lead b{color:var(--navy-ink)}
+.ptile span{display:block; margin-top:3px; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-weight:700}
+@media (max-width:360px){ .ptiles{grid-template-columns:repeat(3,1fr)} .ptile:nth-child(4){border-left:0} .ptile:nth-child(-n+3){border-bottom:1px solid var(--hair)} }
+.mono-nums .phead .pno,.mono-nums .ptile b{font-family:var(--f-mono); font-variant-numeric:normal}
+/* the game column has no rank digit, so it drops the hanging indent */
+.plog thead th:first-child,.plog tbody td:first-child{padding-left:0; text-indent:0}
+.plog tbody td+td,.plog thead th+th{padding-left:14px}
+.plog .psub{display:block; font-size:12px; color:var(--ink-3); font-weight:400}
+.plog tr.scored td:first-child{font-weight:600}
+.plog .tag{margin-right:2px}
+.pnotes{margin:0}
+.pnotes div{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:9px 0; border-top:1px solid var(--hair)}
+.pnotes div:first-child{border-top:0}
+.pnotes dt{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-weight:700; white-space:nowrap}
+.pnotes dd{margin:0; text-align:right; font-weight:600; font-size:15px; font-variant-numeric:tabular-nums}
+
 /* ---- controls ---- */
 .seg{display:inline-flex; border:1px solid var(--rule)}
 .seg button{font:inherit; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;

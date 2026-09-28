@@ -29,7 +29,7 @@ width) — worth a glance when a change is visual.
   Google Calendar links on the next-game card (dates, title, escaped location,
   link back), the whole-season `.ics`, and the crest. Rinks over both routes,
   and the Rinks tab missing entirely.
-- The gameday post panel on `?admin`: each template and size draws at the
+- The gameday post panel: each template and size draws at the
   right dimensions in the club colors, the hype line box and switch redraw
   it, a photo from the picker lands in the photo area and still exports,
   and the last template and size are remembered.

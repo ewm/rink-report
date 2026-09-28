@@ -165,22 +165,6 @@ where it was.
 | `monoNumbers` | Chivo Mono on the figures (they go back to Barlow) |
 | `rating` | the Rtg column in the standings |
 
-Add `?admin` to the address for two more things:
-
-- A "Gameday post" button on every game of ours still to be played. Pick a
-  template (Blueline, Echo or Faceoff), a size (Instagram feed, square or
-  story), add a photo from your phone if you like, and edit the hype line.
-  Download saves the PNG; on a phone Share opens the share sheet too. To
-  post it, get it into your photos (iPhone: Share, then Save Image) and
-  post from the Instagram app.
-- A Coaches Corner card on the league view: record, scoring trends by month,
-  close games, how much of the scoring comes from the top two, penalty
-  minutes, practice ideas (a skating and skills warm-up that changes every
-  Monday, plus drills picked from those numbers), and a "Copy as text" button. It names no player, because anyone
-  who adds `?admin` to the address can see it.
-
-Parents never see either one unless they add `?admin` themselves.
-
 Standings, the schedule, the record chip, the All/Ours switch, the Refresh
 button, the Setup check link and the warnings banner are the page and have no
 switch.

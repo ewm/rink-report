@@ -155,6 +155,11 @@ async function openPage(browser, url, opts){
   // case it serves the fixtures (as the GitHub Action would have written them).
   await page.route(new RegExp('localhost:8811/'+TEAM+'/data/'), route=>{
     const name=new URL(route.request().url()).pathname.replace(/^.*\/data\//,'');
+    // The Coaches report is its own file, present only when a check asks for it.
+    if(name==='coaches-corner.txt'){
+      if(opts.notes) route.fulfill({status:200, contentType:'text/plain', body:opts.notes}); else route.fulfill({status:404, body:'not found'});
+      return;
+    }
     if(!opts.snapshot){ route.fulfill({status:404, body:'not found'}); return; }
     if(name==='updated.txt'){ route.fulfill({status:200, contentType:'text/plain', body:'2026-09-09T22:15:00Z\n'}); return; }
     const which=name.replace(/\.csv$/,'');
@@ -1984,6 +1989,82 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
       await d.page.screenshot({path:path.join(OUT,'shot_player_dark.png'), fullPage:true});
       await d.ctx.close();
     }
+  }
+
+  // 39. Coaches report: the written notes from data/coaches-corner.txt (?admin only)
+  console.log('\n[39] coaches report');
+  {
+    const NOTES = [
+      'COACHES CORNER: GAMES THROUGH 9/25/2026',
+      '(Sheet copy taken 9/28. Numbers below use 13-1.)',
+      '',
+      '1. HEADLINE',
+      '- Record 6-2-3. Goals 48 for, 23 against (+25).',
+      '- No loss in the last 8 (5-0-3).',
+      '',
+      "2. WHAT'S WORKING",
+      '- Both goalies are steady. Andrew M.: 13 GA in 7 games.',
+      '',
+      '4. SUGGESTIONS',
+      '1. Finishing reps for the kids who are setting up goals (Chase M., Alex S.).',
+      '2. A discipline reminder before Cheektowaga.',
+      ''
+    ].join('\n');
+
+    // No ?admin: no card, and the file is never even asked for.
+    const plain = await openPage(browser, BASE, {notes:NOTES});
+    ok((await plain.page.$$eval('.notes', c=>c.length))===0, 'no Coaches report without ?admin');
+    await plain.ctx.close();
+
+    // ?admin but no file: the numbers card is there, the report is not.
+    const none = await openPage(browser, BASE+'?admin', {});
+    ok((await none.page.$$eval('.coach', c=>c.length))===1 && (await none.page.$$eval('.notes', c=>c.length))===0, 'no file, no report card, and the numbers card is untouched');
+    await none.ctx.close();
+
+    const r = await openPage(browser, BASE+'?admin', {notes:NOTES});
+    await r.page.waitForSelector('.notes', {timeout:3000}).catch(()=>{});
+    ok(r.errors.length===0, 'no page errors with the report on: '+r.errors.join(' | '));
+    const card = await r.page.evaluate(()=>{
+      const c=document.querySelector('.notes');
+      if(!c) return null;
+      const cards=[...document.querySelectorAll('#app section.card')];
+      return {
+        shut:c.classList.contains('shut'),
+        hidden:c.querySelector('#rr-notes').hidden,
+        eyebrow:c.querySelector('.eyebrow').textContent.trim(),
+        heads:[...c.querySelectorAll('h3')].map(h=>h.textContent),
+        ul:c.querySelectorAll('ul li').length, ol:c.querySelectorAll('ol li').length, ps:c.querySelectorAll('.nsec p').length,
+        last:cards[cards.length-1].classList.contains('notes'),
+        coachBefore:cards.findIndex(x=>x.classList.contains('coach') && !x.classList.contains('notes')) < cards.findIndex(x=>x.classList.contains('notes')),
+        afterResults:cards.findIndex(x=>/Schedule & results/.test((x.querySelector('h2')||{}).textContent||'')) < cards.findIndex(x=>x.classList.contains('notes')),
+        text:c.textContent
+      };
+    });
+    ok(!!card, 'the report card is on the league view with ?admin');
+    ok(card && card.shut && card.hidden, 'it starts folded');
+    ok(card && card.eyebrow==='Games through 9/25/2026', 'the eyebrow is the words after the colon in the title: '+(card&&card.eyebrow));
+    ok(card && card.heads.join('|')==="Headline|What's working|Suggestions", 'section headings, no longer shouted: '+(card&&card.heads.join('|')));
+    ok(card && card.ul===3 && card.ol===2 && card.ps===1, 'bullets, numbered points and the opening paragraph: '+JSON.stringify(card&&{ul:card.ul,ol:card.ol,ps:card.ps}));
+    ok(card && card.last && card.coachBefore && card.afterResults, 'both Coaches Corner cards sit at the bottom, numbers first, under the schedule');
+    ok(card && /anyone who adds \?admin/.test(card.text), 'the foot says who can read it');
+
+    await r.page.click('[data-act="coachnotes"]'); await r.page.waitForTimeout(150);
+    const open = await r.page.evaluate(()=>({shut:document.querySelector('.notes').classList.contains('shut'), hidden:document.querySelector('#rr-notes').hidden, exp:document.querySelector('[data-act="coachnotes"]').getAttribute('aria-expanded')}));
+    ok(!open.shut && !open.hidden && open.exp==='true', 'a tap unfolds it');
+    await r.page.click('[data-act="coachnotes"]'); await r.page.waitForTimeout(150);
+    ok(await r.page.$eval('#rr-notes', d=>d.hidden), 'and a second tap folds it again');
+    await r.page.click('[data-act="coachnotes"]'); await r.page.waitForTimeout(150);
+    await r.page.screenshot({path:path.join(OUT,'shot_coach_notes.png'), fullPage:true});
+
+    const parsed = await r.page.evaluate(async ()=>(await import('/js/ui/notes.js')).parseNotes('T\n\nplain\n- a\n- b\n\n3. B\n1. x'));
+    ok(parsed.title==='T' && parsed.sections.length===2 && parsed.sections[0].heading==='' && parsed.sections[0].blocks.map(b=>b.kind).join()==='p,ul' && parsed.sections[1].heading==='B' && parsed.sections[1].blocks[0].kind==='ol', 'parseNotes: lines before the first heading form an opening section');
+    await r.ctx.close();
+
+    // The switch hides the card and skips the fetch.
+    const off = await openPage(browser, BASE+'?admin', {notes:NOTES, features:{coachNotes:false}});
+    await off.page.waitForTimeout(400);
+    ok((await off.page.$$eval('.notes', c=>c.length))===0 && (await off.page.$$eval('.coach', c=>c.length))===1, 'coachNotes:false hides the report and keeps the numbers card');
+    await off.ctx.close();
   }
 
   await browser.close(); sNew.close();

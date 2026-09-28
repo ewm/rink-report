@@ -6,7 +6,7 @@
  * that refetches when a phone comes back.
  * See ARCHITECTURE.md, "Module map" and "Polling".
  */
-import { CFG, CACHE_KEY, SPONSORS_KEY, on, state, log, onChange, notify } from "./state.js";
+import { ADMIN, CFG, CACHE_KEY, SPONSORS_KEY, on, state, log, onChange, notify } from "./state.js";
 import { render } from "./render.js";
 import { getCSV } from "./sheet/routes.js";
 import { shapeSettings } from "./shape/settings.js";
@@ -124,6 +124,8 @@ function load() {
     OPTIONAL_TABS.map(optionalRead)
   );
 
+  loadNotes();
+
   Promise.all(reads)
     .then(function (res) {
       var cfg = shapeSettings(res[0]);
@@ -218,6 +220,34 @@ function noteSnapshot() {
     })
     .catch(function () {
       state.snapshotAt = 0;
+    });
+}
+
+/**
+ * Reads the Coaches report, data/coaches-corner.txt in the team folder, on
+ * ?admin only. It never gates the page: the card appears when the file
+ * arrives and stays away when there is no file. Runs with every load, so
+ * the Refresh button and the poll pick up a newly uploaded report.
+ */
+function loadNotes() {
+  if (!ADMIN || !on("coachNotes")) {
+    return;
+  }
+
+  fetch("data/coaches-corner.txt", { cache: "no-store" })
+    .then(function (r) {
+      return r.ok ? r.text() : "";
+    })
+    .then(function (t) {
+      var next = t.trim() ? t : null;
+
+      if (next !== state.coachNotes) {
+        state.coachNotes = next;
+        notify();
+      }
+    })
+    .catch(function () {
+      state.coachNotes = null;
     });
 }
 
@@ -369,6 +399,11 @@ document.addEventListener("click", function (e) {
       localStorage.setItem(SPONSORS_KEY, state.sponsorsOpen ? "1" : "0");
     } catch (err) {}
 
+    render();
+  }
+
+  if (a === "coachnotes") {
+    state.notesOpen = !state.notesOpen;
     render();
   }
 

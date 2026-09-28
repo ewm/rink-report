@@ -732,8 +732,9 @@ either way; the flag only keeps a button out of a parent's way.
 
 ## Coaches Corner
 
-Also on `?admin`, on the league view only: a card of team-level trends for
-the manager to pass to the coach. `model/coach.js` works the numbers out,
+Also on `?admin`, at the bottom of the league view (under the schedule, so
+it stays out of the way): a card of team-level trends for the manager to
+pass to the coach. `model/coach.js` works the numbers out,
 `ui/coach.js` draws them.
 
 - Record, goals for and against, and league play on its own line when the
@@ -805,6 +806,32 @@ Ice time varies, so every drill is tagged Half ice or Full ice, and every
 full-ice drill says how to run it on half ice. Reasons use team numbers
 only, the same rule as the rest of the card. The thresholds are named
 constants at the top of `model/practice.js`.
+
+## Coaches report
+
+Under the Coaches Corner card, on `?admin` and the league view only: the
+written report that goes with the numbers, folded closed until tapped.
+`ui/notes.js` draws it; there is no model, because the page works nothing
+out. The report is a plain text file, `data/coaches-corner.txt` in the
+team folder, written by the manager (or for them) and uploaded with the
+other files. `app.js` (`loadNotes()`) reads it on every load, on `?admin`
+only, and it never gates the page: no file, no card.
+
+The file's shape is the shape the report is already written in. The first
+line is the title, and the words after its colon become the card's eyebrow
+("Games through 9/25/2026"). A numbered line in capitals (`3. WHAT NEEDS
+WORK`) starts a section. A dash starts a bullet, a number inside a section
+starts a numbered point, and anything else is a paragraph. `parseNotes()`
+is the whole parser; it is exported for the tests.
+
+Unlike the numbers card, the report names players (first name and last
+initial, the same as the Stats tab). `?admin` is tidiness, not security, so
+the card's foot says that anyone who adds it can read the report. The
+`coachNotes` switch turns the card off without touching the file.
+
+The fold (`.sph`, `.shut`, `.chev` in `rink.css`) is the same one the
+sponsors block uses. The report starts folded on every open and remembers
+nothing; `state.notesOpen` is the only state.
 
 ## Results order
 

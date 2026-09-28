@@ -16,6 +16,7 @@ import { statsHtml } from "./ui/stats.js";
 import { playerHtml } from "./ui/player.js";
 import { sponsorsHtml } from "./ui/sponsors.js";
 import { coachHtml } from "./ui/coach.js";
+import { notesHtml } from "./ui/notes.js";
 import {
   mastheadHtml,
   viewBarHtml,
@@ -105,13 +106,20 @@ function render() {
         h += crumbHtml(v);
       }
 
-      // The manager's own card, on the league view only, and only on ?admin.
-      if (ADMIN && !v.event) {
-        h += coachHtml();
-      }
-
       h += standingsHtml(v, st, rules);
       h += resultsHtml(v);
+
+      // The manager's own cards, on the league view only and only on ?admin:
+      // the Coaches Corner numbers, then the written report folded under
+      // them. Last on the page, so they stay out of the way of the
+      // standings and the schedule.
+      if (ADMIN && !v.event) {
+        h += coachHtml();
+
+        if (on("coachNotes")) {
+          h += notesHtml();
+        }
+      }
     }
   }
 

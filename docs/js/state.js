@@ -61,7 +61,8 @@ var FEATURES = [
   "seasonCalendar",
   "mhrLinks",
   "monoNumbers",
-  "rating"
+  "rating",
+  "coachNotes"
 ];
 
 /**
@@ -107,6 +108,10 @@ function offList() {
  * player: the short name whose page is open on the Stats view (?admin), or null.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * coachCopied: true for a moment after the Coaches Corner text was copied.
+ * coachNotes: the text of data/coaches-corner.txt (?admin), or null when
+ *   there is no such file.
+ * notesOpen: whether the Coaches report card is unfolded. Starts folded on
+ *   every open; nothing is remembered.
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
  * statsNote / rinksNote / sponsorsNote: why an optional tab is missing, for ?check.
  * logoOk: whether logo.png exists (probed once).
@@ -150,6 +155,8 @@ var state = {
     }
   })(),
   coachCopied: false,
+  coachNotes: null,
+  notesOpen: false,
   diagLog: [],
   routeUsed: [],
   headerMap: [],

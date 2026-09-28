@@ -164,6 +164,7 @@ where it was.
 | `mhrLinks` | MyHockey Rankings links on team names |
 | `monoNumbers` | Chivo Mono on the figures (they go back to Barlow) |
 | `rating` | the Rtg column in the standings |
+| `coachNotes` | the Coaches report card on the staff view (the written notes from `data/coaches-corner.txt`) |
 
 Standings, the schedule, the record chip, the All/Ours switch, the Refresh
 button, the Setup check link and the warnings banner are the page and have no

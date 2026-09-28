@@ -546,6 +546,21 @@ league-only page for a season with no showcases. Open `?check` afterwards:
 the **Features** line names whatever is switched off. Standings and the
 schedule have no switch.
 
+### Posting a Coaches report
+
+On the staff view (the one the gameday post button is on) scroll to the
+bottom: under the schedule is the Coaches Corner card (numbers the page
+works out) and, folded under it, the **Coaches report**, the written notes.
+The report is a plain text file, `data/coaches-corner.txt` in the team
+folder. To post a new one, replace that file on GitHub (open it, tap the
+pencil, paste, commit) or upload a new copy over it, and the page picks it
+up on its next refresh. Keep the shape: title on the first line, section
+headings as numbered lines in capitals (`1. HEADLINE`), a dash for each
+bullet. The report can name players. The staff view is not a login, and the
+file itself sits in the public repo, so write it the way you would want a
+parent to read it. Delete the
+file and the card goes away; the `coachNotes` switch hides it too.
+
 ### The saved copy of the sheet
 
 Once a day (about 3 AM Eastern) a small job on GitHub (Actions tab, "Save a copy of the

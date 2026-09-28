@@ -2046,7 +2046,6 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(card && card.heads.join('|')==="Headline|What's working|Suggestions", 'section headings, no longer shouted: '+(card&&card.heads.join('|')));
     ok(card && card.ul===3 && card.ol===2 && card.ps===1, 'bullets, numbered points and the opening paragraph: '+JSON.stringify(card&&{ul:card.ul,ol:card.ol,ps:card.ps}));
     ok(card && card.last && card.coachBefore && card.afterResults, 'both Coaches Corner cards sit at the bottom, numbers first, under the schedule');
-    ok(card && /anyone who adds \?admin/.test(card.text), 'the foot says who can read it');
 
     await r.page.click('[data-act="coachnotes"]'); await r.page.waitForTimeout(150);
     const open = await r.page.evaluate(()=>({shut:document.querySelector('.notes').classList.contains('shut'), hidden:document.querySelector('#rr-notes').hidden, exp:document.querySelector('[data-act="coachnotes"]').getAttribute('aria-expanded')}));

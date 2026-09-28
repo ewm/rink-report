@@ -448,8 +448,7 @@ function coachHtml() {
   h += practiceHtml(sum);
 
   h +=
-    '<p class="foot">Shown because the address has ?admin. Anyone who adds that can see it, so it names no players. ' +
-    "Scrimmages are left out. " +
+    '<p class="foot">' +
     '<button type="button" class="coachbtn" data-act="coachcopy">' +
     (state.coachCopied ? "Copied" : "Copy as text") +
     "</button></p>";

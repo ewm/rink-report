@@ -429,7 +429,7 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
 .coachlist{margin:0 0 14px; padding-left:18px; font-size:14px; line-height:1.5; color:var(--ink-2)}
 .coachlist li{margin:0 0 6px}
 /* Its own class, not .postbtn: the gameday post code and tests look for .postbtn. */
-.coach .foot .coachbtn{margin-left:6px}
+.coach .foot .coachbtn{margin-left:0}
 
 /* Coaches report (?admin only): the written report from data/coaches-corner.txt,
    folded under the Coaches Corner card. The fold itself is .sph/.shut/.chev,
@@ -439,7 +439,6 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
 .notes .nsec p{margin:0 0 8px; font-size:14px; line-height:1.5; color:var(--ink-2)}
 .notes .nsec ul,.notes .nsec ol{margin:0 0 8px; padding-left:18px; font-size:14px; line-height:1.5; color:var(--ink-2)}
 .notes .nsec li{margin:0 0 6px}
-.notes .foot{font-size:12px; color:var(--ink-3)}
 
 /* Practice ideas, inside the Coaches Corner card */
 .practice{margin:16px 0 14px; padding-top:14px; border-top:1px solid var(--hair)}

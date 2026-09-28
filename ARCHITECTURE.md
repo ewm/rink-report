@@ -825,9 +825,8 @@ starts a numbered point, and anything else is a paragraph. `parseNotes()`
 is the whole parser; it is exported for the tests.
 
 Unlike the numbers card, the report names players (first name and last
-initial, the same as the Stats tab). `?admin` is tidiness, not security, so
-the card's foot says that anyone who adds it can read the report. The
-`coachNotes` switch turns the card off without touching the file.
+initial, the same as the Stats tab). `?admin` is tidiness, not security.
+The `coachNotes` switch turns the card off without touching the file.
 
 The fold (`.sph`, `.shut`, `.chev` in `rink.css`) is the same one the
 sponsors block uses. The report starts folded on every open and remembers

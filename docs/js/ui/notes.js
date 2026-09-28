@@ -18,7 +18,7 @@
  *   Anything else is a paragraph.
  *
  * Unlike the card above it, the report names players. render.js only draws
- * it with ?admin, and the card says so at the bottom.
+ * it with ?admin.
  * See ARCHITECTURE.md, "Coaches report".
  */
 import { state } from "../state.js";
@@ -218,10 +218,6 @@ function notesHtml() {
 
     h += "</div>";
   });
-
-  h +=
-    '<p class="foot">Written by hand and saved as data/coaches-corner.txt in the team folder; the page only shows it. ' +
-    "It names players, and anyone who adds ?admin to the address can read it.</p>";
 
   h += "</div></section>";
 

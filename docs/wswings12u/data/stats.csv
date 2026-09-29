@@ -1,18 +1,18 @@
 SKATER TOTALS  (auto),,,,,,,,GOALIE TOTALS  (auto),,,,,,,,,,,GAME LOG — SKATERS  (add rows here after each game),,,,,,,,GAME LOG — GOALIES  (add rows here after each game),,,,,,,,,GAMES  (add a row after each game),,,,,,,HOW TO USE
 No,Player,GP,G,A,PTS,PIM,,No,Goalie,GP,Min,Saves,GA,GAA,SO,W,L,T,Date,Opponent,No,Player,G,A,PIM,,Date,Opponent,No,Goalie,Min,Saves,GA,Result,,Date,Opponent,H/A,GF,GA,Result,,Blue cells are the ones you type in; the two totals tables fill themselves in.
-15,Luke G.,11,12,2,14,0.,,29,Andrew M.,7,280,19,13,0.594,2,4,1,2,8/28/2026,Allegheny 2014,17,Evan C.,1,1,1.5,,8/28/2026,Allegheny 2014,32,Stephen D.,42,,5,L,,8/28/2026,Allegheny 2014,H,3,5,L,,"After each game: add a row to GAMES, one row per skater who got a goal/assist/penalty in GAME LOG - SKATERS, and one row per goalie in GAME LOG - GOALIES."
-17,Evan C.,11,3,6,9,5.5,,32,Stephen D.,4,157,0,9,,0,2,1,1,8/28/2026,Allegheny 2014,15,Luke G.,1,,,,8/29/2026,Macomb Mavericks 2014,29,Andrew M.,42,19,0,W,,8/29/2026,Macomb Mavericks 2014,A,6,0,W,,"PIM: league minors are 1:30, so each minor = 1.5 PIM."
-14,Evan B.,11,7,3,10,1.5,,,,,,,,,,,,,8/28/2026,Allegheny 2014,12,Dylan M.,,1,,,8/29/2026,Sylvania N-Stars 2014,29,Andrew M.,42,,5,L,,8/29/2026,Sylvania N-Stars 2014,H,2,5,L,,"GP counts every game for every skater. If a kid misses a game, type his real GP number over the formula in the GP column."
-91,Chase M.,11,5,3,8,19.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,91,Chase M.,,1,,,8/30/2026,Middlesex 2014 (Islanders HC East),29,Andrew M.,42,,2,W,,8/30/2026,Middlesex 2014 (Islanders HC East),A,8,2,W,,SV% shows blank until a goalie has saves recorded (no saves box on WNYAHL scoresheets).
-12,Dylan M.,11,5,6,11,10.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,22,Connor S.,1,,1.5,,8/30/2026,Stoney Creek 2014,29,Andrew M.,42,,2,W,,8/30/2026,Stoney Creek 2014,H,3,2,W,,Skater totals are listed by points through 8/30. To re-sort later: select the 13 player rows and use Data > Sort range > by column F (Z to A).
-22,Connor S.,11,6,4,10,3.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,14,Evan B.,,,1.5,,9/13/2026,Southtowns 12U Martino,32,Stephen D.,45,,2,W,,9/13/2026,Southtowns 12U Martino,A,6,2,W,,"Source: 8/28/26 WNYAHL scoresheet vs Allegheny 2014 (L 3-5); 8/29/26 USA Hockey scoresheets at Macomb (W 6-0) and vs Sylvania (L 2-5); 8/30/26 USA Hockey scoresheets at Middlesex/Islanders HC East (W 8-2) and vs Stoney Creek (W 3-2, showcase finale). Per Eric: the 'Guest #4' goal on the Middlesex sheet was Evan B. (14), and the Allegheny 3rd-period goal was Connor S. (22) from Dylan M. (12) and Evan C., not the other way round as the sheet has it."
-9,Rory O.,11,2,4,6,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,91,Chase M.,2,,,,9/18/2026,Norflok Knights,29,Andrew M.,35,,0,T,,9/18/2026,Norfolk Knights,A,0,0,T,,
-8,Connor P.,11,2,2,4,7.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,15,Luke G.,2,,,,9/18/2026,Niagara Falls Canucks,32,Stephen D.,35,,1,T,,9/18/2026,Niagara Falls Canucks,H,1,1,T,,
-44,Cameron T.,11,2,5,7,11.5,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,9,Rory O.,1,1,,,9/19/2026,Flamborough Sabres,29,Andrew M.,35,,3,T,,9/19/2026,Flamborough Sabres,A,3,3,T,,
-87,Alex S.,11,1,5,6,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,14,Evan B.,1,1,,,9/19/2026,Burlington Eagles,32,Stephen D.,35,,1,W,,9/19/2026,Burlington Eagles,H,3,1,W,,
-10,Gus F.,11,0,3,3,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,17,Evan C.,,1,,,9/25/2026,Cazenovia Park Hockey 12U Serafini,29,Andrew M.,42,,1,W,,9/25/2026,Cazenovia Chiefs,H,1,13,W,,
-25,Vincent D.,11,0,4,4,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,87,Alex S.,,1,,,,,,,,,,,,,,,,,,,
-89,Sal S.,11,1,0,1,5.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,10,Gus F.,,1,,,,,,,,,,,,,,,,,,,
+15,Luke G.,12,13,3,16,0.,,29,Andrew M.,7,280,19,13,0.594,2,4,1,2,8/28/2026,Allegheny 2014,17,Evan C.,1,1,1.5,,8/28/2026,Allegheny 2014,32,Stephen D.,42,,5,L,,8/28/2026,Allegheny 2014,H,3,5,L,,"After each game: add a row to GAMES, one row per skater who got a goal/assist/penalty in GAME LOG - SKATERS, and one row per goalie in GAME LOG - GOALIES."
+17,Evan C.,12,3,7,10,5.5,,32,Stephen D.,5,202,0,10,,0,3,1,1,8/28/2026,Allegheny 2014,15,Luke G.,1,,,,8/29/2026,Macomb Mavericks 2014,29,Andrew M.,42,19,0,W,,8/29/2026,Macomb Mavericks 2014,A,6,0,W,,"PIM: league minors are 1:30, so each minor = 1.5 PIM."
+14,Evan B.,12,9,3,12,1.5,,,,,,,,,,,,,8/28/2026,Allegheny 2014,12,Dylan M.,,1,,,8/29/2026,Sylvania N-Stars 2014,29,Andrew M.,42,,5,L,,8/29/2026,Sylvania N-Stars 2014,H,2,5,L,,"GP counts every game for every skater. If a kid misses a game, type his real GP number over the formula in the GP column."
+91,Chase M.,12,7,4,11,19.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,91,Chase M.,,1,,,8/30/2026,Middlesex 2014 (Islanders HC East),29,Andrew M.,42,,2,W,,8/30/2026,Middlesex 2014 (Islanders HC East),A,8,2,W,,SV% shows blank until a goalie has saves recorded (no saves box on WNYAHL scoresheets).
+12,Dylan M.,12,5,6,11,13.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,22,Connor S.,1,,1.5,,8/30/2026,Stoney Creek 2014,29,Andrew M.,42,,2,W,,8/30/2026,Stoney Creek 2014,H,3,2,W,,Skater totals are listed by points through 8/30. To re-sort later: select the 13 player rows and use Data > Sort range > by column F (Z to A).
+22,Connor S.,12,6,5,11,3.,,,,,,,,,,,,,8/28/2026,Allegheny 2014,14,Evan B.,,,1.5,,9/13/2026,Southtowns 12U Martino,32,Stephen D.,45,,2,W,,9/13/2026,Southtowns 12U Martino,A,6,2,W,,"Source: 8/28/26 WNYAHL scoresheet vs Allegheny 2014 (L 3-5); 8/29/26 USA Hockey scoresheets at Macomb (W 6-0) and vs Sylvania (L 2-5); 8/30/26 USA Hockey scoresheets at Middlesex/Islanders HC East (W 8-2) and vs Stoney Creek (W 3-2, showcase finale). Per Eric: the 'Guest #4' goal on the Middlesex sheet was Evan B. (14), and the Allegheny 3rd-period goal was Connor S. (22) from Dylan M. (12) and Evan C., not the other way round as the sheet has it."
+9,Rory O.,12,2,4,6,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,91,Chase M.,2,,,,9/18/2026,Norflok Knights,29,Andrew M.,35,,0,T,,9/18/2026,Norfolk Knights,A,0,0,T,,
+8,Connor P.,12,2,2,4,7.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,15,Luke G.,2,,,,9/18/2026,Niagara Falls Canucks,32,Stephen D.,35,,1,T,,9/18/2026,Niagara Falls Canucks,H,1,1,T,,
+44,Cameron T.,12,2,6,8,11.5,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,9,Rory O.,1,1,,,9/19/2026,Flamborough Sabres,29,Andrew M.,35,,3,T,,9/19/2026,Flamborough Sabres,A,3,3,T,,
+87,Alex S.,12,1,5,6,1.5,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,14,Evan B.,1,1,,,9/19/2026,Burlington Eagles,32,Stephen D.,35,,1,W,,9/19/2026,Burlington Eagles,H,3,1,W,,
+10,Gus F.,12,0,3,3,0.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,17,Evan C.,,1,,,9/25/2026,Cazenovia Park Hockey 12U Serafini,29,Andrew M.,42,,1,W,,9/25/2026,Cazenovia Chiefs,H,1,13,W,,
+25,Vincent D.,12,0,4,4,1.5,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,87,Alex S.,,1,,,9/28/2026,Cheektowaga Warriors,32,Stephen D.,45,,1,W,,9/28/2026,Cheektowaga Warriors,A,7,1,W,,
+89,Sal S.,12,1,0,1,5.,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,10,Gus F.,,1,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,44,Cameron T.,,1,4.5,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,8/29/2026,Macomb Mavericks 2014,12,Dylan M.,,,1.5,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,8/29/2026,Sylvania N-Stars 2014,15,Luke G.,1,,,,,,,,,,,,,,,,,,,,
@@ -79,3 +79,13 @@ No,Player,GP,G,A,PTS,PIM,,No,Goalie,GP,Min,Saves,GA,GAA,SO,W,L,T,Date,Opponent,N
 ,,,,,,,,,,,,,,,,,,,9/25/2026,Cazenovia Park Hockey 12U Serafini,22,Connor S.,,1,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,9/25/2026,Cazenovia Park Hockey 12U Serafini,18,Ryan M.,1,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,9/25/2026,Cazenovia Park Hockey 12U Serafini,19,Nathan A.,1,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,91,Chase M.,2,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,14,Evan B.,2,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,18,Ryan M.,2,,1.5,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,15,Luke G.,1,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,22,Connor S.,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,17,Evan C.,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,44,Cameron T.,,1,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,87,Alex S.,,,1.5,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,25,Vincent D.,,,1.5,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,9/28/2026,Cheektowaga Warriors,12,Dylan M.,,,3.,,,,,,,,,,,,,,,,,,

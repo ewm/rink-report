@@ -777,6 +777,16 @@ an AI service from it would put a paid key where anyone can read it. So the
 drills were written ahead of time and the page picks them by rule. The
 block says so in one line.
 
+**Every drill links to Ice Hockey Systems.** The coaches use
+icehockeysystems.com, so each drill in `model/practice.js` carries an `ihs`
+entry: the name of the closest drill there and its page, drawn under the
+drill as "IHS drill: name" (or "IHS video: name" for one of their skill
+how-to videos, `video: true`) and added to the copied text with the URL.
+Only pages that open without a membership were used. One drill has no
+match there and no link ("Last-minute game"). `DRILLS.md` at the top of
+the repo is the inventory: every drill the card can suggest, what it was
+matched to, and when. Update it when the library changes.
+
 **Skating and skills comes first, every week.** Game stats say nothing
 about skating or puck skills, so no rule could ever pick that work. Instead
 `skillsFor()` shows one of six sets (edges, crossovers and turns, stops and

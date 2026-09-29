@@ -1,39 +1,43 @@
-COACHES CORNER: GAMES THROUGH 9/25/2026
-(Sheet copy taken 9/28. One data note: the 9/25 Cazenovia row in the stats Games list reads Home, 1 for, 13 against, Result W. The schedule has us as the away team and winning 13-1, and the goal rows (13 goals) and goalie row (1 GA) agree with that. Numbers below use 13-1. Worth fixing the Games row.)
+COACHES CORNER: GAMES THROUGH 9/28/2026
+(Sheet copy taken 9/29, 9:43 AM. Two data notes. The 9/25 Cazenovia row in the stats Games list still reads Home, 1 for, 13 against; the schedule, the goal rows and the goalie row all say we won 13-1 on the road, and the numbers below use 13-1. The 9/18 Norfolk row in the goalie log spells the opponent "Norflok". Neither changes a total.)
 
 1. HEADLINE
-- Record 6-2-3. Goals 48 for, 23 against (+25).
-- No loss in the last 8 (5-0-3).
-- League: 2-0-0, 19 for and 3 against (W 6-2 at Southtown 9/13, W 13-1 vs Cazenovia 9/25).
+- Record 7-2-3. Goals 55 for, 23 against (+32).
+- No loss in the last 9 (6-0-3).
+- League: 3-0-0, 26 for and 4 against (W 6-2 at Southtown 9/13, W 13-1 at Cazenovia 9/25, W 7-1 at Cheektowaga 9/28).
+- Cheektowaga had won its only league game 9-2. We held them to one goal.
 
 2. WHAT'S WORKING
-- Goals against are down: 14 in 5 August games (4.0 per 60 min) to 8 in 6 September games (2.1 per 60).
-- Both goalies are steady. Andrew M.: 13 GA in 7 games (1.9 per game), 2 shutouts, 4-1-2. Stephen D.: 9 GA in 4 games (2.3 per game), 2-1-1.
-- Scoring spread out in the last 5 games: 20 goals from 10 different players. Luke G. and Evan B. had 4 each, Connor S. and Dylan M. 3 each.
-- Depth: 11 of 13 roster skaters have a goal and all 13 have a point. Guests Ryan M. and Nathan A. scored once each on 9/25 (they're guests, so they aren't in the season totals).
+- One goal against in each of the last three games. Season: 14 against in 5 August games (4.0 per 60 min), 9 in 7 September games (2.0 per 60).
+- Both goalies are steady. Andrew M.: 13 GA in 7 games (1.9 per game), 2 shutouts, 4-1-2. Stephen D.: 10 GA in 5 games (2.0 per game), 3-1-1, and 3 GA total across his last three starts.
+- Chase M. is scoring again: 2 goals and an assist at Cheektowaga, his first goals since 9/13. Last report flagged him as setting up goals but not finishing.
+- Scoring is spread out. Last 5 games: 27 goals from 11 different players (9 roster, 2 guests). Evan B. 6, Luke G. 5, Dylan M. 3, Connor S. 3.
+- Depth: 11 of 13 roster skaters have a goal and all 13 have a point. Guest Ryan M. has 3 goals in 2 games with us (2 at Cheektowaga); guests are not in the season totals.
 - Close games: 1-0-3 in games decided by one goal or tied.
 
 3. WHAT NEEDS WORK
-- The 13-1 game flatters the September scoring. Without it, the other 5 September games produced 13 goals (4.2 per 60 min, down from 6.3 in August). The 4 Early Bird games had only 7.
-- Luke G. (12) and Evan B. (7) have 19 of 48 goals (40%). That share has held steady, but more of the load is shared than it was two weeks ago.
-- Quieter as scorers lately but still setting up: Chase M. has no goals in the last 5 games (2 A). Alex S. has 1 goal on the season but 5 assists, 3 of them on 9/25. Something to watch, not a worry.
-- Penalties: 62.5 PIM total. Most: Chase M. 19, Cameron T. 11.5, Dylan M. 10, Connor P. 7. 34 of the 62.5 came in the 4 Early Bird games, and 14 of Chase M.'s were in one game (Burlington). The sheet doesn't say what the calls were. (Showcase and league minors log as 1.5, Early Bird minors as 2.0.)
-- Defense points: 18 of the roster's 93 points. Rory O. (2 G, 4 A) leads. The D had 2 goals and 4 assists on 9/25 alone, so this is picking up. Connor P. hasn't had a point since 9/13, which can just reflect a stay-at-home role.
+- The league games flatter the offense. 26 of our 55 goals came in the 3 league games (8.7 a game). The 4 Early Bird games produced 7 goals (1.8 a game, 3.0 per 60 min). Early Bird is the better test, and that number is low.
+- Luke G. (13) and Evan B. (9) have 22 of 55 goals (40%). That share has not moved in three reports.
+- Penalties are climbing in league play: 1.5 PIM at Southtown, 3 at Cazenovia, 7.5 at Cheektowaga (five minors: Dylan M. two, Ryan M., Alex S., Vincent D.). Season total 70 PIM. Most: Chase M. 19, Dylan M. 13, Cameron T. 11.5, Connor P. 7. The sheet still doesn't say what the calls were.
+- Defense points: 18 of the roster's 103 points, and none at Cheektowaga. Rory O. (2 G, 4 A) leads. Connor P. hasn't had a point since 9/13. Gus F. and Vincent D. are the two skaters without a goal (3 and 4 assists).
+- Alex S.: 1 goal on the season, 5 assists, no point at Cheektowaga. Still setting up, still not finishing.
 
 4. SUGGESTIONS
-1. Finishing reps for the kids who are setting up goals but not scoring lately (Chase M., Alex S.).
-2. A discipline reminder before Cheektowaga, which won its only league game 9-2. Over half our PIM came at Early Bird. Start logging the type of each call so we can see whether it's one kind of penalty.
-3. Keep rotating goalies. Both are at 1.9 to 2.3 GA per game.
-4. Judge the offense by the closer games, not the 13-1. Getting a parent to count shots for and against would show whether the low-scoring games were short on shots or on finishes.
+1. Keep the finishing reps going. They showed up for Chase M. Alex S. is the next one.
+2. Penalties went up right after the discipline talk, not down. Start writing the type of each call in the Notes column so the next report can say whether it's sticks, hits, or after-the-whistle stuff.
+3. Keep rotating goalies. Both are under 2 GA a game and both have been good lately.
+4. Niagara scores a lot and gives up a lot (16 for, 20 against in 3 league games, including an 8-7 win over Lockport). Expect an open game. Patience in our own end matters more than chasing goals.
+5. Still worth getting a parent to count shots for and against. Without it we can't say whether the low Early Bird scoring was a shot problem or a finishing problem.
 
 5. NEXT UP
-- Mon 9/28, 6:00 PM at Cheektowaga Warriors (away, Cheektowaga), league.
-- Cheektowaga in league play: 1-0-0, +7 (won 9-2 at Niagara Jr. Cataracts on 9/16).
 - Sun 10/4, 11:30 AM vs Niagara Jr. Cataracts (home, West Seneca), league.
-- Niagara in league play: 2-1-0, 16 for and 20 against (-4).
+- Niagara in league play: 2-1-0, 16 for and 20 against (-4). Lost 2-9 to Cheektowaga, beat Cazenovia 6-4 and Lockport 8-7. They play at Southtown on Sat 10/3, the day before us.
+- Then a two-week break. Sat 10/17, 10:00 AM at ROCO (Tim Hortons Iceplex, Rink 4), league. ROCO has no league result in the sheet yet; its first game is 10/4 vs Southtown.
+- Sun 10/18, 11:30 AM vs Cazenovia Chiefs (home, West Seneca), league. Cazenovia is 0-3-0, 7 for and 27 against.
 
 6. WHAT THE NUMBERS CAN'T TELL US YET
-- Small sample: 11 games, only 2 of them league games.
-- Saves recorded in 1 of 11 games (Macomb), so no save percentage.
+- Small sample: 12 games, 3 of them league games.
+- Saves recorded in 1 of 12 games (Macomb), so no save percentage.
 - No plus/minus.
 - No goal times in the sheet, so we can't tell which periods we score or give up goals in.
+- No penalty types, so we can't tell what kind of calls we're taking.

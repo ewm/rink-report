@@ -454,6 +454,8 @@ pre.diag .ok{color:var(--win)} pre.diag .bad{color:#C0392B} pre.diag .warn{color
   color:var(--ink-3); border:1px solid var(--hair); padding:1px 5px; margin-left:4px; white-space:nowrap}
 .drills .how,.drills .half{display:block}
 .drills .half{font-size:13px; color:var(--ink-3)}
+.drills .ihs{display:inline-block; margin-top:2px; font-size:13px; font-weight:600; color:var(--navy-ink); text-decoration:none}
+.drills .ihs:hover{text-decoration:underline}
 
 body.post-open{overflow:hidden}
 

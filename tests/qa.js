@@ -1769,6 +1769,14 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(lib.every(d=>d.ice==='half' || (d.ice==='full' && d.half)), 'every full-ice drill says how to run it on half ice');
     ok(lib.every(d=>(d.name+d.how+(d.half||'')).indexOf('\u2014')===-1), 'no em-dashes in the drill text');
 
+    // Every focus drill but one links to Ice Hockey Systems.
+    const noIhs = lib.filter(d=>!d.ihs).map(d=>d.name);
+    ok(noIhs.join(',')==='Last-minute game', 'only Last-minute game has no Ice Hockey Systems match: '+noIhs.join(','));
+    ok(lib.filter(d=>d.ihs).every(d=>/^https:\/\/www\.icehockeysystems\.com\/(hockey-drills|skill-development-videos)\/[a-z0-9-]+$/.test(d.ihs.url) && d.ihs.name), 'every ihs entry has a name and an icehockeysystems.com page');
+    const ihsLinks = await r.page.$$eval('.coach .drills a.ihs', as=>as.map(a=>({href:a.getAttribute('href'), target:a.getAttribute('target'), rel:a.getAttribute('rel'), text:a.textContent})));
+    ok(ihsLinks.length>=3 && ihsLinks.every(a=>a.target==='_blank' && a.rel==='noopener' && /^IHS (drill|video): /.test(a.text)), 'the drill links open in a new tab and say IHS drill or IHS video: '+ihsLinks.length);
+    ok(/IHS (drill|video): [^\n]+ https:\/\/www\.icehockeysystems\.com\//.test(txt), 'copied text carries the Ice Hockey Systems name and URL');
+
     // The weekly warm-up on its own.
     const w = await r.page.evaluate(async ()=>{
       const { skillsFor } = await import('/js/model/practice.js');

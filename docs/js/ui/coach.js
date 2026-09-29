@@ -274,7 +274,22 @@ function drillLine(d) {
     line += " Half ice: " + d.half;
   }
 
+  if (d.ihs) {
+    line += " " + ihsLabel(d.ihs) + ": " + d.ihs.name + " " + d.ihs.url;
+  }
+
   return line;
+}
+
+/**
+ * What to call the Ice Hockey Systems link: their drill page, or one of
+ * their skill videos.
+ *
+ * @param {Object} ihs - The drill's ihs entry from model/practice.js.
+ * @returns {string}
+ */
+function ihsLabel(ihs) {
+  return ihs.video ? "IHS video" : "IHS drill";
 }
 
 /**
@@ -323,6 +338,17 @@ function focusHtml(p) {
       h += '<span class="half">Half ice: ' + esc(d.half) + "</span>";
     }
 
+    if (d.ihs) {
+      h +=
+        '<a class="ihs" href="' +
+        esc(d.ihs.url) +
+        '" target="_blank" rel="noopener">' +
+        esc(ihsLabel(d.ihs)) +
+        ": " +
+        esc(d.ihs.name) +
+        "</a>";
+    }
+
     h += "</li>";
   });
 
@@ -343,7 +369,7 @@ function practiceHtml(sum) {
 
   var h =
     '<div class="practice"><h3>Practice ideas</h3>' +
-    '<p class="pnote">The skating and skills set changes every Monday. The rest is picked by the page from the numbers above. All drills were written ahead of time. A starting point, not a plan.</p>';
+    '<p class="pnote">The skating and skills set changes every Monday. The rest is picked by the page from the numbers above. All drills were written ahead of time. Each one links to the matching drill or skill video on Ice Hockey Systems. A starting point, not a plan.</p>';
 
   h += focusHtml({ key: sk.key, title: sk.title, why: skillsWhy(sk), drills: sk.drills });
 

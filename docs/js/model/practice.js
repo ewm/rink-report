@@ -44,6 +44,14 @@ var MIN_MONTH_GP = 2;
  *
  * ice: "half" runs on half ice as written. "full" needs the whole sheet,
  * and `half` says how to run it when the team only has half.
+ *
+ * ihs: the matching drill on Ice Hockey Systems (icehockeysystems.com),
+ * the site the coaches use. `name` is the drill's name there and `url` its
+ * page. `video: true` means it is one of their skill videos (a how-to for
+ * the skill) rather than a drill with a rink diagram. Every link was
+ * checked to open without a membership on 2026-09-29. A drill with no ihs
+ * has no close match there ("Last-minute game"). The full list, with what
+ * each one was matched to and why, is in DRILLS.md at the top of the repo.
  */
 var FOCUS = {
   defense: {
@@ -51,6 +59,10 @@ var FOCUS = {
     drills: [
       {
         name: "Breakout under pressure",
+        ihs: {
+          name: "1 on 1 Retrievals",
+          url: "https://www.icehockeysystems.com/hockey-drills/1-on-1-retrievals"
+        },
         how:
           "Coach dumps the puck in. A D gets it with one forechecker chasing, wingers on the boards, center low for support. Go up ice on the first good pass.",
         ice: "full",
@@ -58,6 +70,10 @@ var FOCUS = {
       },
       {
         name: "Low-zone 2-on-2",
+        ihs: {
+          name: "2 on 2 Box Out",
+          url: "https://www.icehockeysystems.com/hockey-drills/2-on-2-box-out-2"
+        },
         how:
           "Two attack, two defend, below the tops of the circles. Defenders stay between their player and the net and keep sticks in the passing lanes. 30-second shifts.",
         ice: "half"
@@ -70,12 +86,21 @@ var FOCUS = {
     drills: [
       {
         name: "Rebounds and tips",
+        ihs: {
+          name: "Tips and Deflections",
+          url: "https://www.icehockeysystems.com/hockey-drills/tips-and-deflections-0",
+          video: true
+        },
         how:
           "Coach shoots from the point. Two forwards at the net: one screens and tips, one pounces on rebounds. Rotate every three shots.",
         ice: "half"
       },
       {
         name: "Shoot in stride",
+        ihs: {
+          name: "Half Ice Shoot In Stride",
+          url: "https://www.icehockeysystems.com/hockey-drills/half-ice-shoot-stride"
+        },
         how:
           "Carry in from the blue line and shoot without stopping to stickhandle. Pick a corner before you shoot. Both sides, both hands.",
         ice: "half"
@@ -88,6 +113,10 @@ var FOCUS = {
     drills: [
       {
         name: "2-on-1, the other guy shoots",
+        ihs: {
+          name: "Swedish 2 vs 1 (Cross Ice)",
+          url: "https://www.icehockeysystems.com/hockey-drills/swedish-2-vs-1-cross-ice"
+        },
         how:
           "Rush 2-on-1. The player who did not start with the puck has to take the shot, so everyone gets reps finishing a pass.",
         ice: "full",
@@ -95,6 +124,10 @@ var FOCUS = {
       },
       {
         name: "Three-touch small-area game",
+        ihs: {
+          name: "Gates of Buffalo Small Area Passing Game",
+          url: "https://www.icehockeysystems.com/hockey-drills/gates-buffalo-small-area-game"
+        },
         how:
           "3-on-3 in one zone. A goal only counts after all three players on the team touched the puck. Keeps the puck moving to everyone.",
         ice: "half"
@@ -107,12 +140,20 @@ var FOCUS = {
     drills: [
       {
         name: "Angling with the stick down",
+        ihs: {
+          name: "1 on 1 Angling Drill",
+          url: "https://www.icehockeysystems.com/hockey-drills/1-1-angling-drill-10"
+        },
         how:
           "Checker steers the puck carrier to the boards with body position, stick on the ice. A hook, slash or high stick means the puck goes back to the carrier.",
         ice: "half"
       },
       {
         name: "Scrimmage with a real box",
+        ihs: {
+          name: "Picket Fences Game (2 vs. 2 or 3 vs. 3)",
+          url: "https://www.icehockeysystems.com/hockey-drills/picket-fences"
+        },
         how:
           "Any small-area game. A stick penalty sends the player to a 30-second box and the team plays short. Kids feel what a penalty costs.",
         ice: "half"
@@ -132,6 +173,10 @@ var FOCUS = {
       },
       {
         name: "Next goal wins",
+        ihs: {
+          name: "Continuous In Zone 3 vs. 3 Game",
+          url: "https://www.icehockeysystems.com/hockey-drills/continuous-zone-3-vs-3"
+        },
         how:
           "Continuous 3-on-3 across the ice, next goal wins, quick changes. Builds the habit of pushing for the winner instead of settling.",
         ice: "half"
@@ -144,12 +189,20 @@ var FOCUS = {
     drills: [
       {
         name: "Tempo passing",
+        ihs: {
+          name: "Rondo Circle Passing Progression",
+          url: "https://www.icehockeysystems.com/hockey-drills/rondo-circle-passing-progression"
+        },
         how:
           "Pass-and-follow triangles at full speed, tape to tape. Add a second puck once they have it.",
         ice: "half"
       },
       {
         name: "Edges with a puck",
+        ihs: {
+          name: "6 Cone Skills Series",
+          url: "https://www.icehockeysystems.com/hockey-drills/the-6-cone-series"
+        },
         how:
           "Tight turns, crossovers and stops around cones, head up, puck on the stick the whole way.",
         ice: "half"
@@ -170,18 +223,31 @@ var SKILL_SETS = [
     drills: [
       {
         name: "Edge circles",
+        ihs: {
+          name: "Using Edges: The Basics",
+          url: "https://www.icehockeysystems.com/skill-development-videos/edges",
+          video: true
+        },
         how:
           "Glide around a faceoff circle on one foot, inside edge, then outside edge. Both feet, both directions. Knees bent, chest up.",
         kind: "skating"
       },
       {
         name: "Figure 8s",
+        ihs: {
+          name: "Figure 8 Edge Series",
+          url: "https://www.icehockeysystems.com/hockey-drills/figure-8-edge-series"
+        },
         how:
           "Figure 8s around two cones without stopping. Stay low and lean into the turns.",
         kind: "skating"
       },
       {
         name: "Heads-up stickhandling",
+        ihs: {
+          name: "Heads Up Stickhandling Station",
+          url: "https://www.icehockeysystems.com/hockey-drills/heads-stickhandling-station"
+        },
         how:
           "Stickhandle through a line of cones. Coach holds up fingers at the end and each player calls out the number, so eyes stay up.",
         kind: "puck"
@@ -193,18 +259,32 @@ var SKILL_SETS = [
     drills: [
       {
         name: "Circle crossovers",
+        ihs: {
+          name: "Forward Cross Overs",
+          url: "https://www.icehockeysystems.com/skill-development-videos/forward-cross-overs",
+          video: true
+        },
         how:
           "Crossovers around the faceoff circles, both directions. Push hard with the leg that goes under, not just the one that steps over.",
         kind: "skating"
       },
       {
         name: "Turn on the whistle",
+        ihs: {
+          name: "How to Perform a Transition Turn",
+          url: "https://www.icehockeysystems.com/skill-development-videos/transition-turns",
+          video: true
+        },
         how:
           "Skate forward. On the whistle, turn to backward without slowing down. Next whistle, back to forward. Turn both ways.",
         kind: "skating"
       },
       {
         name: "Crossovers with a puck",
+        ihs: {
+          name: "Circle Warm Up Series",
+          url: "https://www.icehockeysystems.com/hockey-drills/circle-warm-up-series-1"
+        },
         how:
           "Crossovers around the circle carrying the puck. Forehand going one way, backhand going the other.",
         kind: "puck"
@@ -216,18 +296,32 @@ var SKILL_SETS = [
     drills: [
       {
         name: "Blue line to blue line",
+        ihs: {
+          name: "Hockey Stop: Tips On How To Do A Side Stop",
+          url: "https://www.icehockeysystems.com/skill-development-videos/hockey-stop",
+          video: true
+        },
         how:
           "Sprint, stop at the blue line, sprint back. Face the same wall every time so both sides of the stop get work. First three strides short and quick.",
         kind: "skating"
       },
       {
         name: "Tight turns at the dots",
+        ihs: {
+          name: "Jam Turns",
+          url: "https://www.icehockeysystems.com/skill-development-videos/jam-turns",
+          video: true
+        },
         how:
           "Skate to each faceoff dot and turn tight around it, stick on the ice, then burst out of the turn.",
         kind: "skating"
       },
       {
         name: "Stop and go with a puck",
+        ihs: {
+          name: "Start & Stop Loose Puck Battle",
+          url: "https://www.icehockeysystems.com/hockey-drills/start-stop-loose-puck-battle"
+        },
         how:
           "Same stops and starts, carrying a puck. Keep it on the stick through the stop and take it with you on the first stride.",
         kind: "puck"
@@ -239,18 +333,31 @@ var SKILL_SETS = [
     drills: [
       {
         name: "Backward C-cuts",
+        ihs: {
+          name: "How to Skate Backwards (for hockey players)",
+          url: "https://www.icehockeysystems.com/skill-development-videos/how-to-skate-backwards",
+          video: true
+        },
         how:
           "Backward the length of half ice using C-cuts, one leg then the other. Butt down, back straight, stick on the ice.",
         kind: "skating"
       },
       {
         name: "Toe drags through cones",
+        ihs: {
+          name: "Toe Drag Pull Shot",
+          url: "https://www.icehockeysystems.com/hockey-drills/toe-drag-pull-shot"
+        },
         how:
           "Pull the puck across the body with the toe of the blade at each cone. Start slow, then add speed.",
         kind: "puck"
       },
       {
         name: "Protect it on the boards",
+        ihs: {
+          name: "Puck Protection Skill Drill",
+          url: "https://www.icehockeysystems.com/hockey-drills/puck-protection-skill-drill"
+        },
         how:
           "In pairs along the boards. One carries, the other leans in with light pressure. The carrier keeps their body between the checker and the puck for 15 seconds, then switch.",
         kind: "puck"
@@ -262,18 +369,32 @@ var SKILL_SETS = [
     drills: [
       {
         name: "Mohawk turns",
+        ihs: {
+          name: "Mohawk Pivoting",
+          url: "https://www.icehockeysystems.com/skill-development-videos/mohawk-turns",
+          video: true
+        },
         how:
           "Open the hips heel to heel and glide sideways, then turn up ice. Both directions. This is how D walk the blue line.",
         kind: "skating"
       },
       {
         name: "Backward partner passing",
+        ihs: {
+          name: "Defensive Transition Passing",
+          url: "https://www.icehockeysystems.com/hockey-drills/defensive-transition-passing"
+        },
         how:
           "Pairs, one skating forward, one backward, passing the length of half ice. Switch at the end.",
         kind: "puck"
       },
       {
         name: "Take it on the backhand",
+        ihs: {
+          name: "Backhand Passing",
+          url: "https://www.icehockeysystems.com/skill-development-videos/backhand-passing",
+          video: true
+        },
         how:
           "Receive a pass on the backhand and move it on in one smooth motion. Both sides of the ice so everyone gets both hands.",
         kind: "puck"
@@ -285,18 +406,32 @@ var SKILL_SETS = [
     drills: [
       {
         name: "Backward crossovers",
+        ihs: {
+          name: "How to Do Backwards Cross-Overs",
+          url: "https://www.icehockeysystems.com/skill-development-videos/backwards-cross-overs",
+          video: true
+        },
         how:
           "Backward crossovers around the circles, both directions. Look up ice, not at your feet.",
         kind: "skating"
       },
       {
         name: "Pivot and go",
+        ihs: {
+          name: "Defensive Pivot Races",
+          url: "https://www.icehockeysystems.com/hockey-drills/defensive-pivot-races"
+        },
         how:
           "Skate backward. On the whistle, open up and pivot to forward and sprint to the boards. Pivot both ways.",
         kind: "skating"
       },
       {
         name: "Pivot and pass",
+        ihs: {
+          name: "Backwards to Forwards Pivot",
+          url: "https://www.icehockeysystems.com/skill-development-videos/backwards-forwards-pivot",
+          video: true
+        },
         how:
           "Skate backward with a puck, pivot to forward, and hit a partner with a pass on the tape.",
         kind: "puck"

@@ -16,19 +16,25 @@ docs/
   teams.js            every club (name + two colors) and team (folder, club)
   theme.js            a club's two colors -> every color slot, light and dark
   landing.js/.css     the landing page
+  robots.txt          asks search engines to skip every staff page
   wswings12u/         one folder per team:
-    index.html        the shell: fonts, the CONFIG block (the only thing a
-                      manager edits), an empty #app, and one module script
+    config.js         the CONFIG: sheet ID, tab IDs, feature switches. The
+                      only thing a manager edits. Read by both pages below.
+    index.html        the parents' page: fonts, config.js, an empty #app,
+                      and one module script
+    staff/index.html  the staff page: the same shell with a <base> tag and
+                      window.RINK_STAFF = true (see "The staff page")
     logo.png          the crest, optional
     manifest.json     the home-screen shortcut's name and icon
-    data/             the saved copy of this team's sheet, written by the Action
+    data/             the saved copy of this team's sheet, written by the
+                      Action, and coaches-corner.enc, the sealed report
   css/rink.css        every style, shared by every team
   js/
     app.js            entry point: boot, load(), the poll, the cache, clicks
     state.js          RINK_CONFIG, the feature switches, the store, notify()
     render.js         composes components into one innerHTML write
-    util/             text.js  dates.js  csv.js  clipboard.js
-                      no app knowledge
+    util/             text.js  dates.js  csv.js  clipboard.js  seal.js
+                      no app knowledge (seal.js is also what tools/seal.mjs runs)
     sheet/routes.js   read one tab: raw export, tab name, then the saved copy
     shape/            settings.js  teams.js  games.js  stats.js  rinks.js
                       sponsors.js
@@ -44,6 +50,7 @@ docs/
                       and sheet-changes.py, its daily change list
 changes/              <team>/<date>.md, what changed in the sheet each day
 tests/                Playwright suite + fixtures; see tests/README.md
+tools/seal.mjs        seals a Coaches report for the staff page (Node, no packages)
 workbench/            templates, handouts, sheet copies, old builds.
                       git ignores it; see workbench/README.md
 ```
@@ -206,15 +213,15 @@ Two rules that are not stylistic:
 
 ## Feature switches
 
-The CONFIG block in `index.html` ends with a `features` object, one boolean
+`config.js` ends with a `features` object, one boolean
 per optional card or data-driven piece of the page: `nextGame`, `sponsors`,
 `stats`, `events`, `preseason`, `directions`, `calendar`, `seasonCalendar`,
 `mhrLinks`, `monoNumbers`, `rating`. `on(name)` in `state.js` is true unless the block says `false`;
-a name missing from the block counts as on, so an `index.html` written
+a name missing from the block counts as on, so a `config.js` written
 before a switch existed keeps every feature it had. Small controls (the
-Refresh button, the Setup check link, the record chip, the All/Ours switch,
-the crest, the warnings banner) have no switch on purpose: nobody flips
-them, and each one was a config line, a check in the code and a test.
+Refresh button, the record chip, the All/Ours switch, the crest, the
+warnings banner) have no switch on purpose: nobody flips them, and each one
+was a config line, a check in the code and a test.
 
 `monoNumbers` is the exception to everything below: it adds and removes no
 markup at all, only the font the figures are set in. So `app.js` puts a
@@ -266,7 +273,7 @@ If you find yourself simplifying this back to one route, read
 
 `.github/workflows/snapshot.yml` runs once a day on GitHub (07:00 UTC, about
 3 AM Eastern), and by hand from the Actions tab. For every
-team folder under `docs/` whose `index.html` has a `sheetId`, it fetches the
+team folder under `docs/` whose `config.js` has a `sheetId`, it fetches the
 six tabs through the same raw-export URLs the page uses, and commits them to
 `<team>/data/<tab>.csv` plus `<team>/data/updated.txt` (the UTC time of the
 copy) when a tab changed. The landing page has no `sheetId` and is skipped. A tab that comes back as a web page or fails to fetch keeps its
@@ -631,8 +638,8 @@ changing those two lines.
 
 ## Gameday post card
 
-Add `?admin` to the URL and every unplayed game of ours grows a "Gameday
-post" button. It opens a panel where the manager picks:
+On the staff page, every unplayed game of ours grows a "Gameday post"
+button. It opens a panel where the manager picks:
 
 - **Template**: Blueline, Echo or Faceoff. These are the three directions
   from the Claude Design file (`Gameday Post.dc.html`, 1a to 1c), redrawn on
@@ -727,12 +734,12 @@ Share only appears where `navigator.canShare` takes files. Download always
 appears and always downloads (`savePost(..., false)`). Files are named like
 `wings-vs-cheektowaga-warriors-2026-09-28-feed.png`.
 
-`?admin` is tidiness, not security. Everything the page holds is public
-either way; the flag only keeps a button out of a parent's way.
+The staff page is tidiness, not security. Everything the post uses is
+public either way; the split only keeps a button out of a parent's way.
 
 ## Coaches Corner
 
-Also on `?admin`, at the bottom of the league view (under the schedule, so
+Also on the staff page, at the bottom of the league view (under the schedule, so
 it stays out of the way): a card of team-level trends for the manager to
 pass to the coach. `model/coach.js` works the numbers out,
 `ui/coach.js` draws them.
@@ -751,8 +758,8 @@ Results come from the Schedule tab, our finished games with scrimmages left
 out, the same as the standings. Scoring comes from the Player Stats tab: the
 season totals, and the game log for the last five games.
 
-**It names no player.** `?admin` hides the card but does not protect it: one
-parent who adds it to the address sees everything. So the card only says
+**It names no player.** The staff page hides the card but does not protect
+it: anyone who knows the address sees everything. So the card only says
 what anyone could add up from the public page, and "two players have 16 of
 the 35 goals" never says which two. Anything about a named kid belongs in a
 private note to the coach, not here.
@@ -817,15 +824,76 @@ full-ice drill says how to run it on half ice. Reasons use team numbers
 only, the same rule as the rest of the card. The thresholds are named
 constants at the top of `model/practice.js`.
 
+## The staff page
+
+Every team folder has a second page, `staff/index.html`, at
+`/<team>/staff/`. It is the parents' page with one flag on:
+`window.RINK_STAFF = true`, set in a one-line script before `config.js`
+loads, which `state.js` reads as `STAFF`. Everything the manager and the
+coaches use and parents do not is gated on `STAFF`, at the one place each
+thing enters the page: the Coaches Corner numbers card and the report
+(`render()`), the gameday post buttons (`ui/results.js`), the `?check`
+diagnostics (`DIAG` in `state.js`), and the Setup check link in the footer.
+The parents' page never draws any of it, with or without `?admin`.
+
+`ADMIN` is `STAFF || ?admin`: the per-player pages and the hot / warm /
+cold tags come from the public stats tab, so they stay reachable on the
+parents' page with `?admin` and are simply always on for staff.
+
+The staff shell is a copy of `index.html` with three differences. A
+`<base href="../">` so that every relative address (`config.js`, `data/`,
+`logo.png`, `../js/`) still means the team folder: one config, one data
+folder, no second copy of anything. That base tag is also why the two
+links that must stay on the staff page (`?check` in the footer, "back to
+the page" on the diagnostics) are spelled out from `location.pathname`
+instead of written relative. `theme.js` drops a trailing `staff` segment
+when it works out the team folder from the address. And a `noindex` meta,
+backed by `robots.txt`, so the page stays out of search; that is tidiness,
+not a lock.
+
+The lock is on the one thing that needs one, the report, and it is
+described next. The rest of the staff page is code and public numbers;
+there is nothing to hide and no attempt to.
+
 ## Coaches report
 
-Under the Coaches Corner card, on `?admin` and the league view only: the
-written report that goes with the numbers, folded closed until tapped.
+Under the Coaches Corner card, on the staff page and the league view only:
+the written report that goes with the numbers, folded closed until tapped.
 `ui/notes.js` draws it; there is no model, because the page works nothing
-out. The report is a plain text file, `data/coaches-corner.txt` in the
-team folder, written by the manager (or for them) and uploaded with the
-other files. `app.js` (`loadNotes()`) reads it on every load, on `?admin`
-only, and it never gates the page: no file, no card.
+out. The report is written as plain text by the manager (or for them),
+sealed with `tools/seal.mjs` into `data/coaches-corner.enc` in the team
+folder, and that sealed file is uploaded with the others. `app.js`
+(`loadNotes()`) fetches it on every load, on the staff page only, and it
+never gates the page: no file, no card.
+
+**Sealing.** `util/seal.js` is the whole of it, and both sides run the same
+file: `tools/seal.mjs` imports it under Node, the page imports it in the
+browser, so the two cannot drift. A sealed file is `"CTR1"`, a 16-byte
+salt, a 12-byte nonce, then the report scrambled with AES-256-GCM under a
+key made from the passphrase by PBKDF2 (SHA-256, 210,000 rounds, that
+salt). GCM checks itself, so a wrong passphrase is a clean failure
+(`"wrong passphrase"`), not garbage; bytes without the magic are `"not
+sealed"`. A fresh salt and nonce every time, so re-sealing the same report
+gives a different file.
+
+**Unlocking.** Once the bytes are in `state.coachSealed`, `tryUnlock()`
+tries the passphrase this phone remembers (`PASS_KEY` in localStorage,
+scoped to the staff folder). With none, or one that no longer works, the
+card is the unlock box: a form (`data-form="unlock"`, so Enter submits),
+one field, one button. A typed passphrase that fails puts a plain message
+under the field and remembers nothing. One that works stores itself, sets
+`state.coachNotes`, and opens the card. A remembered passphrase that fails
+on a later load (the report was re-sealed under a new one) is dropped
+without a message, and the box comes back. **Lock on this phone** in the
+report's foot forgets it. The passphrase never leaves the page; nothing is
+sent anywhere but the sealed file's own fetch.
+
+The passphrase itself lives in `staff-passphrase.txt` one folder above the
+repo on Eric's Mac (`tools/seal.mjs` reads it from there by default). It is
+one shared passphrase for the two people who use the page. That is the
+honest limit of the design: there is no per-person login and no way to
+remove one reader without changing it for both. A host with real logins
+would be the next step if that ever matters.
 
 The file's shape is the shape the report is already written in. The first
 line is the title, and the words after its colon become the card's eyebrow
@@ -835,8 +903,9 @@ starts a numbered point, and anything else is a paragraph. `parseNotes()`
 is the whole parser; it is exported for the tests.
 
 Unlike the numbers card, the report names players (first name and last
-initial, the same as the Stats tab). `?admin` is tidiness, not security.
-The `coachNotes` switch turns the card off without touching the file.
+initial, the same as the Stats tab). That is why it is sealed and why it is
+not on the parents' page at all. The `coachNotes` switch turns the card off
+without touching the file, and skips the fetch.
 
 The fold (`.sph`, `.shut`, `.chev` in `rink.css`) is the same one the
 sponsors block uses. The report starts folded on every open and remembers
@@ -1025,7 +1094,7 @@ with a new key is simply ignored.
 ## Adding things
 
 **A new feature switch.** Only for a whole card or a data-driven piece.
-Add the name to the `features` block in `index.html` with a one-line
+Add the name to the `features` block in `config.js` with a one-line
 comment, to `FEATURES` in `state.js`, and one `on("name")` test where the
 feature enters the page. Section [20] of `tests/qa.js` already proves the
 mechanism; add a check only if the new switch touches something the
@@ -1036,8 +1105,7 @@ view a key in `buildViews()` (`{key:"stats", tab:"Stats", stats:true}` is
 the pattern) and a branch in `render()`. Give it a line in `diagnostics.js`.
 Write the test before the component.
 
-**A new sheet tab.** Add its name and gid to the CONFIG block in
-`index.html`, a `shape/<tab>.js` that turns rows into objects and warnings,
+**A new sheet tab.** Add its name and gid to `config.js`, a `shape/<tab>.js` that turns rows into objects and warnings,
 and one entry in `OPTIONAL_TABS` in `app.js` (or a `getCSV()` call beside
 the required three). Add it to the tab list in `snapshot.yml`.
 

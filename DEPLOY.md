@@ -4,8 +4,8 @@ About 20 minutes, once. After this you never touch the site again, only the shee
 
 > **Check The Rink layout.** The site now holds more than one team. Each team
 > has its own folder under `docs/` (the Wings are `docs/wswings12u/`), and
-> wherever this guide says `index.html` or `logo.png` it means the ones in
-> the team's folder. The landing page at `docs/index.html` lists every team
+> wherever this guide says `config.js`, `index.html` or `logo.png` it means
+> the ones in the team's folder. The landing page at `docs/index.html` lists every team
 > from `docs/teams.js`; a new team needs a folder and an entry there.
 
 You need: a Google account, and a free GitHub account (email signup, no card).
@@ -54,7 +54,7 @@ Copy the part between `/d/` and `/edit`. It's long and random-looking. That's co
 
 ## Part 2: Point the page at your sheet (2 minutes)
 
-Open `index.html` in any text editor (TextEdit, VS Code, Notepad, anything but Word). Near the top you'll find:
+Open `config.js` (in the team's folder, beside `index.html`) in any text editor (TextEdit, VS Code, Notepad, anything but Word). Near the top you'll find:
 
 ```js
 sheetId: "PASTE_YOUR_SHEET_ID_HERE",
@@ -62,7 +62,7 @@ sheetId: "PASTE_YOUR_SHEET_ID_HERE",
 
 Replace what's between the quotes with your sheet ID. Keep the quotes and the comma.
 
-Save. Don't change anything else.
+Save. Don't change anything else. `index.html` never needs editing; it just loads `config.js`.
 
 ---
 
@@ -208,7 +208,7 @@ A **showcase** and a **tournament** are different animals. A tournament runs poo
 
 ## Adding a tournament mid-season
 
-Rows in the sheet. No deploy, no config, nothing in `index.html`. About ten
+Rows in the sheet. No deploy, no config, nothing in `config.js`. About ten
 minutes, and it works the same in January as it does today.
 
 **1. Add any new clubs to the Teams tab.** Put `tournament only` in the Notes
@@ -476,7 +476,7 @@ The page tells you. Warnings appear at the bottom of the page under **Things to 
 
 `?check` has the rest: which route each tab was read through, which spreadsheet column the page decided is which field, and the first few rows exactly as it parsed them.
 
-**If you build a new sheet, the tab IDs change.** The page notices and says so. Click each tab in the new sheet, copy the number after `gid=` in the address bar, and paste it into the `gids` line in `index.html`. Six numbers, two minutes.
+**If you build a new sheet, the tab IDs change.** The page notices and says so. Click each tab in the new sheet, copy the number after `gid=` in the address bar, and paste it into the `gids` line in `config.js`. Six numbers, two minutes.
 
 **"came back as a web page, not data"**: the sheet isn't shared. Redo Part 1 step 4.
 
@@ -496,7 +496,7 @@ The page tells you. Warnings appear at the bottom of the page under **Things to 
 
 ## The gids block: already filled in, but here's what it is
 
-In `index.html`:
+In `config.js`:
 
 ```js
 gids: { settings: "1160090892", teams: "239776309", schedule: "1739208952", stats: "703037060", rinks: "1202177208", sponsors: "95128319" },
@@ -524,27 +524,71 @@ Or open `https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/htmlview`, that pa
 
 Go to **github.com/ewm/rink-report/upload/main**. Drag the changed files onto
 the page. Dragging the `js` folder from `site` replaces everything under `js/`
-and keeps the structure; dragging `index.html` alone replaces just that file.
+and keeps the structure; dragging `config.js` alone replaces just that file.
 In the commit box, write a title that names what changed ("Standings: hide rank numbers before the first score") and a line or two underneath saying which files and why, then **Commit changes**. The history is the only record of what changed when. The live site updates in about a
 minute, hard-refresh (Cmd-Shift-R) to see it. Do this as often as you like;
 nothing is counted.
 
-For a one-line change like the sheet ID, you don't even need Finder: open the
-file on GitHub, click the pencil icon, edit, **Commit changes**.
+For a one-line change like the sheet ID, you don't even need Finder: open
+`config.js` on GitHub, click the pencil icon, edit, **Commit changes**.
 
 You'll only need this if you want a design change. Schedule and score changes
 never require it, those live in the sheet.
 
 ### Switching a feature off
 
-The config block at the top of `index.html` ends with a `features` list, one
-line per optional piece of the page, each set to `true`. Change one to
-`false`, upload `index.html` again, and that piece is gone; nothing else on
-the page moves. Set it back to `true` and it returns. Handy when a sponsor
+`config.js` ends with a `features` list, one line per optional piece of the
+page, each set to `true`. Change one to `false`, upload `config.js` again,
+and that piece is gone; nothing else on the page moves. Set it back to `true` and it returns. Handy when a sponsor
 list isn't ready, a team has no Player Stats tab yet, or you want a plain
 league-only page for a season with no showcases. Open `?check` afterwards:
 the **Features** line names whatever is switched off. Standings and the
 schedule have no switch.
+
+### The staff page
+
+Every team has a second page at `<team folder>/staff/` (the Wings:
+`checktherink.com/wswings12u/staff/`). It is the same page with the staff
+view switched on: the Coaches Corner numbers card, the written Coaches
+report, the Gameday post buttons on our upcoming games, and the `?check`
+setup page. None of those are on the parents' page any more, with or without
+`?admin`. (`?admin` on the parents' page still opens the per-player pages and
+the hot / warm / cold tags; those come from the public stats tab either way.)
+
+Anyone can open the staff page. The one thing on it that matters, the
+report, is sealed: the file in the repo is scrambled, and the page asks for
+the staff passphrase once per phone before it can show it. Wrong passphrase,
+no report, and the page says so. The passphrase is remembered on that phone
+until someone taps **Lock on this phone** under the report.
+
+**Posting a new report**, on Eric's Mac:
+
+1. Write the report as plain text, the same shape as before (title line,
+   numbered capital headings, dashes for bullets). Keep it in the Youth
+   Hockey folder as `Coaches-Corner-<date>.txt`. It never goes in the repo.
+2. Seal it:
+
+   ```
+   cd rink-report-site
+   node tools/seal.mjs "../Coaches-Corner-2026-10-06.txt"
+   ```
+
+   That writes `docs/wswings12u/data/coaches-corner.enc`, the only copy that
+   goes online. The passphrase comes from `staff-passphrase.txt`, one folder
+   up from the repo (the Youth Hockey folder). `node tools/seal.mjs --check`
+   proves the sealed file opens with that passphrase.
+3. Upload `coaches-corner.enc` the usual way. The staff page picks it up on
+   its next poll.
+
+**Changing the passphrase**: edit `staff-passphrase.txt`, seal the current
+report again, upload. Everyone's phone will ask for the new one next time.
+There is no way to lock out one person and keep another; it is one shared
+passphrase for two people. If that ever needs to change, the plan is a host
+with real logins (Cloudflare Access was the free option), not more code here.
+
+`docs/**/coaches-corner.txt` is in `.gitignore`, so a plain-text report
+cannot be uploaded to the repo by accident from a git client. The browser
+upload page does not read `.gitignore`: drag the `.enc`, not the `.txt`.
 
 ### Posting a Coaches report
 
@@ -591,7 +635,7 @@ Google Sheet          the data. you and your co-manager edit it.
       |
       |  read anonymously over https, every 2 minutes
       v
-index.html + js/     on GitHub Pages. never changes.
+config.js + js/       on GitHub Pages. never changes.
       |
       v
 parent's phone        no login, no app, works on anything.

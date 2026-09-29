@@ -1,14 +1,14 @@
 /**
  * What the page knows before it fetches, and the store it fills afterwards.
  *
- * CFG is the config block from index.html, the only thing a manager edits.
+ * CFG is the config from config.js, the only thing a manager edits.
  * state is one plain object that every module reads and writes directly.
  * Nothing here renders: code that changes state and wants the page to follow
  * calls notify(), and app.js registers render() as the listener.
  * See ARCHITECTURE.md, "The store" and "Feature switches".
  */
 
-/** The config block from index.html. */
+/** The config from config.js in the team folder. */
 var CFG = window.RINK_CONFIG || {};
 
 /**
@@ -36,18 +36,30 @@ var CACHE_KEY = scopedKey("rinkreport.v5");
 /** localStorage key for whether this reader folded the sponsors block. */
 var SPONSORS_KEY = scopedKey("rinkreport.sponsorsOpen");
 
-/** Whether the page was opened with ?check. */
-var DIAG = /[?&]check\b/.test(location.search);
+/**
+ * Whether this is the staff page: the team folder's staff/index.html sets
+ * window.RINK_STAFF before any module runs. The staff page is where the
+ * manager's own things live: the Coaches Corner cards, the sealed Coaches
+ * report, the gameday post buttons and the ?check diagnostics. Anyone can
+ * open it, but the report only unlocks with the staff passphrase.
+ * See ARCHITECTURE.md, "The staff page".
+ */
+var STAFF = !!window.RINK_STAFF;
+
+/** Whether the page was opened with ?check. Staff page only. */
+var DIAG = STAFF && /[?&]check\b/.test(location.search);
 
 /**
- * Whether the page was opened with ?admin.
- *
- * Shows the manager's own controls, currently just the gameday post button
- * on our upcoming games. This is tidiness, not security: everything the page
- * holds is public either way, and the flag only keeps a button out of a
- * parent's way.
+ * Whether the reader is looking at the manager's view of the numbers: the
+ * per-player pages and the hot / warm / cold tags on the Stats tab. On with
+ * ?admin on the parents' page, always on the staff page. This is tidiness,
+ * not security: those come from the public stats tab either way, and the
+ * flag only keeps them out of a parent's way.
  */
-var ADMIN = /[?&]admin\b/.test(location.search);
+var ADMIN = STAFF || /[?&]admin\b/.test(location.search);
+
+/** localStorage key for the staff passphrase, once the report has unlocked with it. */
+var PASS_KEY = scopedKey("rinkreport.staffPass");
 
 /** Every feature switch the page knows, in the order index.html lists them. */
 var FEATURES = [
@@ -108,8 +120,10 @@ function offList() {
  * player: the short name whose page is open on the Stats view (?admin), or null.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * coachCopied: true for a moment after the Coaches Corner text was copied.
- * coachNotes: the text of data/coaches-corner.txt (?admin), or null when
- *   there is no such file.
+ * coachSealed: the bytes of data/coaches-corner.enc (staff page), or null
+ *   when there is no such file.
+ * coachNotes: the report's text once it has unlocked, or null.
+ * unlockError: what went wrong with the last passphrase typed, or "".
  * notesOpen: whether the Coaches report card is unfolded. Starts folded on
  *   every open; nothing is remembered.
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
@@ -155,7 +169,9 @@ var state = {
     }
   })(),
   coachCopied: false,
+  coachSealed: null,
   coachNotes: null,
+  unlockError: "",
   notesOpen: false,
   diagLog: [],
   routeUsed: [],
@@ -197,4 +213,4 @@ function notify() {
   }
 }
 
-export { CFG, CACHE_KEY, SPONSORS_KEY, ADMIN, DIAG, on, offList, state, log, onChange, notify };
+export { CFG, CACHE_KEY, SPONSORS_KEY, PASS_KEY, STAFF, ADMIN, DIAG, on, offList, state, log, onChange, notify };

@@ -5,7 +5,7 @@
  * tickFresh() patches the "updated N ago" line in place, without a render,
  * because a full repaint every 30 seconds was a visible flash.
  */
-import { state } from "../state.js";
+import { STAFF, state } from "../state.js";
 import { ago } from "../util/dates.js";
 import { esc } from "../util/text.js";
 
@@ -44,6 +44,12 @@ function mastheadHtml(v, rec) {
   } else {
     kicker = busy ? "Loading" : v.stats ? "Player stats" : v.events ? v.label : "Live standings";
     headline = v.event ? v.label : cfg.leagueName || "Check The Rink";
+  }
+
+  // The staff page says so in the kicker, so nobody mistakes it for the
+  // parents' page when both are open.
+  if (STAFF) {
+    kicker += " \u00b7 Staff";
   }
 
   h += '<div class="txt"><div class="eyebrow">' + esc(kicker) + "</div>";
@@ -181,7 +187,7 @@ function problemsHtml() {
       .join("") +
     "</ul>" +
     (p.length > 6
-      ? "and " + (p.length - 6) + ' more — <a href="?check">Setup check</a> lists them all'
+      ? "and " + (p.length - 6) + " more" + (STAFF ? ' — <a href="' + checkHref() + '">Setup check</a> lists them all' : "")
       : "") +
     "</div>"
   );
@@ -243,8 +249,25 @@ function footHtml() {
     h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span> All teams</a>';
   }
 
-  return h + '<p class="foot">Scores are entered by the team after each game.<br><a href="?check">Setup check</a>' +
-    '<br>&copy; 2026 Minted Moose LLC. All rights reserved.</p>';
+  h += '<p class="foot">Scores are entered by the team after each game.';
+
+  // The setup check is a staff thing; the parents' page has no link to it.
+  if (STAFF) {
+    h += '<br><a href="' + checkHref() + '">Setup check</a>';
+  }
+
+  return h + "<br>&copy; 2026 Minted Moose LLC. All rights reserved.</p>";
+}
+
+/**
+ * The address of this page's setup check. Spelled out from the path
+ * because the staff page carries a <base> tag, which would send a bare
+ * "?check" to the parents' page instead.
+ *
+ * @returns {string}
+ */
+function checkHref() {
+  return location.pathname + "?check";
 }
 
 export {

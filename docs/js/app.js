@@ -6,7 +6,7 @@
  * that refetches when a phone comes back.
  * See ARCHITECTURE.md, "Module map" and "Polling".
  */
-import { ADMIN, CFG, CACHE_KEY, SPONSORS_KEY, on, state, log, onChange, notify } from "./state.js";
+import { CFG, CACHE_KEY, SPONSORS_KEY, PASS_KEY, STAFF, on, state, log, onChange, notify } from "./state.js";
 import { render } from "./render.js";
 import { getCSV } from "./sheet/routes.js";
 import { shapeSettings } from "./shape/settings.js";
@@ -21,6 +21,7 @@ import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
 import { coachText } from "./ui/coach.js";
 import { initFormTip } from "./ui/formtip.js";
 import { copyText } from "./util/clipboard.js";
+import { unlock } from "./util/seal.js";
 import { ago, timeKey, todayISO } from "./util/dates.js";
 import { bare, norm } from "./util/text.js";
 
@@ -168,7 +169,7 @@ function load() {
 
       if (state.routeTrouble.length) {
         state.problems.push(
-          "The tab IDs in index.html belong to a different sheet, so the page is falling back to the slower reader. " +
+          "The tab IDs in config.js belong to a different sheet, so the page is falling back to the slower reader. " +
             "That fallback is what blanks headers. Open each tab in the sheet, copy the number after gid= in the address bar, and paste it into the gids line in index.html."
         );
       }
@@ -224,31 +225,121 @@ function noteSnapshot() {
 }
 
 /**
- * Reads the Coaches report, data/coaches-corner.txt in the team folder, on
- * ?admin only. It never gates the page: the card appears when the file
- * arrives and stays away when there is no file. Runs with every load, so
- * the Refresh button and the poll pick up a newly uploaded report.
+ * Reads the sealed Coaches report, data/coaches-corner.enc in the team
+ * folder, on the staff page only. It never gates the page: the card appears
+ * when the file arrives and stays away when there is no file. Runs with
+ * every load, so the Refresh button and the poll pick up a newly uploaded
+ * report. Once the bytes are in, the passphrase this phone remembers is
+ * tried; with none, or a stale one, the card shows the unlock box instead.
  */
 function loadNotes() {
-  if (!ADMIN || !on("coachNotes")) {
+  if (!STAFF || !on("coachNotes")) {
     return;
   }
 
-  fetch("data/coaches-corner.txt", { cache: "no-store" })
+  fetch("data/coaches-corner.enc", { cache: "no-store" })
     .then(function (r) {
-      return r.ok ? r.text() : "";
+      return r.ok ? r.arrayBuffer() : null;
     })
-    .then(function (t) {
-      var next = t.trim() ? t : null;
+    .then(function (buf) {
+      if (!buf) {
+        setNotes(null, null);
 
-      if (next !== state.coachNotes) {
-        state.coachNotes = next;
-        notify();
+        return;
       }
+
+      state.coachSealed = new Uint8Array(buf);
+
+      return tryUnlock(savedPass(), false);
     })
     .catch(function () {
-      state.coachNotes = null;
+      setNotes(null, null);
     });
+}
+
+/**
+ * The passphrase this phone remembered, or "".
+ *
+ * @returns {string}
+ */
+function savedPass() {
+  try {
+    return localStorage.getItem(PASS_KEY) || "";
+  } catch (e) {
+    return "";
+  }
+}
+
+/**
+ * Puts the report (or its absence) in the store and repaints when that is
+ * a change.
+ *
+ * @param {Uint8Array|null} sealed - The file's bytes, or null for no file.
+ * @param {string|null} text - The unlocked report, or null while locked.
+ */
+function setNotes(sealed, text) {
+  var changed = sealed !== state.coachSealed || text !== state.coachNotes;
+
+  state.coachSealed = sealed;
+  state.coachNotes = text;
+
+  if (changed) {
+    notify();
+  }
+}
+
+/**
+ * Tries a passphrase on the sealed report in the store.
+ *
+ * On success the report is shown and the passphrase remembered on this
+ * phone. On failure the report stays locked; a passphrase the reader just
+ * typed gets a message under the box, and a remembered one that no longer
+ * works (the report was re-sealed with a new passphrase) is forgotten so
+ * the box comes back.
+ *
+ * @param {string} pass
+ * @param {boolean} typed - Whether the reader typed it just now.
+ * @returns {Promise<void>}
+ */
+function tryUnlock(pass, typed) {
+  if (!state.coachSealed) {
+    return Promise.resolve();
+  }
+
+  if (!pass) {
+    state.unlockError = typed ? "Type the staff passphrase first." : "";
+    setNotes(state.coachSealed, null);
+    notify();
+
+    return Promise.resolve();
+  }
+
+  return unlock(state.coachSealed, pass).then(
+    function (text) {
+      state.unlockError = "";
+
+      try {
+        localStorage.setItem(PASS_KEY, pass);
+      } catch (e) {}
+
+      setNotes(state.coachSealed, text.trim() ? text : null);
+    },
+    function (e) {
+      if (typed) {
+        state.unlockError =
+          e && e.message === "not sealed"
+            ? "The report file on the site is not a sealed report. Seal it again with tools/seal.mjs and upload it."
+            : "That passphrase did not open the report. Check it and try again.";
+      } else {
+        try {
+          localStorage.removeItem(PASS_KEY);
+        } catch (err) {}
+      }
+
+      setNotes(state.coachSealed, null);
+      notify();
+    }
+  );
 }
 
 /* ---- cache: the last good copy, so the page paints before the fetch ---- */
@@ -352,6 +443,30 @@ function schedulePoll() {
 
 /* ---- input ---- */
 
+/**
+ * The unlock box on the staff page is a form, so Enter on a phone keyboard
+ * submits it. The passphrase is tried and never leaves the page.
+ */
+document.addEventListener("submit", function (e) {
+  var form = e.target;
+
+  if (!form || form.getAttribute("data-form") !== "unlock") {
+    return;
+  }
+
+  e.preventDefault();
+
+  var box = form.querySelector("input");
+  var pass = box ? box.value.trim() : "";
+
+  tryUnlock(pass, true).then(function () {
+    if (state.coachNotes) {
+      state.notesOpen = true;
+      render();
+    }
+  });
+});
+
 /** One delegated click handler: every button carries a data-act attribute. */
 document.addEventListener("click", function (e) {
   var el = e.target.closest ? e.target.closest("[data-act]") : null;
@@ -404,6 +519,18 @@ document.addEventListener("click", function (e) {
 
   if (a === "coachnotes") {
     state.notesOpen = !state.notesOpen;
+    render();
+  }
+
+  // Locks the report again on this phone: forgets the passphrase.
+  if (a === "coachlock") {
+    try {
+      localStorage.removeItem(PASS_KEY);
+    } catch (err) {}
+
+    state.unlockError = "";
+    state.notesOpen = false;
+    setNotes(state.coachSealed, null);
     render();
   }
 

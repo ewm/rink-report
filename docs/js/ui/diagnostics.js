@@ -92,7 +92,7 @@ function diagHtml() {
     "Sheet ID     " +
       (CFG.sheetId && CFG.sheetId.indexOf("PASTE") === -1
         ? '<span class="ok">' + esc(CFG.sheetId) + "</span>"
-        : '<span class="bad">not set — edit index.html and paste your sheet ID</span>')
+        : '<span class="bad">not set — edit config.js and paste your sheet ID</span>')
   );
   var tabs = CFG.tabs || {};
 
@@ -218,7 +218,7 @@ function diagHtml() {
       (off.length
         ? '<span class="warn">off: ' +
           esc(off.join(", ")) +
-          "</span>   (switched off in index.html; everything else is on)"
+          "</span>   (switched off in config.js; everything else is on)"
         : '<span class="ok">all on</span>')
   );
   L.push(
@@ -227,7 +227,7 @@ function diagHtml() {
 
   if (state.routeTrouble.length) {
     L.push(
-      '<span class="bad">Tab IDs in index.html do not match this sheet — see "Correct tab IDs" below.</span>'
+      '<span class="bad">Tab IDs in config.js do not match this sheet — see "Correct tab IDs" below.</span>'
     );
   }
 
@@ -294,7 +294,9 @@ function diagHtml() {
   });
 
   L.push("");
-  L.push('<a href="./">back to the page</a>');
+  // Spelled out from the path: the staff page's <base> tag would send "./"
+  // to the parents' page.
+  L.push('<a href="' + esc(location.pathname) + '">back to the page</a>');
 
   return (
     '<header class="masthead"><div class="txt"><div class="eyebrow">Diagnostics</div><h1>Setup check</h1></div></header><pre class="diag">' +

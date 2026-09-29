@@ -5,7 +5,7 @@
  * string. render() decides which components a view needs, joins them, and
  * skips the DOM write entirely when nothing changed since last time.
  */
-import { ADMIN, DIAG, on, state } from "./state.js";
+import { ADMIN, DIAG, STAFF, on, state } from "./state.js";
 import { buildViews, currentView, leagueView, barKeyFor, teamsInView } from "./model/views.js";
 import { rulesFor, standings } from "./model/standings.js";
 import { nextGameHtml } from "./ui/nextgame.js";
@@ -109,11 +109,11 @@ function render() {
       h += standingsHtml(v, st, rules);
       h += resultsHtml(v);
 
-      // The manager's own cards, on the league view only and only on ?admin:
+      // The manager's own cards, on the league view of the staff page only:
       // the Coaches Corner numbers, then the written report folded under
       // them. Last on the page, so they stay out of the way of the
       // standings and the schedule.
-      if (ADMIN && !v.event) {
+      if (STAFF && !v.event) {
         h += coachHtml();
 
         if (on("coachNotes")) {

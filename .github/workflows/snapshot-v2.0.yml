@@ -15,8 +15,9 @@
 # the website never serves it) and onto the run's page on the Actions tab.
 # A day with more than one run gets one section per run in the same file.
 #
-# A folder counts as a team when its index.html has a sheetId in it. Only
-# folders are looked at, so the landing page at docs/index.html never is.
+# A folder counts as a team when it has a config.js with a sheetId in it.
+# Only folders are looked at, so the landing page at docs/index.html never
+# is, and a team's staff/ folder has no config.js of its own.
 #
 # Players' full names never get saved. Any Player or Goalie column holding
 # more than a first name and last initial ("Luke G.") makes the job keep the
@@ -49,12 +50,12 @@ jobs:
           shopt -s nullglob
           found=0
 
-          for page in */index.html; do
-            team=$(dirname "$page")
-            SHEET=$(grep -o 'sheetId: *"[^"]*"' "$page" | sed 's/.*"\(.*\)"/\1/' || true)
+          for cfg in */config.js; do
+            team=$(dirname "$cfg")
+            SHEET=$(grep -o 'sheetId: *"[^"]*"' "$cfg" | sed 's/.*"\(.*\)"/\1/' || true)
 
             if [ -z "$SHEET" ]; then
-              echo "$team: no sheetId in index.html, not a team page; skipping"
+              echo "$team: no sheetId in config.js, not a team page; skipping"
               continue
             fi
 

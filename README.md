@@ -62,12 +62,16 @@ Report. All teams share the same `js/` and `css/`.
 | `docs/theme.js` | Works out every color a page needs from a club's two colors, for light and dark mode, and keeps them readable. Used by the landing page and every team page. |
 | `docs/landing.js`, `docs/landing.css` | The landing page's code and styles. |
 | `docs/wswings12u/` | The West Seneca Wings 12U page. One folder per team. |
-| `docs/wswings12u/index.html` | That team's shell: the config block you edit (sheet ID, tab IDs, feature switches), and the lines that load the shared code. |
+| `docs/wswings12u/config.js` | **The one file a team manager edits**: sheet ID, tab IDs, feature switches. Read by both of the team's pages. |
+| `docs/wswings12u/index.html` | That team's shell for parents: loads `config.js` and the shared code. Nothing in it to edit. |
+| `docs/wswings12u/staff/index.html` | The team's staff page: the same page with the staff view on (Coaches Corner, the sealed report, post buttons, `?check`). Nothing in it to edit. |
+| `docs/wswings12u/data/coaches-corner.enc` | The Coaches report, sealed with the staff passphrase by `tools/seal.mjs`. The plain text never goes in the repo. |
 | `docs/wswings12u/logo.png` | That team's crest. Optional; delete it and the masthead is text only. |
 | `docs/wswings12u/manifest.json` | Names the home-screen shortcut a parent makes from that team's page. |
 | `docs/wswings12u/data/` | The saved copy of that team's sheet, one CSV per tab, written by the GitHub job. Do not edit by hand. |
 | `docs/js/` | The Rink Report itself, one module per responsibility, shared by every team. Native ES modules, no build step. `ARCHITECTURE.md` is the map. |
 | `docs/css/rink.css` | Every Rink Report style, shared by every team. |
+| `tools/seal.mjs` | Seals a Coaches report for the staff page. `node tools/seal.mjs <report.txt>`; see `DEPLOY.md`, "The staff page". |
 | `docs/_headers` | Security headers Netlify would read. Ignored by GitHub Pages; harmless. |
 | `docs/.nojekyll` | Tells GitHub Pages to serve the folder as-is. Keep it. |
 | `.github/workflows/snapshot.yml` | The job that saves a copy of every team's sheet. Runs once a day; commits only when a tab changed, and writes a plain-English list of what changed to `changes/<team>/<date>.md`. |
@@ -83,8 +87,8 @@ Read `DEPLOY.md`. Short version:
 2. Fill in Settings, Teams, Schedule. The workbook grades itself as you type
    and goes red where it is not happy.
 3. Share it as "Anyone with the link, Viewer".
-4. Paste the sheet ID and the tab gids into the config block at the top of
-   your team's `index.html` (`docs/<team folder>/index.html`).
+4. Paste the sheet ID and the tab gids into your team's `config.js`
+   (`docs/<team folder>/config.js`).
 5. Upload the files to a GitHub repo and turn on Pages (`DEPLOY.md`, Part 3).
 
 ## The weekly workflow
@@ -147,7 +151,7 @@ instead of a table of zeros.
 
 ## Turning pieces off
 
-The config block at the top of `index.html` ends with a `features` list.
+Your team's `config.js` ends with a `features` list.
 Set any one to `false` and that piece leaves the page; everything else stays
 where it was.
 

@@ -91,6 +91,13 @@ function coerceNumericHeaders(csv, harsh){
 
 const OUT = path.join(HERE,'out'); fs.mkdirSync(OUT,{recursive:true});
 let failures=0, passes=0;
+// Seals a test report the way tools/seal.mjs would, with the site's own
+// module, so the page unlocks exactly what a real upload would hold.
+let sealMod = null;
+async function sealed(text){
+  if(!sealMod) sealMod = await import(require('url').pathToFileURL(path.join(SITE_DIR,'js','util','seal.js')).href);
+  return sealMod.seal(text, PASS);
+}
 function ok(cond, msg){ if(cond){passes++; console.log('  ok   '+msg);} else {failures++; console.log('  FAIL '+msg);} }
 
 function serve(dir, port){
@@ -155,9 +162,14 @@ async function openPage(browser, url, opts){
   // case it serves the fixtures (as the GitHub Action would have written them).
   await page.route(new RegExp('localhost:8811/'+TEAM+'/data/'), route=>{
     const name=new URL(route.request().url()).pathname.replace(/^.*\/data\//,'');
-    // The Coaches report is its own file, present only when a check asks for it.
-    if(name==='coaches-corner.txt'){
-      if(opts.notes) route.fulfill({status:200, contentType:'text/plain', body:opts.notes}); else route.fulfill({status:404, body:'not found'});
+    // The Coaches report is its own sealed file, present only when a check
+    // asks for it (opts.notes is the plain text; it is sealed with PASS).
+    // The old plain-text name is gone for good: 404, and noted, so a check
+    // can prove the parents' page never asks for either.
+    if(name==='coaches-corner.enc' || name==='coaches-corner.txt'){
+      asked.push('notes:'+name);
+      if(name==='coaches-corner.enc' && opts.notes){ sealed(opts.notes).then(bytes=>route.fulfill({status:200, contentType:'application/octet-stream', body:Buffer.from(bytes)})); }
+      else route.fulfill({status:404, body:'not found'});
       return;
     }
     if(!opts.snapshot){ route.fulfill({status:404, body:'not found'}); return; }
@@ -171,13 +183,14 @@ async function openPage(browser, url, opts){
   if(opts.teamsJs){
     await page.route(/localhost:8811\/teams\.js/, route=>route.fulfill({status:200, contentType:'text/javascript', body:opts.teamsJs}));
   }
-  // opts.features: {name:false,...} is spliced into RINK_CONFIG as the page
-  // loads, so a switch can be tested without editing index.html.
+  // opts.features: {name:false,...} is spliced onto the end of config.js as
+  // it loads, so a switch can be tested without editing the file. Both the
+  // parents' page and the staff page read the same config.js.
   if(opts.features){
-    await page.route(new RegExp('localhost:8811/'+TEAM+'/(\\?.*)?$'), route=>{
-      const html=fs.readFileSync(path.join(SITE_DIR,TEAM,'index.html'),'utf8')
-        .replace('</script>', '</script><script>window.RINK_CONFIG.features=Object.assign({},window.RINK_CONFIG.features,'+JSON.stringify(opts.features)+');</script>');
-      route.fulfill({status:200, contentType:'text/html; charset=utf-8', body:html});
+    await page.route(new RegExp('localhost:8811/'+TEAM+'/config\\.js(\\?.*)?$'), route=>{
+      const js=fs.readFileSync(path.join(SITE_DIR,TEAM,'config.js'),'utf8')
+        + '\nwindow.RINK_CONFIG.features=Object.assign({},window.RINK_CONFIG.features,'+JSON.stringify(opts.features)+');\n';
+      route.fulfill({status:200, contentType:'text/javascript; charset=utf-8', body:js});
     });
   }
   await page.goto(url);
@@ -191,6 +204,11 @@ const SITE_DIR = process.env.SITE || path.join(HERE,'..','docs');
 // Wings'. BASE is that page's address on the test server.
 const TEAM = 'wswings12u';
 const BASE = 'http://localhost:8811/'+TEAM+'/';
+// The team's staff page: same code, the staff view switched on. Home of the
+// Coaches Corner cards, the sealed report, the post buttons and ?check.
+const STAFF = BASE+'staff/';
+// The passphrase the suite seals the test report with. Never the real one.
+const PASS = 'test-pass-123';
 (async()=>{
   const SITE = SITE_DIR;
   const sNew = await serve(SITE, 8811);
@@ -263,7 +281,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(skaters.length===13 && skaters[0][0]==='15Luke G.' && skaters[0][4]==='7' && skaters[0][5]==='0', 'same skater result by position: '+JSON.stringify(skaters[0]));
     ok(goalies[0][4]==='2.41' && goalies[0][6]==='3-1-0', 'same goalie result by position (GAA 2.41, record 3-1-0): '+JSON.stringify(goalies[0]));
     const banner = await page.$eval('#app', e=>e.textContent);
-    ok(!/tab IDs in index.html belong to a different sheet/.test(banner), 'a failing stats export does not accuse the other tab IDs');
+    ok(!/tab IDs in config.js belong to a different sheet/.test(banner), 'a failing stats export does not accuse the other tab IDs');
     await ctx.close();
   }
 
@@ -280,7 +298,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(skaters.length===13 && skaters[0][0]==='15Luke G.' && skaters[0][4]==='7' && skaters[0][5]==='0', 'same skater result by position: '+JSON.stringify(skaters[0]));
     ok(goalies[0][4]==='2.41' && goalies[0][6]==='3-1-0', 'same goalie result by position (GAA 2.41, record 3-1-0): '+JSON.stringify(goalies[0]));
     const banner = await page.$eval('#app', e=>e.textContent);
-    ok(!/tab IDs in index.html belong to a different sheet/.test(banner), 'a failing stats export does not accuse the other tab IDs');
+    ok(!/tab IDs in config.js belong to a different sheet/.test(banner), 'a failing stats export does not accuse the other tab IDs');
     await ctx.close();
   }
 
@@ -295,7 +313,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(!/Player Stats/.test(body), 'no stats warning shown to parents');
     ok(/Standings/.test(body), 'standings still render');
     // ?check
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1500);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1500);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Stats\s+not shown/.test(diag), '?check says stats not shown: '+(diag.match(/Stats .*/)||[''])[0]);
     ok(/Player Stats/.test(diag), '?check lists the stats tab name');
@@ -309,7 +327,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(errors.length===0, 'no page errors');
     const tabs = await page.$$eval('.viewbar button', b=>b.map(x=>x.textContent)).catch(()=>[]);
     ok(tabs.indexOf('Stats')===-1, 'no Stats tab for an empty sheet');
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1500);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1500);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/no player rows/.test(diag), '?check explains why: '+(diag.match(/Stats .*/)||[''])[0]);
     await ctx.close();
@@ -318,7 +336,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
   // 5. ?check with stats loaded, and dark scheme screenshot
   console.log('\n[5] diagnostics + dark mode');
   {
-    const {page, ctx} = await openPage(browser, BASE+'?check', {});
+    const {page, ctx} = await openPage(browser, STAFF+'?check', {});
     await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Stats\s+13 skaters, 2 goalies/.test(diag), '?check counts: '+(diag.match(/Stats .*/)||[''])[0]);
@@ -418,7 +436,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await page.click('.viewbar button[data-v="events"]'); await page.waitForTimeout(100);
     const ahead = await page.$$eval('.card:not(.sponsors)', c=>[...c[0].querySelectorAll('.evrow')].map(x=>x.textContent));
     ok(ahead.length===2 && /NOW/.test(ahead[0]) && /Thanksgiving/.test(ahead[1]), 'coming up: live one tagged NOW, then Thanksgiving: '+JSON.stringify(ahead));
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Bar\s+League\s+\|\s+Labor Day Faceoff\s+\|\s+Events\s+\|\s+Stats/.test(diag), '?check Bar line: '+(diag.match(/Bar .*/)||[''])[0]);
     ok(/Labor Day Faceoff \(2, .*in the bar\)/.test(diag), '?check Events line marks the featured one');
@@ -499,7 +517,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const crest = await page.$eval('.masthead img.crest', i=>({w:i.naturalWidth, h:i.naturalHeight, cw:i.clientWidth, ch:i.clientHeight}));
     ok(crest.w===216 && crest.h===132 && crest.ch===44 && crest.cw<=84, 'crest loaded, 44px tall, wide, capped: '+JSON.stringify(crest));
     // ?check
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Rinks\s+5 of 18 with an address\s+no address yet: Cheektowaga, Cornerstone/.test(diag), '?check rinks line: '+(diag.match(/Rinks .*/)||[''])[0].slice(0,120));
     ok(/rinks=raw export/.test(diag), 'rinks read via raw export');
@@ -516,11 +534,11 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const links = await page.$$('.rinklink');
     ok(links.length===0, 'no rink links on the schedule');
     const body = await page.$eval('#app', e=>e.textContent);
-    ok(!/tab IDs in index.html belong to a different sheet/.test(body) && !/Rinks/.test(body), 'no warning shown to parents about the rinks tab');
+    ok(!/tab IDs in config.js belong to a different sheet/.test(body) && !/Rinks/.test(body), 'no warning shown to parents about the rinks tab');
     ok(/Standings/.test(body), 'standings still render');
     const ics = await page.$eval('.next .actions a[download]', a=>decodeURIComponent(a.getAttribute('href')));
     ok(/LOCATION:Leisure-1\r\n/.test(ics), 'ics location falls back to the rink name alone');
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Rinks\s+not read/.test(diag), '?check says rinks not read: '+(diag.match(/Rinks .*/)||[''])[0].slice(0,100));
     await ctx.close();
@@ -534,7 +552,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const acts = await page.$$eval('.next .actions a', a=>a.map(x=>x.textContent));
     ok(acts[0]==='Directions', 'Directions present via gviz route');
     const body = await page.$eval('#app', e=>e.textContent);
-    ok(!/tab IDs in index.html belong to a different sheet/.test(body), 'a failing rinks export does not accuse the other tab IDs');
+    ok(!/tab IDs in config.js belong to a different sheet/.test(body), 'a failing rinks export does not accuse the other tab IDs');
     await ctx.close();
   }
 
@@ -598,7 +616,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
       await page.click('.viewbar button[data-v="'+v+'"]'); await page.waitForTimeout(120);
       ok((await page.$$('.sponsors')).length===1, 'sponsors still on the '+v+' view');
     }
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1200);
     const diag = await page.$eval('pre.diag', e=>e.textContent);
     ok(/Sponsors\s+9 sponsors\s+Gold 2, Silver 5, Bronze 2/.test(diag), '?check sponsors line: '+(diag.match(/Sponsors .*/)||[''])[0].slice(0,120));
     await ctx.close();
@@ -611,10 +629,10 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(errors.length===0, 'no page errors');
     ok((await page.$$('.sponsors')).length===0, 'no sponsors section');
     const body = await page.$eval('#app', e=>e.textContent);
-    ok(!/tab IDs in index.html belong to a different sheet/.test(body), 'a failing sponsors tab does not accuse the other tab IDs');
+    ok(!/tab IDs in config.js belong to a different sheet/.test(body), 'a failing sponsors tab does not accuse the other tab IDs');
     ok(!/sponsor/i.test(body), 'parents are told nothing about a missing sponsors tab');
     ok(/Standings/.test(body), 'standings still render');
-    await page.goto(BASE+'?check'); await page.waitForTimeout(1200);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(1200);
     ok(/Sponsors\s+not shown/.test(await page.$eval('pre.diag', e=>e.textContent)), '?check says sponsors not shown');
     await ctx.close();
   }
@@ -760,14 +778,15 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     const gone = await page.evaluate(()=>({
       next:!!document.querySelector('section.next'), sp:!!document.querySelector('.sponsors'), crest:!!document.querySelector('img.crest'),
       chip:!!document.querySelector('.record'), seg:!!document.querySelector('.seg'), refresh:!!document.querySelector('button[data-act="refresh"]'),
-      check:!!document.querySelector('.foot a[href="?check"]'), mhr:document.querySelectorAll('a.tm').length, pre:!!document.querySelector('.lead'),
+      check:!!document.querySelector('.foot a[href$="?check"]'), mhr:document.querySelectorAll('a.tm').length, pre:!!document.querySelector('.lead'),
       evrow:!!document.querySelector('.evrow'), season:!!document.querySelector('.seasoncal'), rink:document.querySelectorAll('.rinklink').length,
       bar:!!document.querySelector('.viewbar'),
       table:!!document.querySelector('table tbody tr'), sched:/Schedule & results/.test(document.querySelector('#app').textContent),
       h2s:[...document.querySelectorAll('.card h2')].map(x=>x.textContent).join('|')}));
     ok(!gone.next, 'next-game card gone');
     ok(!gone.sp, 'sponsors block gone');
-    ok(gone.crest && gone.seg && gone.refresh && gone.check, 'crest, All/Ours, Refresh and Setup check have no switch and stay');
+    ok(gone.crest && gone.seg && gone.refresh, 'crest, All/Ours and Refresh have no switch and stay');
+    ok(!gone.check, 'no Setup check link on the parents\' page (it lives on the staff page)');
     ok(gone.mhr===0 && gone.rink===0 && !gone.season, 'no MyHockey, directions or season-calendar links');
     ok(!gone.bar, 'league is the only view left, so the bar itself is gone (no Events, no Stats)');
     ok(!gone.pre && !gone.evrow && gone.table, 'pre-season card gone: the standings table shows instead, with no event rows');
@@ -775,7 +794,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     // the tabs that feed the switched-off pieces were never asked for
     ok(!asked.includes('stats') && !asked.includes('rinks') && !asked.includes('sponsors') && asked.includes('schedule'), 'stats, rinks and sponsors tabs not fetched; schedule still is: '+asked.join(','));
     // and ?check names them
-    await page.goto(BASE+'?check'); await page.waitForTimeout(600);
+    await page.goto(STAFF+'?check'); await page.waitForTimeout(600);
     const diag = await page.$eval('#app', e=>e.textContent);
     ok(/Features\s+off: nextGame, sponsors, stats, events, preseason, directions, calendar, seasonCalendar, mhrLinks, monoNumbers, rating/.test(diag), '?check lists every switched-off feature');
     await ctx.close();
@@ -929,7 +948,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     ok(/Google Sheets can.t be reached right now\. Showing the saved copy from/.test(body), 'the banner says it is the saved copy and when it was taken');
     ok(/9\/9\/2026|2026-09-09/.test(body), 'the copy\'s date comes from data/updated.txt: '+(body.match(/saved copy from [^.]+/)||[''])[0]);
     ok(r.asked.length>0, 'Google was tried first ('+r.asked.length+' requests)');
-    await r.page.goto(BASE+'?check');
+    await r.page.goto(STAFF+'?check');
     await r.page.waitForFunction(()=>/Read via\s+\w+=/.test(document.querySelector('#app').textContent), null, {timeout:20000}).catch(()=>{});
     const diag = await r.page.$eval('#app', e=>e.textContent);
     ok(/Saved copy/.test(diag) && /schedule=site snapshot/.test(diag), '?check names the snapshot route');
@@ -1156,17 +1175,20 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
   console.log('\n[27] gameday post panel');
   {
     const plain = await openPage(browser, BASE, {schedule:'scored'});
-    ok((await plain.page.$$eval('.postbtn', b=>b.length))===0, 'no post button without ?admin');
+    ok((await plain.page.$$eval('.postbtn', b=>b.length))===0, 'no post button on the parents\' page');
     await plain.ctx.close();
+    const adm = await openPage(browser, BASE+'?admin', {schedule:'scored'});
+    ok((await adm.page.$$eval('.postbtn', b=>b.length))===0, 'and none with ?admin either: the buttons moved to the staff page');
+    await adm.ctx.close();
 
-    const r = await openPage(browser, BASE+'?admin', {schedule:'scored'});
-    ok(r.errors.length===0, 'no page errors in admin mode: '+r.errors.join(' | '));
+    const r = await openPage(browser, STAFF, {schedule:'scored'});
+    ok(r.errors.length===0, 'no page errors on the staff page: '+r.errors.join(' | '));
 
     const rows = await r.page.evaluate(()=>[...document.querySelectorAll('.game')].map(g=>({
       btn:!!g.querySelector('.postbtn'),
       ours:/West Seneca Wings/.test(g.textContent),
       done:[...g.querySelectorAll('.sc')].some(s=>s.textContent.trim()!=='')})));
-    ok(rows.length>0 && rows.filter(x=>x.btn).length>0, 'admin mode puts buttons on the card ('+rows.filter(x=>x.btn).length+' of '+rows.length+' rows)');
+    ok(rows.length>0 && rows.filter(x=>x.btn).length>0, 'the staff page puts buttons on the card ('+rows.filter(x=>x.btn).length+' of '+rows.length+' rows)');
     ok(rows.every(x=>x.btn === (x.ours && !x.done)), 'a button on every unplayed game of ours, and on nothing else');
 
     // The note reads "1080 x ..." once a draw has finished.
@@ -1298,14 +1320,14 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
   // 28. A blank Event cell is only flagged when that team is at the event
   {
     console.log('\n[28] blank Event cell on an event day');
-    const ours = await openPage(browser, BASE+'?admin', {schedule:'strayOurs'});
+    const ours = await openPage(browser, STAFF, {schedule:'strayOurs'});
     const oursText = await ours.page.$eval('#app', e=>e.textContent);
     ok(/Event cell is blank, but other games that day belong to Pre-Season Summer Showcase 2026/.test(oursText),
        'our own game with a blank Event on a showcase day is flagged');
     ok(/Schedule row 205:/.test(oursText), 'and the warning names the row (205)');
     await ours.ctx.close();
 
-    const other = await openPage(browser, BASE+'?admin', {schedule:'strayOther'});
+    const other = await openPage(browser, STAFF, {schedule:'strayOther'});
     const otherText = await other.page.$eval('#app', e=>e.textContent);
     ok(!/Event cell is blank/.test(otherText),
        'two other league teams playing on a showcase day is not flagged');
@@ -1357,6 +1379,8 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     // A second team folder, served from the Wings page, as a new team's copy would be.
     await r.page.route(/localhost:8811\/otherteam\/(\?.*)?$/, route=>route.fulfill({status:200, contentType:'text/html; charset=utf-8',
       body: fs.readFileSync(path.join(SITE_DIR,TEAM,'index.html'),'utf8')}));
+    await r.page.route(/localhost:8811\/otherteam\/config\.js/, route=>route.fulfill({status:200, contentType:'text/javascript; charset=utf-8',
+      body: fs.readFileSync(path.join(SITE_DIR,TEAM,'config.js'),'utf8')}));
     await r.page.route(/localhost:8811\/otherteam\/data\//, route=>route.fulfill({status:404, body:'nope'}));
     await r.page.evaluate(()=>localStorage.setItem('rinkreport.sponsorsOpen:/wswings12u/','0'));
     await r.page.goto('http://localhost:8811/otherteam/');
@@ -1394,7 +1418,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
       ok(cr(c.mastInk, c.mast)>=4.5, scheme+': team name on the masthead reads ('+cr(c.mastInk,c.mast).toFixed(2)+')');
       await r.ctx.close();
     }
-    const r = await openPage(browser, BASE+'?admin', {teamsJs, schedule:'scored'});
+    const r = await openPage(browser, STAFF, {teamsJs, schedule:'scored'});
     await r.page.click('.postbtn');
     await r.page.waitForFunction(()=>{ const n=document.querySelector('.postnote'); return n && /^1080 x/.test(n.textContent); }, null, {timeout:8000});
     const px = await r.page.evaluate(()=>{ const c=document.querySelector('.postcanvas'); const d=c.getContext('2d').getImageData(20,c.height-20,1,1).data; return d[0]+','+d[1]+','+d[2]; });
@@ -1622,21 +1646,21 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await r.ctx.close();
   }
 
-  // 35. Coaches Corner (?admin only, team numbers, no names)
+  // 35. Coaches Corner (staff page only, team numbers, no names)
   console.log('\n[35] coaches corner');
   {
-    const plain = await openPage(browser, BASE, {});
-    ok((await plain.page.$$eval('.coach', c=>c.length))===0, 'no Coaches Corner without ?admin');
+    const plain = await openPage(browser, BASE+'?admin', {});
+    ok((await plain.page.$$eval('.coach', c=>c.length))===0, 'no Coaches Corner on the parents\' page, even with ?admin');
     await plain.ctx.close();
 
     // The fixtures hold the five August showcase games: 3-5, 6-0, 2-5, 8-2, 3-2.
-    const r = await openPage(browser, BASE+'?admin', {});
+    const r = await openPage(browser, STAFF, {});
     ok(r.errors.length===0, 'no page errors with the card on: '+r.errors.join(' | '));
     const card = await r.page.evaluate(()=>{
       const c=document.querySelector('.coach');
       return c ? { text:c.textContent, items:[...c.querySelectorAll('.coachlist li')].map(li=>li.textContent), table:!!c.querySelector('table') } : null;
     });
-    ok(!!card, 'the card is on the league view with ?admin');
+    ok(!!card, 'the card is on the league view of the staff page');
     ok(card && card.items[0]==='Record 3-2-0 in 5 games. Goals 22 for, 14 against (+8).', 'record line adds up the showcase: '+(card&&card.items[0]));
     // Aug 29 ended with the loss to Sylvania, then two wins on Aug 30.
     ok(card && card.items.includes('Won the last 2 in a row.'), 'the run is counted back from the latest game');
@@ -1661,7 +1685,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await r.ctx.close();
 
     // A September league game (6-2 over Southtowns) with its log rows.
-    const L = await openPage(browser, BASE+'?admin', {leagueLog:true});
+    const L = await openPage(browser, STAFF, {leagueLog:true});
     const lc = await L.page.evaluate(()=>{
       const c=document.querySelector('.coach');
       return { items:[...c.querySelectorAll('.coachlist li')].map(li=>li.textContent),
@@ -1679,7 +1703,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     // The fixture skaters have 24 penalty minutes in 5 games (4.8 a game).
     // Nothing else crosses a line: 4.4 goals for, 2.8 against, the top two
     // have 9 of 22 goals, and only one close game.
-    const r = await openPage(browser, BASE+'?admin', {});
+    const r = await openPage(browser, STAFF, {});
     const pr = await r.page.evaluate(()=>{
       const b=document.querySelector('.coach .practice');
       return b ? { text:b.textContent,
@@ -1999,7 +2023,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     }
   }
 
-  // 39. Coaches report: the written notes from data/coaches-corner.txt (?admin only)
+  // 39. Coaches report: the sealed notes in data/coaches-corner.enc (staff page only)
   console.log('\n[39] coaches report');
   {
     const NOTES = [
@@ -2019,19 +2043,48 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
       ''
     ].join('\n');
 
-    // No ?admin: no card, and the file is never even asked for.
-    const plain = await openPage(browser, BASE, {notes:NOTES});
-    ok((await plain.page.$$eval('.notes', c=>c.length))===0, 'no Coaches report without ?admin');
-    await plain.ctx.close();
+    // The parents' page, with and without ?admin: no card, and the file is
+    // never even asked for, under its new name or its old one.
+    for (const url of [BASE, BASE+'?admin']) {
+      const plain = await openPage(browser, url, {notes:NOTES});
+      await plain.page.waitForTimeout(300);
+      ok((await plain.page.$$eval('.notes', c=>c.length))===0 && !plain.asked.some(a=>/^notes:/.test(a)), 'no Coaches report and no request for the file on '+url.replace(BASE,'/'));
+      await plain.ctx.close();
+    }
 
-    // ?admin but no file: the numbers card is there, the report is not.
-    const none = await openPage(browser, BASE+'?admin', {});
+    // Staff page but no file: the numbers card is there, the report is not.
+    const none = await openPage(browser, STAFF, {});
     ok((await none.page.$$eval('.coach', c=>c.length))===1 && (await none.page.$$eval('.notes', c=>c.length))===0, 'no file, no report card, and the numbers card is untouched');
     await none.ctx.close();
 
-    const r = await openPage(browser, BASE+'?admin', {notes:NOTES});
-    await r.page.waitForSelector('.notes', {timeout:3000}).catch(()=>{});
-    ok(r.errors.length===0, 'no page errors with the report on: '+r.errors.join(' | '));
+    // Staff page with the sealed file: the unlock box, and not a word of the report.
+    const r = await openPage(browser, STAFF, {notes:NOTES});
+    await r.page.waitForSelector('.notes.locked', {timeout:3000}).catch(()=>{});
+    ok(r.errors.length===0, 'no page errors with the sealed report on: '+r.errors.join(' | '));
+    ok(r.asked.some(a=>a==='notes:coaches-corner.enc') && !r.asked.some(a=>a==='notes:coaches-corner.txt'), 'the staff page asks for coaches-corner.enc, never the old .txt');
+    const locked = await r.page.evaluate(()=>{
+      const c=document.querySelector('.notes.locked');
+      return c ? { form:!!c.querySelector('form[data-form="unlock"] input#rr-pass'), eyebrow:c.querySelector('.eyebrow').textContent.trim(), body:document.querySelector('#app').textContent } : null;
+    });
+    ok(locked && locked.form && locked.eyebrow==='Locked', 'the report card is the unlock box: a passphrase field, eyebrow Locked');
+    ok(locked && !/Finishing reps|Andrew M\./.test(locked.body), 'nothing from the report is on the page while it is locked');
+
+    // A wrong passphrase: a plain message, still locked, nothing remembered.
+    await r.page.fill('#rr-pass', 'nope-nope'); await r.page.press('#rr-pass', 'Enter');
+    await r.page.waitForSelector('.unlock .err', {timeout:3000}).catch(()=>{});
+    const wrong = await r.page.evaluate(()=>({ err:(document.querySelector('.unlock .err')||{}).textContent||'', locked:!!document.querySelector('.notes.locked'), saved:localStorage.getItem('rinkreport.staffPass:/wswings12u/staff/') }));
+    ok(/did not open the report/.test(wrong.err) && wrong.locked && wrong.saved===null, 'a wrong passphrase says so and remembers nothing: '+wrong.err);
+
+    // The right one: the report opens, unfolded, and the passphrase is remembered.
+    await r.page.fill('#rr-pass', PASS); await r.page.click('.unlock button[type="submit"]');
+    await r.page.waitForSelector('#rr-notes', {timeout:5000}).catch(()=>{});
+    const opened = await r.page.evaluate(()=>({ locked:!!document.querySelector('.notes.locked'), hidden:(document.querySelector('#rr-notes')||{hidden:true}).hidden, saved:localStorage.getItem('rinkreport.staffPass:/wswings12u/staff/') }));
+    ok(!opened.locked && !opened.hidden && opened.saved==='test-pass-123', 'the right passphrase unlocks the report, unfolded, and is remembered on this phone');
+
+    // Reload: it unlocks by itself, and starts folded like before.
+    await r.page.reload();
+    await r.page.waitForSelector('.notes:not(.locked)', {timeout:5000}).catch(()=>{});
+    await r.page.waitForTimeout(300);
     const card = await r.page.evaluate(()=>{
       const c=document.querySelector('.notes');
       if(!c) return null;
@@ -2048,7 +2101,7 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
         text:c.textContent
       };
     });
-    ok(!!card, 'the report card is on the league view with ?admin');
+    ok(!!card, 'after a reload the remembered passphrase unlocks the report by itself');
     ok(card && card.shut && card.hidden, 'it starts folded');
     ok(card && card.eyebrow==='Games through 9/25/2026', 'the eyebrow is the words after the colon in the title: '+(card&&card.eyebrow));
     ok(card && card.heads.join('|')==="Headline|What's working|Suggestions", 'section headings, no longer shouted: '+(card&&card.heads.join('|')));
@@ -2063,15 +2116,81 @@ const BASE = 'http://localhost:8811/'+TEAM+'/';
     await r.page.click('[data-act="coachnotes"]'); await r.page.waitForTimeout(150);
     await r.page.screenshot({path:path.join(OUT,'shot_coach_notes.png'), fullPage:true});
 
+    // Lock on this phone: the box comes back and the passphrase is forgotten.
+    await r.page.click('[data-act="coachlock"]'); await r.page.waitForTimeout(150);
+    const relocked = await r.page.evaluate(()=>({ locked:!!document.querySelector('.notes.locked'), saved:localStorage.getItem('rinkreport.staffPass:/wswings12u/staff/') }));
+    ok(relocked.locked && relocked.saved===null, 'Lock on this phone brings the box back and forgets the passphrase');
+
+    // A remembered passphrase that no longer opens the file (the report was
+    // re-sealed with a new one): the box comes back, and the stale one is dropped.
+    await r.page.evaluate(()=>localStorage.setItem('rinkreport.staffPass:/wswings12u/staff/','stale-pass-000'));
+    await r.page.reload();
+    await r.page.waitForSelector('.notes.locked', {timeout:5000}).catch(()=>{});
+    const stale = await r.page.evaluate(()=>({ locked:!!document.querySelector('.notes.locked'), err:(document.querySelector('.unlock .err')||{}).textContent||'', saved:localStorage.getItem('rinkreport.staffPass:/wswings12u/staff/') }));
+    ok(stale.locked && stale.err==='' && stale.saved===null, 'a stale remembered passphrase is dropped quietly and the box is back');
+
+    // The sealing module round-trips in the browser, and refuses the wrong passphrase.
+    const rt = await r.page.evaluate(async ()=>{
+      const m = await import('/js/util/seal.js');
+      const bytes = await m.seal('hello\nworld', 'pass-one');
+      const back = await m.unlock(bytes, 'pass-one');
+      let bad = ''; try { await m.unlock(bytes, 'pass-two'); } catch (e) { bad = e.message; }
+      let junk = ''; try { await m.unlock(new Uint8Array(40), 'pass-one'); } catch (e) { junk = e.message; }
+      return { sealed:m.isSealed(bytes), plainInside:new TextDecoder().decode(bytes).indexOf('hello')!==-1, back, bad, junk, len:bytes.length };
+    });
+    ok(rt.sealed && rt.back==='hello\nworld' && !rt.plainInside, 'seal.js: seals and unlocks in the browser, and the text is not readable in the file');
+    ok(rt.bad==='wrong passphrase' && rt.junk==='not sealed', 'seal.js: names a wrong passphrase and a file that is not sealed: '+rt.bad+' / '+rt.junk);
+
     const parsed = await r.page.evaluate(async ()=>(await import('/js/ui/notes.js')).parseNotes('T\n\nplain\n- a\n- b\n\n3. B\n1. x'));
     ok(parsed.title==='T' && parsed.sections.length===2 && parsed.sections[0].heading==='' && parsed.sections[0].blocks.map(b=>b.kind).join()==='p,ul' && parsed.sections[1].heading==='B' && parsed.sections[1].blocks[0].kind==='ol', 'parseNotes: lines before the first heading form an opening section');
     await r.ctx.close();
 
     // The switch hides the card and skips the fetch.
-    const off = await openPage(browser, BASE+'?admin', {notes:NOTES, features:{coachNotes:false}});
+    const off = await openPage(browser, STAFF, {notes:NOTES, features:{coachNotes:false}});
     await off.page.waitForTimeout(400);
     ok((await off.page.$$eval('.notes', c=>c.length))===0 && (await off.page.$$eval('.coach', c=>c.length))===1, 'coachNotes:false hides the report and keeps the numbers card');
     await off.ctx.close();
+  }
+
+  // 40. The staff page itself: the same page with the staff view on, and
+  //     the parents' page with none of it.
+  console.log('\n[40] staff page');
+  {
+    const r = await openPage(browser, STAFF, {});
+    ok(r.errors.length===0, 'no page errors on the staff page: '+r.errors.join(' | '));
+    const look = await r.page.evaluate(()=>({
+      kicker:document.querySelector('.masthead .eyebrow').textContent.trim(),
+      title:document.title,
+      check:(document.querySelector('.foot a[href$="?check"]')||{}).getAttribute ? document.querySelector('.foot a[href$="?check"]').getAttribute('href') : null,
+      home:(document.querySelector('a.home')||{}).getAttribute ? document.querySelector('a.home').getAttribute('href') : null,
+      crest:!!document.querySelector('img.crest'),
+      club:getComputedStyle(document.querySelector('.masthead')).backgroundColor,
+      robots:(document.querySelector('meta[name="robots"]')||{}).content||''
+    }));
+    ok(/· Staff$/.test(look.kicker), 'the masthead kicker says Staff: '+look.kicker);
+    ok(look.title==='West Seneca Wings | Check The Rink', 'the tab is named after the team once the sheet loads: '+look.title);
+    ok(look.check==='/wswings12u/staff/?check', 'the Setup check link points at the staff page, not the parents\' page: '+look.check);
+    ok(look.home==='../', 'All teams still links to the landing page: '+look.home);
+    ok(look.crest, 'the crest loads from the team folder through the <base> tag');
+    ok(look.club==='rgb(0, 48, 135)', 'theme.js still finds the Wings by folder from /wswings12u/staff/: '+look.club);
+    ok(look.robots==='noindex, nofollow', 'the staff page asks search engines to skip it');
+    ok(fs.readFileSync(path.join(SITE_DIR,'robots.txt'),'utf8').indexOf('Disallow: /wswings12u/staff/')!==-1, 'and robots.txt says the same');
+    // ?check on the staff page is the diagnostics page, and its back link stays on the staff page.
+    await r.page.goto(STAFF+'?check'); await r.page.waitForTimeout(800);
+    ok(!!(await r.page.$('pre.diag')), '?check on the staff page opens the setup check');
+    ok((await r.page.$eval('pre.diag a', a=>a.getAttribute('href')))==='/wswings12u/staff/', 'its back link goes to the staff page: '+(await r.page.$eval('pre.diag a', a=>a.getAttribute('href'))));
+    await r.ctx.close();
+
+    // ?check on the parents' page is just the parents' page.
+    const p = await openPage(browser, BASE+'?check', {});
+    ok(!(await p.page.$('pre.diag')) && !!(await p.page.$('.masthead h1')), '?check on the parents\' page shows the normal page');
+    ok(!/· Staff/.test(await p.page.$eval('.masthead .eyebrow', e=>e.textContent)), 'and no Staff kicker there');
+    await p.ctx.close();
+
+    // The plain-text report can never come back into docs/ by accident.
+    ok(/docs\/\*\*\/coaches-corner\.txt/.test(fs.readFileSync(path.join(SITE_DIR,'..','.gitignore'),'utf8')), '.gitignore refuses docs/**/coaches-corner.txt');
+    ok(!fs.existsSync(path.join(SITE_DIR,TEAM,'data','coaches-corner.txt')), 'no plain-text report in the team folder');
+    ok(fs.existsSync(path.join(SITE_DIR,TEAM,'data','coaches-corner.enc')), 'the sealed report is there');
   }
 
   await browser.close(); sNew.close();

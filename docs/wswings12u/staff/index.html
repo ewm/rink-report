@@ -3,8 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Everything relative resolves against the team folder, one level up: config.js, data/, logo.png, ../js/. -->
+<base href="../">
+<!-- Search engines are asked to leave this page alone (also in /robots.txt). Not a lock: the report itself is sealed. -->
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#003087">
-<title>West Seneca Wings | Check The Rink</title>
+<title>West Seneca Wings staff | Check The Rink</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,12 +17,15 @@
 <link rel="stylesheet" href="../css/rink.css">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="logo.png">
-<meta name="apple-mobile-web-app-title" content="Wings 12U">
+<meta name="apple-mobile-web-app-title" content="Wings staff">
 
 <!-- ============================================================
-     CONFIG lives in config.js, beside this file: the sheet ID, the
-     tab IDs and the feature switches. That is the only file you edit.
+     THE STAFF PAGE. Same code as the parents' page one folder up,
+     with the staff view switched on: the Coaches Corner cards, the
+     sealed Coaches report, the gameday post buttons, and ?check.
+     Nothing to edit here; the config is ../config.js.
      ============================================================ -->
+<script>window.RINK_STAFF = true;</script>
 <script src="config.js"></script>
 
 <!-- ============================================================

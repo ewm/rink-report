@@ -537,13 +537,19 @@
 
   /**
    * The folder this page lives in, from its address: "wswings12u" for
-   * /wswings12u/ or /rink-report/wswings12u/index.html.
+   * /wswings12u/, /rink-report/wswings12u/index.html, and the team's
+   * staff page at /wswings12u/staff/ (the staff folder is a page of the
+   * team, not a team of its own).
    * @returns {string}
    */
   function currentFolder() {
     var parts = location.pathname.split("/").filter(function (p) {
       return p && !/\.html?$/i.test(p);
     });
+
+    if (parts.length && parts[parts.length - 1] === "staff") {
+      parts.pop();
+    }
 
     return parts.length ? parts[parts.length - 1] : "";
   }

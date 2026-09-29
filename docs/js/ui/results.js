@@ -9,7 +9,7 @@
  */
 import { bySlot, isBracket, isExhibition, isOurs, played } from "../model/game.js";
 import { directionsFor, icsUrl, ourSeasonGames } from "../model/links.js";
-import { ADMIN, on, state } from "../state.js";
+import { STAFF, on, state } from "../state.js";
 import { postKey } from "./postcard.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -216,9 +216,10 @@ function gameRow(g) {
 
   h += '<span class="tm">' + esc(g.time || "TBD") + "</span>";
 
-  // The manager's own button, on ?admin only: make an Instagram square for
-  // a game we have not played yet. Nothing to promote about a finished one.
-  if (ADMIN && !done && isOurs(g)) {
+  // The manager's own button, on the staff page only: make an Instagram
+  // square for a game we have not played yet. Nothing to promote about a
+  // finished one.
+  if (STAFF && !done && isOurs(g)) {
     h +=
       '<br><button type="button" class="postbtn" data-act="post" data-g="' +
       esc(postKey(g)) +

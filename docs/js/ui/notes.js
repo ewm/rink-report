@@ -1,13 +1,19 @@
 /**
- * Component: the Coaches report, on ?admin only.
+ * Component: the Coaches report, on the staff page only.
  *
  * The written report that goes with the Coaches Corner numbers. It is not
- * worked out by the page: the manager writes it (or has it written), saves
- * it as data/coaches-corner.txt in the team folder, and uploads it with the
- * other files. The page reads the file and draws it as a folded card under
- * the Coaches Corner card. Folded on every open; nothing is remembered.
+ * worked out by the page: the manager writes it (or has it written), seals
+ * it with tools/seal.mjs into data/coaches-corner.enc in the team
+ * folder, and uploads that with the other files. The page reads the sealed
+ * file, unlocks it with the staff passphrase, and draws it as a folded card
+ * under the Coaches Corner card. Folded on every open; nothing is
+ * remembered but the passphrase.
  *
- * The file is plain text, in the shape the report is already written in:
+ * Until it unlocks, the card is the unlock box: one field, one button, and
+ * a plain message when the passphrase is wrong. Once unlocked, a "Lock"
+ * button in the report's foot forgets the passphrase on this phone.
+ *
+ * The report is plain text, in the shape it is already written in:
  *
  *   COACHES CORNER: GAMES THROUGH 9/25/2026     the first line is the title
  *   1. HEADLINE                                 a numbered line in capitals
@@ -17,9 +23,9 @@
  *                                               starts a numbered point
  *   Anything else is a paragraph.
  *
- * Unlike the card above it, the report names players. render.js only draws
- * it with ?admin.
- * See ARCHITECTURE.md, "Coaches report".
+ * Unlike the card above it, the report names players. That is why it is
+ * sealed, and why it is not on the parents' page at all.
+ * See ARCHITECTURE.md, "Coaches report" and "The staff page".
  */
 import { state } from "../state.js";
 import { esc } from "../util/text.js";
@@ -175,15 +181,36 @@ function blockHtml(b) {
 }
 
 /**
- * The card. Only drawn on ?admin; render.js checks that.
+ * The unlock box: the card in its locked state.
  *
- * @returns {string} "" when there is no report file, or it is empty.
+ * @returns {string} HTML.
+ */
+function unlockHtml() {
+  var err = state.unlockError;
+
+  return (
+    '<section class="card coach notes locked">' +
+    '<div class="card-h"><h2>Coaches report</h2><span class="eyebrow">Locked</span></div>' +
+    '<div class="card-b"><form class="unlock" data-form="unlock" autocomplete="off">' +
+    '<label for="rr-pass">Staff passphrase</label>' +
+    '<div class="row"><input id="rr-pass" type="password" autocapitalize="off" spellcheck="false">' +
+    '<button type="submit" class="coachbtn">Unlock</button></div>' +
+    (err ? '<p class="err" role="alert">' + esc(err) + "</p>" : "") +
+    "</form></div></section>"
+  );
+}
+
+/**
+ * The card. Only drawn on the staff page; render.js checks that.
+ *
+ * @returns {string} "" when there is no report file. The unlock box while
+ *   the file is there and locked. The report once it is unlocked.
  */
 function notesHtml() {
   var text = state.coachNotes;
 
   if (!text || !text.trim()) {
-    return "";
+    return state.coachSealed ? unlockHtml() : "";
   }
 
   var notes = parseNotes(text);
@@ -219,6 +246,8 @@ function notesHtml() {
     h += "</div>";
   });
 
+  h +=
+    '<div class="foot"><button type="button" class="coachbtn" data-act="coachlock">Lock on this phone</button></div>';
   h += "</div></section>";
 
   return h;

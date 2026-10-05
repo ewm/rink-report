@@ -67,7 +67,7 @@ jobs:
             mkdir -p "$team/data"
             got=0
 
-            for tab in settings teams schedule stats rinks sponsors; do
+            for tab in settings teams schedule stats rinks sponsors slots; do
               gid=$(echo "$GIDS" | grep -o "$tab: *\"[0-9]*\"" | grep -o '[0-9]*' || true)
 
               if [ -z "$gid" ]; then

@@ -74,7 +74,8 @@ var FEATURES = [
   "mhrLinks",
   "monoNumbers",
   "rating",
-  "coachNotes"
+  "coachNotes",
+  "scheduler"
 ];
 
 /**
@@ -95,6 +96,21 @@ function on(name) {
 }
 
 /**
+ * Whether this is a league page: the Settings tab says "Page type: league".
+ *
+ * A league page has no home team. It shows the standings (one table per
+ * division), the schedule and results, and on the staff page the scheduling
+ * tool. Everything that assumes "our team" (the next-game card, the record
+ * chip, the Ours filter, the Stats tab, the Coaches Corner cards) stays
+ * off, each by its own check. See ARCHITECTURE.md, "League mode".
+ *
+ * @returns {boolean}
+ */
+function isLeague() {
+  return state.data.config.pageType === "league";
+}
+
+/**
  * The switches that are off, for the ?check page.
  *
  * @returns {string[]}
@@ -108,7 +124,8 @@ function offList() {
 /**
  * Everything the page knows.
  *
- * data: the shaped sheet (config, teams, pools, games, stats, rinks, sponsors).
+ * data: the shaped sheet (config, teams, pools, games, stats, rinks, sponsors,
+ *   slots on a league staff page).
  * problems: plain-English warnings for the manager, reset per load.
  * fetchedAt / loading / loadError: fetch status, for the status line.
  * snapshotAt: when the site's own saved copy was taken, if that is what loaded.
@@ -127,7 +144,7 @@ function offList() {
  * notesOpen: whether the Coaches report card is unfolded. Starts folded on
  *   every open; nothing is remembered.
  * diagLog / routeUsed / headerMap / routeTrouble: for ?check.
- * statsNote / rinksNote / sponsorsNote: why an optional tab is missing, for ?check.
+ * statsNote / rinksNote / sponsorsNote / slotsNote: why an optional tab is missing, for ?check.
  * logoOk: whether logo.png exists (probed once).
  * lastHtml: the last markup written, so a no-op poll is a no-op paint.
  * pollTimer: the pending poll.
@@ -137,6 +154,7 @@ var state = {
     config: {
       leagueName: "",
       teamName: "",
+      pageType: "",
       mode: "season",
       ptsWin: 2,
       ptsTie: 1,
@@ -149,7 +167,8 @@ var state = {
     games: [],
     stats: null,
     rinks: null,
-    sponsors: null
+    sponsors: null,
+    slots: null
   },
   problems: [],
   fetchedAt: null,
@@ -180,6 +199,7 @@ var state = {
   statsNote: "",
   rinksNote: "",
   sponsorsNote: "",
+  slotsNote: "",
   logoOk: false,
   lastHtml: null,
   pollTimer: null
@@ -213,4 +233,4 @@ function notify() {
   }
 }
 
-export { CFG, CACHE_KEY, SPONSORS_KEY, PASS_KEY, STAFF, ADMIN, DIAG, on, offList, state, log, onChange, notify };
+export { CFG, CACHE_KEY, SPONSORS_KEY, PASS_KEY, STAFF, ADMIN, DIAG, on, isLeague, offList, state, log, onChange, notify };

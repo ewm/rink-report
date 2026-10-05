@@ -1,2 +1,3 @@
 User-agent: *
 Disallow: /wswings12u/staff/
+Disallow: /testleague/staff/

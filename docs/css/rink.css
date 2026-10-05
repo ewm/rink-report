@@ -515,3 +515,16 @@ body.post-open{overflow:hidden}
 /* With Share and Download side by side, Download is the plain one. */
 .postacts button+button{color:var(--ink); background:transparent; border-color:var(--rule)}
 .postnote{margin:12px 16px 0; font-size:12px; color:var(--ink-2)}
+
+/* ---- Ice slots card (league staff page) ---- */
+.slots .need{margin:0 0 12px; font-size:14px; line-height:1.5; color:var(--ink-2)}
+.slots .slotsum{margin:0 0 14px}
+.slots .slotsum th,.slots .slotsum td{text-align:left}
+.slots .slotsum th:last-child,.slots .slotsum td:last-child{text-align:right; white-space:nowrap}
+.slots tr.none td{color:var(--ink-3)}
+.slots .slotlist summary{cursor:pointer; font-size:13px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-2); padding:6px 0}
+.slots .slotlist th,.slots .slotlist td{text-align:left; vertical-align:top}
+.slots .slotlist td.d,.slots .slotlist td.t{white-space:nowrap}
+.slots .slotlist td.who{font-family:var(--f-text); width:100%}
+.mono-nums .slots .slotlist td.who{font-family:var(--f-text)}
+.slots .slotlist .rk{display:block; color:var(--ink-2); font-size:12px}

@@ -149,6 +149,17 @@ are left off on purpose: most youth scoresheets never record shots.
 league play starts, shows the showcase record, and lists the division,
 instead of a table of zeros.
 
+## League pages
+
+A folder can be a whole league instead of one team. The only difference in
+the sheet is a Settings row, `Page type` = `league`, and a blank `Our team`.
+The page then shows every division's standings and the whole schedule, with
+none of the home-team pieces (next game, record, stats, coaches cards). The
+staff page reads an extra tab, Ice slots (Home team, Rink, Date, Face-off),
+and shows the ice each club brought; the scheduling tool that turns those
+slots into a season is next. The test league lives in `docs/testleague/`,
+set up from `Test-League-12U-Sheet.xlsx` in the Youth Hockey folder.
+
 ## Turning pieces off
 
 Your team's `config.js` ends with a `features` list.

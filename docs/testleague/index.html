@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0B1620">
+<title>Test League 12U | Check The Rink</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%92%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Loaded without blocking the first paint: the page shows in a system font until the web fonts arrive. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&family=Chivo+Mono:wght@400;600;700&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="../css/rink.css">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Test League">
+
+<!-- ============================================================
+     CONFIG lives in config.js, beside this file: the sheet ID, the
+     tab IDs and the feature switches. That is the only file you edit.
+     ============================================================ -->
+<script src="config.js"></script>
+
+<!-- ============================================================
+     Check The Rink: this league's colors, from ../teams.js.
+     Runs before the page paints. Nothing here to edit: the club's
+     two colors live in teams.js.
+     ============================================================ -->
+<script src="../theme.js"></script>
+<script src="../teams.js"></script>
+<script>
+  if (window.CheckTheRinkTheme) {
+    window.CheckTheRinkTheme.applyTeamPage();
+  }
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- ============================================================
+     The page itself lives in ../js/, one module per responsibility.
+     Start at ../js/app.js; the map is in ARCHITECTURE.md at the repo root.
+     Served as native ES modules: no build step, no bundler. Open it
+     through a web server (python3 -m http.server), not as a file://.
+     ============================================================ -->
+<script type="module" src="../js/app.js"></script>
+</body>
+</html>

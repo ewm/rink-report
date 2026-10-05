@@ -559,7 +559,8 @@
    * Themes a team page in its club's colors, before it paints.
    *
    * Finds the team in teams.js by folder (RINK_CONFIG.folder wins when a
-   * page sets it, which local testing does), puts the club's slots on the
+   * page sets it, which local testing does), or the league when the folder
+   * is a league page, puts the club's slots on the
    * whole page, and points the phone's browser bar at the club's main
    * color. With no match the page keeps the colors in rink.css.
    *
@@ -576,7 +577,9 @@
       return null;
     }
 
-    var team = site.teams.filter(function (t) {
+    // A league page lists itself under leagues, with an org of its own for
+    // the two colors, and is themed exactly like a team page.
+    var team = site.teams.concat(Array.isArray(site.leagues) ? site.leagues : []).filter(function (t) {
       return t && t.folder === folder;
     })[0];
 

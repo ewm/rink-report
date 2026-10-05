@@ -39,6 +39,27 @@ var SETTINGS_ROWS = [
     }
   },
   {
+    // "league" alone makes this a league page; anything else is a team page.
+    match: ["pagetype", "thispageis", "kindofpage"],
+    apply: function (c, v) {
+      c.pageType = norm(v) === "league" ? "league" : "";
+    }
+  },
+  {
+    // How many league games the scheduling tool gives every team.
+    match: ["gamesperteam", "gameseach", "leaguegames"],
+    apply: function (c, v) {
+      c.gamesPerTeam = num(v) === null ? 0 : Math.max(0, Math.round(num(v)));
+    }
+  },
+  {
+    // "balanced" (the default) splits home and away; "any" lets the ice decide.
+    match: ["homeandaway", "homeaway"],
+    apply: function (c, v) {
+      c.homeAway = norm(v).indexOf("any") === 0 ? "any" : "balanced";
+    }
+  },
+  {
     match: ["whichview", "viewopens", "showcaseweekend", "seasonorshowcase"],
     apply: function (c, v) {
       c.mode = norm(v).indexOf("showcase") !== -1 ? "showcase" : "season";
@@ -144,6 +165,9 @@ function shapeSettings(rows) {
   var c = {
     leagueName: "",
     teamName: "",
+    pageType: "",
+    gamesPerTeam: 0,
+    homeAway: "balanced",
     mode: "season",
     ptsWin: 2,
     ptsTie: 1,
@@ -232,7 +256,8 @@ function shapeSettings(rows) {
     var needed = [];
 
     blankFields.forEach(function (f) {
-      if (f.indexOf("ourteam") !== -1) {
+      // A league page has no home team, so a blank "Our team" is right.
+      if (f.indexOf("ourteam") !== -1 && c.pageType !== "league") {
         needed.push("Our team");
       } else if (f.indexOf("leaguename") !== -1 || f.indexOf("showcaseorleague") !== -1) {
         needed.push("League or showcase name");

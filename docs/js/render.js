@@ -5,7 +5,7 @@
  * string. render() decides which components a view needs, joins them, and
  * skips the DOM write entirely when nothing changed since last time.
  */
-import { ADMIN, DIAG, STAFF, on, state } from "./state.js";
+import { ADMIN, DIAG, STAFF, isLeague, on, state } from "./state.js";
 import { buildViews, currentView, leagueView, barKeyFor, teamsInView } from "./model/views.js";
 import { rulesFor, standings } from "./model/standings.js";
 import { nextGameHtml } from "./ui/nextgame.js";
@@ -17,6 +17,7 @@ import { playerHtml } from "./ui/player.js";
 import { sponsorsHtml } from "./ui/sponsors.js";
 import { coachHtml } from "./ui/coach.js";
 import { notesHtml } from "./ui/notes.js";
+import { slotsHtml } from "./ui/slots.js";
 import {
   mastheadHtml,
   viewBarHtml,
@@ -81,7 +82,8 @@ function render() {
   if (state.loading && !state.data.games.length && !state.loadError) {
     h += skeleton();
   } else {
-    if (on("nextGame")) {
+    // A league page has no "our next game".
+    if (on("nextGame") && !isLeague()) {
       h += nextGameHtml();
     }
 
@@ -114,10 +116,15 @@ function render() {
       // them. Last on the page, so they stay out of the way of the
       // standings and the schedule.
       if (STAFF && !v.event) {
-        h += coachHtml();
+        if (isLeague()) {
+          // The commissioner's card: the ice slots the clubs brought.
+          h += slotsHtml();
+        } else {
+          h += coachHtml();
 
-        if (on("coachNotes")) {
-          h += notesHtml();
+          if (on("coachNotes")) {
+            h += notesHtml();
+          }
         }
       }
     }

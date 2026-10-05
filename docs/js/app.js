@@ -15,6 +15,7 @@ import { shapeGames } from "./shape/games.js";
 import { shapeStats } from "./shape/stats.js";
 import { shapeRinks } from "./shape/rinks.js";
 import { shapeSponsors } from "./shape/sponsors.js";
+import { shapeSlots } from "./shape/slots.js";
 import { played } from "./model/game.js";
 import { tickFresh } from "./ui/frame.js";
 import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
@@ -35,8 +36,21 @@ initFormTip();
 var OPTIONAL_TABS = [
   { which: "stats", feature: "stats", shape: shapeStats, note: "statsNote" },
   { which: "rinks", feature: "directions", shape: shapeRinks, note: "rinksNote" },
-  { which: "sponsors", feature: "sponsors", shape: shapeSponsors, note: "sponsorsNote" }
+  { which: "sponsors", feature: "sponsors", shape: shapeSponsors, note: "sponsorsNote" },
+  // Ice slots come last so the Rinks tab is already shaped when they snap
+  // their rink names. Staff page only: parents never need them.
+  { which: "slots", feature: "scheduler", shape: shapeSlotsNow, note: "slotsNote", staffOnly: true }
 ];
+
+/**
+ * Shapes the Ice slots tab against the Teams list already in the store.
+ *
+ * @param {string[][]} rows
+ * @returns {Object[]}
+ */
+function shapeSlotsNow(rows) {
+  return shapeSlots(rows, state.data.teams);
+}
 
 /**
  * Reads an optional tab. Resolves to null when the tab is switched off, not
@@ -48,7 +62,7 @@ var OPTIONAL_TABS = [
 function optionalRead(tab) {
   var configured = (CFG.tabs && CFG.tabs[tab.which]) || (CFG.gids && CFG.gids[tab.which]);
 
-  if (!on(tab.feature) || !configured) {
+  if (!on(tab.feature) || !configured || (tab.staffOnly && !STAFF)) {
     return Promise.resolve(null);
   }
 
@@ -113,6 +127,7 @@ function load() {
   state.statsNote = "";
   state.rinksNote = "";
   state.sponsorsNote = "";
+  state.slotsNote = "";
 
   // A page that already has content keeps it while the refetch runs.
   if (!state.data.games.length) {
@@ -140,7 +155,8 @@ function load() {
         games: [],
         stats: null,
         rinks: null,
-        sponsors: null
+        sponsors: null,
+        slots: null
       };
 
       snapTeamName(cfg, tm);

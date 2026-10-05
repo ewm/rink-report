@@ -8,7 +8,7 @@ and gives the same answer every time.
 
     cd tests
     npm install        # once — pulls Playwright and a headless Chromium
-    npm test           # 485 checks, about two minutes
+    npm test           # 545 checks, about two minutes
 
 Screenshots of the views land in `out/` after a run (light and dark, phone
 width) — worth a glance when a change is visual.
@@ -57,3 +57,8 @@ Each numbered block in `qa.js` opens the page with a scenario
 clicks around, and asserts with `ok(condition, 'what it proves')`. Put a
 new scenario in its own block and give the message enough detail that a
 failure reads like a bug report.
+
+`fixtures/league/` is the test league's sheet (`Test-League-12U-Sheet.xlsx`),
+one CSV per tab the way Google exports it, including the Ice slots tab.
+Section [41] drives `docs/testleague/` with it through `openPage(..., LEAGUE)`,
+which swaps in the league's folder, gid map and fixtures.

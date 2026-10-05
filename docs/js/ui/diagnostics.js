@@ -6,7 +6,7 @@
  */
 import { played } from "../model/game.js";
 import { buildViews, currentView, dataViews, featuredEvent, hasStats } from "../model/views.js";
-import { CFG, offList, state } from "../state.js";
+import { CFG, STAFF, isLeague, offList, state } from "../state.js";
 import { esc } from "../util/text.js";
 
 /**
@@ -38,6 +38,32 @@ function sponsorsLine() {
     "</span>   " +
     esc(tiers)
   );
+}
+
+/**
+ * The Ice slots line, on a league staff page: how many slots were read, or
+ * why none were.
+ *
+ * @returns {string} HTML.
+ */
+function slotsLine() {
+  var s = state.data.slots;
+
+  if (!STAFF) {
+    return "staff page only";
+  }
+
+  if (!s) {
+    return state.slotsNote
+      ? '<span class="warn">not read — ' + esc(state.slotsNote) + "</span>"
+      : '<span class="warn">not read — add an Ice slots tab (Home team, Rink, Date, Face-off) and its gid to config.js</span>';
+  }
+
+  if (!s.length) {
+    return '<span class="warn">tab read, no slots on it</span>';
+  }
+
+  return '<span class="ok">' + s.length + " slots, " + esc(s[0].date) + " to " + esc(s[s.length - 1].date) + "</span>";
 }
 
 /**
@@ -132,12 +158,23 @@ function diagHtml() {
 
   L.push("");
   L.push("<b>What loaded</b>");
-  L.push(
-    "Our team     " +
-      (state.data.config.teamName
-        ? '<span class="ok">' + esc(state.data.config.teamName) + "</span>"
-        : '<span class="bad">blank — set it on the Settings tab</span>')
-  );
+  if (isLeague()) {
+    L.push('Page type    <span class="ok">league</span>   (no home team; standings and schedule for the whole league)');
+    L.push(
+      "Games each   " +
+        (state.data.config.gamesPerTeam
+          ? '<span class="ok">' + state.data.config.gamesPerTeam + "</span>"
+          : '<span class="warn">not set — add \"Games per team\" on the Settings tab for the scheduling tool</span>')
+    );
+    L.push("Ice slots    " + slotsLine());
+  } else {
+    L.push(
+      "Our team     " +
+        (state.data.config.teamName
+          ? '<span class="ok">' + esc(state.data.config.teamName) + "</span>"
+          : '<span class="bad">blank — set it on the Settings tab</span>')
+    );
+  }
   L.push(
     "Mode         " +
       esc(state.data.config.mode) +

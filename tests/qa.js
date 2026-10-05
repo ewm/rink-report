@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (415 checks, ~2 minutes)
+//   npm test         (545 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -65,7 +65,27 @@ ALT.strayOurs  = addRow(FIX.schedule, '2026-08-29,5:00 PM,West Seneca Wings,Buff
 ALT.strayOther = addRow(FIX.schedule, '2026-08-29,5:00 PM,Cazenovia Chiefs,Buffalo Bisons,,,Nichols,,Q-Game,,');
 
 const GIDS = { '1160090892':'settings', '239776309':'teams', '1739208952':'schedule', '703037060':'stats', '1202177208':'rinks', '95128319':'sponsors' };
-const TABS = { 'Settings':'settings', 'Teams':'teams', 'Schedule':'schedule', 'Player Stats':'stats', 'Rinks':'rinks', 'Sponsors':'sponsors' };
+const TABS = { 'Settings':'settings', 'Teams':'teams', 'Schedule':'schedule', 'Player Stats':'stats', 'Rinks':'rinks', 'Sponsors':'sponsors', 'Ice slots':'slots' };
+// The test league (docs/testleague/): its own sheet, so its own gid map and
+// fixtures, exported from Test-League-12U-Sheet.xlsx the way Google would.
+const lfx = n => fs.readFileSync(path.join(HERE,'fixtures','league',n),'utf8');
+const LEAGUE_GIDS = { '560272049':'settings', '1574794579':'teams', '1402291474':'schedule', '1489084264':'rinks', '1641985135':'sponsors', '1745516389':'slots' };
+const LEAGUE_FIX = { settings: lfx('settings.csv'), teams: lfx('teams.csv'), schedule: lfx('schedule.csv'), rinks: lfx('rinks.csv'), sponsors: lfx('sponsors.csv'), slots: lfx('slots.csv') };
+const LEAGUE = { team:'testleague', gids:LEAGUE_GIDS, fix:LEAGUE_FIX };
+// The league part-way through: eight played games, four per division, plus
+// one cross-division game still to come.
+LEAGUE_FIX.scheduled = LEAGUE_FIX.schedule.replace(/\r?\n$/, '') + '\r\n' + [
+  ',2026-08-22,10:30 AM,Harbor Hawks,Lakeshore Lightning,2,5,Lakeshore Arena,Blue,League,,OK',
+  ',2026-08-22,1:30 PM,Mill Creek Mustangs,Ridgeway Rangers,3,3,Ridgeway Rink,Blue,League,,OK',
+  ',2026-08-23,12:00 PM,Lakeshore Lightning,Mill Creek Mustangs,4,1,Mill Creek Twin Rinks,Blue,League,,OK',
+  ',2026-08-23,3:00 PM,Ridgeway Rangers,Harbor Hawks,0,2,Harbor Ice Center,Blue,League,,OK',
+  ',2026-08-22,12:00 PM,Southpoint Storm,Northgate Narwhals,1,6,Northgate Pavilion,Gold,League,,OK',
+  ',2026-08-22,4:40 PM,Westbrook Wolves,Eastfield Eagles,2,2,Eastfield Ice Plex,Gold,League,,OK',
+  ',2026-08-23,10:30 AM,Northgate Narwhals,Westbrook Wolves,3,2,Westbrook Community Rink,Gold,League,,OK',
+  ',2026-08-23,1:30 PM,Eastfield Eagles,Southpoint Storm,5,4,Southpoint Arena,Gold,League,,OK',
+  ',2026-11-07,10:30 AM,Harbor Hawks,Northgate Narwhals,,,Northgate Pavilion,,League,,OK'
+].join('\r\n') + '\r\n';
+const LEAGUE_PLAYED = { team:'testleague', gids:LEAGUE_GIDS, fix:Object.assign({}, LEAGUE_FIX, {schedule: LEAGUE_FIX.scheduled}) };
 
 // Simulate the gviz tab-name route: blank every header cell in a column that
 // otherwise holds only numbers (that is what Google does).
@@ -115,6 +135,11 @@ function serve(dir, port){
 
 async function openPage(browser, url, opts){
   // opts: { export: {which: status|'coerce'|'text'}, tabname: {...}, scheme }
+  // opts.team / opts.gids / opts.fix: drive another folder under docs/ with
+  // its own gid map and fixture set (the league page uses LEAGUE_*).
+  const T = opts.team || TEAM;
+  const gidMap = opts.gids || GIDS;
+  const fixSet = opts.fix || FIX;
   const ctx = await browser.newContext({ viewport:{width:412,height:900}, colorScheme: opts.scheme||'light' });
   const page = await ctx.newPage();
   await page.clock.setFixedTime(opts.clock || FROZEN);
@@ -123,15 +148,15 @@ async function openPage(browser, url, opts){
   await page.route(/docs\.google\.com/, route=>{
     const u=new URL(route.request().url());
     let which=null, how=null;
-    if(u.pathname.endsWith('/export')){ which=GIDS[u.searchParams.get('gid')]; how='export'; }
+    if(u.pathname.endsWith('/export')){ which=gidMap[u.searchParams.get('gid')]; how='export'; }
     else if(u.pathname.indexOf('/gviz/')!==-1){ which=TABS[u.searchParams.get('sheet')]; how='gviz'; }
     if(which) asked.push(which);
-    else if(u.pathname.endsWith('/htmlview')){ route.fulfill({status:200, body:'<html>'+Object.keys(GIDS).map(g=>'<a href="#gid='+g+'">t</a>').join('')+'</html>'}); return; }
+    else if(u.pathname.endsWith('/htmlview')){ route.fulfill({status:200, body:'<html>'+Object.keys(gidMap).map(g=>'<a href="#gid='+g+'">t</a>').join('')+'</html>'}); return; }
     if(!which){ route.fulfill({status:400, body:'bad'}); return; }
     const plan=(opts[how]||{})[which];
     if(plan==='404'){ route.fulfill({status:404, body:'nope'}); return; }
-    if(plan==='empty'){ route.fulfill({status:200, body: which==='stats' ? FIX.stats.split(/\r?\n/).slice(0,2).join('\r\n')+'\r\n' : ''}); return; }
-    let body=FIX[which];
+    if(plan==='empty'){ route.fulfill({status:200, body: which==='stats' ? fixSet.stats.split(/\r?\n/).slice(0,2).join('\r\n')+'\r\n' : ''}); return; }
+    let body=fixSet[which];
     if(which==='schedule' && opts.schedule) body=ALT[opts.schedule];
     if(which==='settings' && opts.settingsTeam) body=body.replace(/(Our team,)West Seneca Wings/, '$1'+opts.settingsTeam);
     if(which==='schedule' && opts.leagueLog)
@@ -160,7 +185,7 @@ async function openPage(browser, url, opts){
   });
   // The site's saved copy under data/: absent unless opts.snapshot, in which
   // case it serves the fixtures (as the GitHub Action would have written them).
-  await page.route(new RegExp('localhost:8811/'+TEAM+'/data/'), route=>{
+  await page.route(new RegExp('localhost:8811/'+T+'/data/'), route=>{
     const name=new URL(route.request().url()).pathname.replace(/^.*\/data\//,'');
     // The Coaches report is its own sealed file, present only when a check
     // asks for it (opts.notes is the plain text; it is sealed with PASS).
@@ -175,8 +200,8 @@ async function openPage(browser, url, opts){
     if(!opts.snapshot){ route.fulfill({status:404, body:'not found'}); return; }
     if(name==='updated.txt'){ route.fulfill({status:200, contentType:'text/plain', body:'2026-09-09T22:15:00Z\n'}); return; }
     const which=name.replace(/\.csv$/,'');
-    if(!FIX[which]){ route.fulfill({status:404, body:'nope'}); return; }
-    route.fulfill({status:200, contentType:'text/csv', body:FIX[which]});
+    if(!fixSet[which]){ route.fulfill({status:404, body:'nope'}); return; }
+    route.fulfill({status:200, contentType:'text/csv', body:fixSet[which]});
   });
   // opts.teamsJs: a replacement ../teams.js, so a check can give the club
   // other colors or add teams without touching the real file.
@@ -187,8 +212,8 @@ async function openPage(browser, url, opts){
   // it loads, so a switch can be tested without editing the file. Both the
   // parents' page and the staff page read the same config.js.
   if(opts.features){
-    await page.route(new RegExp('localhost:8811/'+TEAM+'/config\\.js(\\?.*)?$'), route=>{
-      const js=fs.readFileSync(path.join(SITE_DIR,TEAM,'config.js'),'utf8')
+    await page.route(new RegExp('localhost:8811/'+T+'/config\\.js(\\?.*)?$'), route=>{
+      const js=fs.readFileSync(path.join(SITE_DIR,T,'config.js'),'utf8')
         + '\nwindow.RINK_CONFIG.features=Object.assign({},window.RINK_CONFIG.features,'+JSON.stringify(opts.features)+');\n';
       route.fulfill({status:200, contentType:'text/javascript; charset=utf-8', body:js});
     });
@@ -2191,6 +2216,111 @@ const PASS = 'test-pass-123';
     ok(/docs\/\*\*\/coaches-corner\.txt/.test(fs.readFileSync(path.join(SITE_DIR,'..','.gitignore'),'utf8')), '.gitignore refuses docs/**/coaches-corner.txt');
     ok(!fs.existsSync(path.join(SITE_DIR,TEAM,'data','coaches-corner.txt')), 'no plain-text report in the team folder');
     ok(fs.existsSync(path.join(SITE_DIR,TEAM,'data','coaches-corner.enc')), 'the sealed report is there');
+  }
+
+  console.log('\n[41] league mode');
+  {
+    // The test league's parents' page: a whole-league page with no home team.
+    const LBASE = 'http://localhost:8811/testleague/';
+    const r = await openPage(browser, LBASE, LEAGUE);
+    ok(r.errors.length===0, 'no page errors on the league page: '+r.errors.join(' | '));
+    const look = await r.page.evaluate(()=>({
+      kicker:document.querySelector('.masthead .eyebrow').textContent.trim(),
+      h1:document.querySelector('.masthead h1').textContent.trim(),
+      title:document.title,
+      chip:!!document.querySelector('.masthead .record'),
+      next:!!document.querySelector('section.next'),
+      seg:!!document.querySelector('.seg button[data-v="ours"]'),
+      tabs:[...document.querySelectorAll('.viewbar button')].map(b=>b.textContent.trim()),
+      pools:[...document.querySelectorAll('.poolname')].map(e=>e.textContent.trim()),
+      rows:document.querySelectorAll('table.standings tbody tr, .standings tbody tr').length,
+      coach:!!document.querySelector('section.coach'),
+      slots:!!document.querySelector('section.slots'),
+      club:getComputedStyle(document.querySelector('.masthead')).backgroundColor,
+      warn:document.body.textContent.indexOf('Not filled in on the Settings tab')!==-1,
+      text:document.body.textContent
+    }));
+    ok(look.h1==='Test League 12U', 'the league name is the headline: '+look.h1);
+    ok(look.title==='Check The Rink' || look.title==='Test League 12U | Check The Rink', 'the tab title has no team in it: '+look.title);
+    ok(!look.chip, 'no record chip on a league page');
+    ok(!look.next, 'no next-game card on a league page');
+    ok(!look.seg, 'no All / Ours switch on a league page');
+    ok(look.tabs.indexOf('Stats')===-1, 'no Stats tab on a league page: '+look.tabs.join(','));
+    ok(/No league games on the schedule yet/.test(look.text), 'an empty schedule shows the pre-season card, not a table of zeros');
+    ok(!look.coach, 'no Coaches Corner card on the league parents\' page');
+    ok(!look.slots, 'no Ice slots card on the parents\' page');
+    ok(!look.warn, 'a blank "Our team" is not nagged about on a league page');
+    ok(look.club==='rgb(11, 22, 32)', 'the league is themed from its own org in teams.js: '+look.club);
+    ok(r.asked.indexOf('slots')===-1 && r.asked.indexOf('stats')===-1, 'the parents\' page never asks for the Ice slots or stats tabs: '+r.asked.join(','));
+    await r.ctx.close();
+
+    // With games played, one standings table per division, from the Teams tab's Pool / division column.
+    const pl = await openPage(browser, LBASE, LEAGUE_PLAYED);
+    const pools = await pl.page.evaluate(()=>({
+      names:[...document.querySelectorAll('.poolname')].map(e=>e.textContent.trim()),
+      tables:document.querySelectorAll('.card .tablewrap table').length,
+      first:[...document.querySelectorAll('.card tbody tr')].slice(0,1).map(tr=>tr.textContent.replace(/\s+/g,' ').trim())[0]||'',
+      chip:!!document.querySelector('.masthead .record'),
+      games:document.querySelectorAll('.game').length,
+      ours:document.querySelectorAll('.side.ours').length
+    }));
+    ok(pools.names.join(',')==='Blue,Gold', 'one standings table per division: '+pools.names.join(','));
+    ok(/Lakeshore Lightning/.test(pools.first) && /2/.test(pools.first), 'Blue is led by the 2-0 Lightning: '+pools.first);
+    ok(pools.games===9 && pools.ours===0, 'all nine games listed, none marked as ours: '+pools.games+' / '+pools.ours);
+    ok(!pools.chip, 'still no record chip once games are played');
+    await pl.ctx.close();
+
+    // The league staff page: the Ice slots card and ?check lines.
+    const st = await openPage(browser, LBASE+'staff/', LEAGUE);
+    ok(st.errors.length===0, 'no page errors on the league staff page: '+st.errors.join(' | '));
+    const sl = await st.page.evaluate(()=>{
+      const card=document.querySelector('section.slots');
+      return {
+        card:!!card,
+        count:card ? card.querySelector('.card-h .eyebrow').textContent.trim() : '',
+        need:card ? card.querySelector('.need').textContent.trim() : '',
+        teams:card ? card.querySelectorAll('.slotsum tbody tr').length : 0,
+        none:card ? card.querySelectorAll('.slotsum tr.none').length : 0,
+        list:card ? card.querySelectorAll('.slotlist tbody tr').length : 0,
+        first:card ? card.querySelector('.slotlist tbody tr td').textContent.trim() : '',
+        coach:!!document.querySelector('section.coach'),
+        kicker:document.querySelector('.masthead .eyebrow').textContent.trim()
+      };
+    });
+    ok(sl.card && sl.count==='88 slots', 'the staff page shows the Ice slots card with every slot counted: '+sl.count);
+    ok(/8 teams at 20 games each is 80 games\. 88 slots covers it with 8 to spare\./.test(sl.need), 'the card does the ice-versus-games arithmetic: '+sl.need);
+    ok(sl.teams===8 && sl.none===0, 'every team is listed with its slot count: '+sl.teams+' teams, '+sl.none+' without');
+    ok(sl.list===88 && /Nov 7/.test(sl.first), 'the by-date list has all 88, earliest first: '+sl.first);
+    ok(!sl.coach, 'no Coaches Corner on a league staff page');
+    ok(/Staff$/.test(sl.kicker), 'the staff kicker still says Staff: '+sl.kicker);
+    ok(st.asked.indexOf('slots')!==-1, 'the staff page asks for the Ice slots tab');
+    await st.page.goto(LBASE+'staff/?check'); await st.page.waitForTimeout(800);
+    const diag = await st.page.$eval('pre.diag', e=>e.textContent);
+    ok(/Page type\s+league/.test(diag), '?check says this is a league page');
+    ok(/Games each\s+20/.test(diag), '?check shows games per team');
+    ok(/Ice slots\s+88 slots, 2026-11-07 to 2027-02-28/.test(diag), '?check counts the slots and their span');
+    ok(!/Our team/.test(diag), '?check does not ask for Our team on a league page');
+    await st.ctx.close();
+
+    // A slot row with a misspelled team snaps; one with a team not on the Teams tab is dropped and named.
+    const bad = Object.assign({}, LEAGUE, { fix: Object.assign({}, LEAGUE_FIX, {
+      slots: LEAGUE_FIX.slots.replace('Northgate Narwhals,Northgate Pavilion,11/07/2026', 'Northgate Narwhal,Northgate Pavilion,11/07/2026')
+                             .replace(/\r?\n$/, '') + '\r\n,Buffalo Bisons,Harbor Ice Center,12/05/2026,1:00 PM,\r\n'
+    })});
+    const b = await openPage(browser, LBASE+'staff/', bad);
+    const got = await b.page.evaluate(()=>({
+      count:document.querySelector('section.slots .card-h .eyebrow').textContent.trim(),
+      warn:document.body.textContent
+    }));
+    ok(got.count==='88 slots', 'a one-letter slip in a team name still counts: '+got.count);
+    ok(/Ice slots tab: 1 row left out\. row 93: "Buffalo Bisons" is not on the Teams tab/.test(got.warn), 'an unknown team is dropped with its sheet row named');
+    await b.ctx.close();
+
+    // The Wings page is untouched: still a team page with its chip and switch.
+    const w = await openPage(browser, BASE, {schedule:'scored'});
+    const wl = await w.page.evaluate(()=>({chip:!!document.querySelector('.masthead .record'), seg:!!document.querySelector('.seg button[data-v="ours"]'), next:!!document.querySelector('section.next')}));
+    ok(wl.chip && wl.seg && wl.next, 'a team page still has its record chip, Ours switch and next-game card');
+    await w.ctx.close();
   }
 
   await browser.close(); sNew.close();

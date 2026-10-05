@@ -9,7 +9,7 @@
  */
 import { bySlot, isBracket, isExhibition, isOurs, played } from "../model/game.js";
 import { directionsFor, icsUrl, ourSeasonGames } from "../model/links.js";
-import { STAFF, on, state } from "../state.js";
+import { STAFF, isLeague, on, state } from "../state.js";
 import { postKey } from "./postcard.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -23,20 +23,25 @@ import { esc } from "../util/text.js";
  */
 function resultsHtml(v) {
   var all = orderedGames(v);
-  var filt = state.filterOurs;
+  // A league page has no "ours", so it always shows every game.
+  var filt = state.filterOurs && !isLeague();
   var shown = filt ? all.filter(isOurs) : all;
 
   // Where the schedule turns into the results feed, in the list as shown.
   var splitAt = v.event ? -1 : firstPlayedIndex(shown);
   var h = '<section class="card"><div class="card-h"><h2>Schedule &amp; results</h2>';
 
-  h +=
-    '<span class="seg"><button type="button" data-act="filter" data-v="all" aria-pressed="' +
-    !filt +
-    '">All</button>' +
-    '<button type="button" data-act="filter" data-v="ours" aria-pressed="' +
-    filt +
-    '">Ours</button></span>';
+  // A league page has no "ours", so no switch.
+  if (!isLeague()) {
+    h +=
+      '<span class="seg"><button type="button" data-act="filter" data-v="all" aria-pressed="' +
+      !filt +
+      '">All</button>' +
+      '<button type="button" data-act="filter" data-v="ours" aria-pressed="' +
+      filt +
+      '">Ours</button></span>';
+  }
+
   h += '</div><div class="card-b">';
 
   if (!shown.length) {
@@ -76,7 +81,7 @@ function resultsHtml(v) {
     h += "</div>";
 
     // Every game we still have to get to, as one calendar file built in the browser.
-    var mine = on("seasonCalendar") ? ourSeasonGames() : [];
+    var mine = on("seasonCalendar") && !isLeague() ? ourSeasonGames() : [];
 
     if (mine.length) {
       h +=

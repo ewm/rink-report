@@ -8,7 +8,7 @@
  * See ARCHITECTURE.md, "Views".
  */
 import { isBracket, isExhibition, isOurs, played } from "./game.js";
-import { on, state } from "../state.js";
+import { isLeague, on, state } from "../state.js";
 import { daysUntil, todayISO } from "../util/dates.js";
 import { bare, norm } from "../util/text.js";
 
@@ -199,12 +199,14 @@ function buildViews() {
 
 /**
  * Whether the stats switch is on and there is at least one skater or goalie.
+ * A league page has no home team, so no Stats tab either.
  *
  * @returns {boolean}
  */
 function hasStats() {
   return (
     on("stats") &&
+    !isLeague() &&
     !!(state.data.stats && (state.data.stats.skaters.length || state.data.stats.goalies.length))
   );
 }

@@ -21,6 +21,12 @@
  *           aka      optional, other names parents search for (["Pee Wee"])
  *           crest    optional, path to the team's logo
  *
+ * leagues One entry per league page: a whole league's standings and
+ *         schedule with no home team. Same fields as a team (folder, name,
+ *         short, org, program, aka) and the org gives the league its two
+ *         colors. Leagues sit in their own list so the landing page can
+ *         show a league with its teams under it.
+ *
  * To pull a team, delete its entry (and its folder).
  */
 window.CHECK_THE_RINK = {
@@ -30,6 +36,11 @@ window.CHECK_THE_RINK = {
       name: "West Seneca Youth Hockey",
       primary: "#003087",
       accent: "#FCD51E"
+    },
+    testleague: {
+      name: "Test League",
+      primary: "#0B1620",
+      accent: "#4FD1FF"
     }
   },
 
@@ -42,6 +53,16 @@ window.CHECK_THE_RINK = {
       program: "12U",
       league: "WNYAHL",
       crest: "wswings12u/logo.png"
+    }
+  ],
+
+  leagues: [
+    {
+      folder: "testleague",
+      name: "Test League 12U",
+      short: "Test League",
+      org: "testleague",
+      program: "12U"
     }
   ]
 };

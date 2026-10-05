@@ -1,0 +1,15 @@
+,Settings,,
+,"Field, your answer, notes. The page reads the first two columns.",,
+,,,
+,Field,Your answer,Notes
+,League or showcase name,Test League 12U,the small line above the page title
+,Page type,league,league = a whole-league page with no home team; blank = a team page
+,Our team,,leave blank on a league page
+,Which view opens first,season,
+,Tiebreak rules,usa hockey,"wins, capped goal differential, goal quotient"
+,Points for a win,,blank = 2
+,Points for a tie,,blank = 1
+,Points for a loss,,blank = 0
+,Period length,3 x 15,"minutes per period, used for game length"
+,Games per team,20,the scheduling tool fills this many league games for every team
+,Home and away,balanced,each team gets as close to half its games at home as the ice allows

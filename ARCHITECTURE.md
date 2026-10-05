@@ -216,7 +216,7 @@ Two rules that are not stylistic:
 `config.js` ends with a `features` object, one boolean
 per optional card or data-driven piece of the page: `nextGame`, `sponsors`,
 `stats`, `events`, `preseason`, `directions`, `calendar`, `seasonCalendar`,
-`mhrLinks`, `monoNumbers`, `rating`. `on(name)` in `state.js` is true unless the block says `false`;
+`mhrLinks`, `monoNumbers`, `rating`, `coachNotes`, `scheduler`. `on(name)` in `state.js` is true unless the block says `false`;
 a name missing from the block counts as on, so a `config.js` written
 before a switch existed keeps every feature it had. Small controls (the
 Refresh button, the record chip, the All/Ours switch, the crest, the
@@ -238,6 +238,54 @@ switch saves a request as well as a paint. `events` off means league play
 only: event games stay in the data but never reach a view. Standings and the
 schedule are the page and have no switch. `?check` prints which switches are
 off.
+
+## League mode
+
+A league page (`docs/testleague/` is the first) is the same engine with no
+home team. The Settings tab says `Page type: league`, `shapeSettings()`
+puts that in `config.pageType`, and `isLeague()` in `state.js` reads it.
+Nothing is configured in `config.js` for this: a league is a property of
+the sheet, so the same folder could not be a team page by accident.
+
+What changes is one check at each place a feature assumes "our team":
+`render()` skips the next-game card and the Coaches Corner cards and shows
+the Ice slots card instead on the staff page; `hasStats()` is false, so
+there is no Stats tab; `resultsHtml()` drops the All / Ours switch, never
+filters, and offers no "our remaining games" calendar; `shapeSettings()`
+does not nag about a blank "Our team"; the masthead already used the league
+name as the headline when there is no team; the record chip was already
+null without a team. The footer says scores are entered by the league. The
+standings are one table per division because the Teams tab's Pool /
+division column already does that for league play.
+
+A league is themed like a team: `teams.js` has a `leagues` list beside
+`teams`, each entry with a `folder` and an `org` for its two colors, and
+`applyTeamPage()` in `theme.js` looks in both lists. The landing page does
+not show leagues yet.
+
+Settings rows a league uses: `Games per team` (`config.gamesPerTeam`) and
+`Home and away` (`config.homeAway`, "balanced" or "any") are inputs to the
+scheduling tool. Both are harmless on a team sheet.
+
+## Ice slots tab
+
+`shape/slots.js` reads the Ice slots tab (Home team, Rink, Date, Face-off,
+Notes) into a list sorted by date and time. Each row is one hour of ice a
+club brings to the scheduling meeting; the scheduling tool places that
+club's home games into its own slots. Team names snap to the Teams tab and
+rink names to the Rinks tab, exact match first, then within two edits
+(`nearestName()`), the same rule as the Schedule. A row with no readable
+date, or a team that matches nothing, is dropped and named by sheet row in
+a warning, so the commissioner fixes the sheet rather than wondering why a
+club has fewer slots than it brought.
+
+The tab is listed last in `OPTIONAL_TABS` so the Rinks tab is already
+shaped when slot rinks snap, and it is `staffOnly`: the parents' page never
+requests it. Its switch is `scheduler`. `ui/slots.js` draws the card: the
+games-versus-ice arithmetic (N teams at G games is N x G / 2 games), slots
+per team with teams that brought none shown, and the full list folded
+under it. `?check` prints the page type, games per team and the slot count
+with its date span.
 
 ## Why two read routes
 

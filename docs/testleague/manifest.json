@@ -1,0 +1,10 @@
+{
+  "name": "Test League 12U",
+  "short_name": "Test League",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0B1620",
+  "icons": []
+}

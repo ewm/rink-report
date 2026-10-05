@@ -5,7 +5,7 @@
  * tickFresh() patches the "updated N ago" line in place, without a render,
  * because a full repaint every 30 seconds was a visible flash.
  */
-import { STAFF, state } from "../state.js";
+import { STAFF, isLeague, state } from "../state.js";
 import { ago } from "../util/dates.js";
 import { esc } from "../util/text.js";
 
@@ -249,7 +249,10 @@ function footHtml() {
     h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span> All teams</a>';
   }
 
-  h += '<p class="foot">Scores are entered by the team after each game.';
+  h +=
+    '<p class="foot">Scores are entered by the ' +
+    (isLeague() ? "league" : "team") +
+    " after each game.";
 
   // The setup check is a staff thing; the parents' page has no link to it.
   if (STAFF) {

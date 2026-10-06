@@ -18,6 +18,7 @@ import { sponsorsHtml } from "./ui/sponsors.js";
 import { coachHtml } from "./ui/coach.js";
 import { notesHtml } from "./ui/notes.js";
 import { slotsHtml } from "./ui/slots.js";
+import { builderHtml } from "./ui/schedule-builder.js";
 import {
   mastheadHtml,
   viewBarHtml,
@@ -117,8 +118,10 @@ function render() {
       // standings and the schedule.
       if (STAFF && !v.event) {
         if (isLeague()) {
-          // The commissioner's card: the ice slots the clubs brought.
+          // The commissioner's cards: the ice slots the clubs brought,
+          // then the tool that turns them into a season.
           h += slotsHtml();
+          h += builderHtml();
         } else {
           h += coachHtml();
 

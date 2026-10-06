@@ -287,6 +287,49 @@ per team with teams that brought none shown, and the full list folded
 under it. `?check` prints the page type, games per team and the slot count
 with its date span.
 
+## The scheduling tool
+
+`model/schedule-builder.js` turns the Teams tab and the Ice slots tab into
+a season. Pure functions; `ui/schedule-builder.js` is the card and
+`app.js` wires the two buttons (`build`, `copysched`).
+
+Pairings first. Each division plays a round robin by the circle method,
+then every team plays every team in the other divisions once, and the two
+kinds alternate with home and away swapped on each repeat until every team
+has "Games per team". A pairing is skipped once either side is full, so
+nobody goes over; a team that cannot reach its number (a one-team
+division, say) is named in the notes.
+
+Placement second. Each game goes into one of the home club's own slots.
+Every team's k-th game aims at an even share of the season (first slot to
+last), and the game takes the unused home slot nearest the two teams'
+average target that breaks no rule in `LIMITS`: one game a day, two a
+Saturday-Sunday, three a Monday-to-Sunday week. A game with no legal home
+slot tries the away club's ice (a swap, allowed when it keeps the pair's
+home counts within one, or always with "Home and away: any"), then tries
+moving one of the host's placed games to another free host slot so the
+vacated slot can take it. What is still unplaced is listed with a reason.
+
+The greedy pass runs once plain, then up to 400 more times with the
+targets nudged and the games shuffled inside each round, from a fixed
+seed so the same sheet always gives the same answer. The pass that places
+the most games wins, ties going to the better home-and-away balance. On
+the test league (8 teams, 20 games, 90 slots) that is a third of a second
+and all 80 games. It is deliberately not a solver: a commissioner can read
+the rules above and understand why a game landed where it did.
+
+The copy is one tab-separated Schedule row per game (Date, Face-off, Away,
+Home, blank scores, Rink, Pool / division for an in-division game, Game
+type League, blank Event) for one paste at the first empty Date cell; the
+card names the column from `state.headerMap`. The page never writes to
+the sheet.
+
+Division standings count every league game. `standings()` used to drop a
+game unless both teams were in the table, which is right for a tournament
+pool and wrong for a league whose Blue team beat a Gold team. In league
+play (`isEvent` false) a game with one side in the table now tallies for
+that side; at an event the old rule stands.
+
 ## Why two read routes
 
 Google offers two anonymous CSV endpoints (a third route, the site's own saved copy, is for when neither answers; see "The saved copy"). The raw export by tab ID returns

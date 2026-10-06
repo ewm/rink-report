@@ -8,7 +8,7 @@ and gives the same answer every time.
 
     cd tests
     npm install        # once — pulls Playwright and a headless Chromium
-    npm test           # 545 checks, about two minutes
+    npm test           # 568 checks, about two minutes
 
 Screenshots of the views land in `out/` after a run (light and dark, phone
 width) — worth a glance when a change is visual.
@@ -61,4 +61,6 @@ failure reads like a bug report.
 `fixtures/league/` is the test league's sheet (`Test-League-12U-Sheet.xlsx`),
 one CSV per tab the way Google exports it, including the Ice slots tab.
 Section [41] drives `docs/testleague/` with it through `openPage(..., LEAGUE)`,
-which swaps in the league's folder, gid map and fixtures.
+which swaps in the league's folder, gid map and fixtures. Section [42] runs the
+scheduling tool: the model in Node, then the card, the build and the Copy in the
+browser (the context is granted clipboard permissions to read the copy back).

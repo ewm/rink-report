@@ -156,8 +156,9 @@ the sheet is a Settings row, `Page type` = `league`, and a blank `Our team`.
 The page then shows every division's standings and the whole schedule, with
 none of the home-team pieces (next game, record, stats, coaches cards). The
 staff page reads an extra tab, Ice slots (Home team, Rink, Date, Face-off),
-and shows the ice each club brought; the scheduling tool that turns those
-slots into a season is next. The test league lives in `docs/testleague/`,
+and shows the ice each club brought, and the Scheduling tool turns those
+slots into a season: one tap builds it, one Copy hands back the Schedule
+rows for a paste into the sheet. The test league lives in `docs/testleague/`,
 set up from `Test-League-12U-Sheet.xlsx` in the Youth Hockey folder.
 
 ## Turning pieces off

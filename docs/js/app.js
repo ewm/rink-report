@@ -20,6 +20,7 @@ import { played } from "./model/game.js";
 import { tickFresh } from "./ui/frame.js";
 import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
 import { coachText } from "./ui/coach.js";
+import { buildSchedule, scheduleRows } from "./model/schedule-builder.js";
 import { initFormTip } from "./ui/formtip.js";
 import { copyText } from "./util/clipboard.js";
 import { unlock } from "./util/seal.js";
@@ -574,6 +575,35 @@ document.addEventListener("click", function (e) {
 
       setTimeout(function () {
         state.coachCopied = false;
+        render();
+      }, 2000);
+    });
+  }
+
+  // The scheduling tool: build, and copy the result for the Schedule tab.
+  if (a === "build") {
+    state.built = buildSchedule({
+      teams: state.data.teams,
+      pools: state.data.pools,
+      slots: state.data.slots || [],
+      gamesPerTeam: state.data.config.gamesPerTeam,
+      homeAway: state.data.config.homeAway
+    });
+    state.schedCopied = false;
+    render();
+  }
+
+  if (a === "copysched" && state.built) {
+    copyText(scheduleRows(state.built.placed)).then(function (done) {
+      if (!done) {
+        return;
+      }
+
+      state.schedCopied = true;
+      render();
+
+      setTimeout(function () {
+        state.schedCopied = false;
         render();
       }, 2000);
     });

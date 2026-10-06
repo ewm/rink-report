@@ -55,8 +55,8 @@ function slotsLine() {
 
   if (!s) {
     return state.slotsNote
-      ? '<span class="warn">not read — ' + esc(state.slotsNote) + "</span>"
-      : '<span class="warn">not read — add an Ice slots tab (Home team, Rink, Date, Face-off) and its gid to config.js</span>';
+      ? '<span class="warn">not read: ' + esc(state.slotsNote) + "</span>"
+      : '<span class="warn">not read: add an Ice slots tab (Home team, Rink, Date, Face-off) and its gid to config.js</span>';
   }
 
   if (!s.length) {
@@ -164,7 +164,7 @@ function diagHtml() {
       "Games each   " +
         (state.data.config.gamesPerTeam
           ? '<span class="ok">' + state.data.config.gamesPerTeam + "</span>"
-          : '<span class="warn">not set — add \"Games per team\" on the Settings tab for the scheduling tool</span>')
+          : '<span class="warn">not set: add \"Games per team\" on the Settings tab for the scheduling tool</span>')
     );
     L.push("Ice slots    " + slotsLine());
   } else {

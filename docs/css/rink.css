@@ -524,7 +524,29 @@ body.post-open{overflow:hidden}
 .slots tr.none td{color:var(--ink-3)}
 .slots .slotlist summary{cursor:pointer; font-size:13px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-2); padding:6px 0}
 .slots .slotlist th,.slots .slotlist td{text-align:left; vertical-align:top}
-.slots .slotlist td.d,.slots .slotlist td.t{white-space:nowrap}
-.slots .slotlist td.who{font-family:var(--f-text); width:100%}
+.slots .slotlist td.d,.slots .slotlist td.t{white-space:nowrap; width:1%; padding-right:10px}
+.slots .slotlist td.who{font-family:var(--f-text); white-space:normal}
 .mono-nums .slots .slotlist td.who{font-family:var(--f-text)}
 .slots .slotlist .rk{display:block; color:var(--ink-2); font-size:12px}
+
+/* ---- Scheduling tool card (league staff page) ---- */
+.builder .lead{margin:0 0 12px; font-size:14px; line-height:1.5; color:var(--ink-2)}
+.builder .acts{margin:0 0 14px}
+.builder .verdict{margin:0 0 10px; font-size:15px; font-weight:600; color:var(--ink)}
+.builder .verdict.warn{color:var(--warn)}
+.builder .verdict.ok{color:var(--win)}
+.builder .note{margin:0 0 10px; font-size:13px; line-height:1.5; color:var(--ink-2)}
+.builder .unplaced{margin:0 0 12px; padding-left:18px; font-size:13px; line-height:1.5; color:var(--ink-2)}
+.builder .share{margin:0 0 14px}
+.builder .share th,.builder .share td{text-align:left}
+.builder .share th+th,.builder .share td+td{text-align:right; white-space:nowrap}
+.builder .share tr.short td{color:var(--ink-3)}
+.builder .built summary{cursor:pointer; font-size:13px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-2); padding:6px 0}
+.builder .built th,.builder .built td{text-align:left; vertical-align:top}
+.builder .built td.d,.builder .built td.t{white-space:nowrap; width:1%; padding-right:10px}
+.builder .built td.who{font-family:var(--f-text); white-space:normal}
+.mono-nums .builder .built td.who{font-family:var(--f-text)}
+.builder .built .rk{display:block; color:var(--ink-2); font-size:12px}
+.builder .foot{margin:14px 0 0; font-size:13px; line-height:1.6; color:var(--ink-2)}
+.builder .foot .coachbtn{margin:0 6px 0 0}
+.builder .built .at{display:block}

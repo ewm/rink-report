@@ -106,6 +106,35 @@ var METRIC = {
 };
 
 /**
+ * Adds one game to a team's row: games played, goals, the result, the
+ * capped margin, and the head-to-head and goals-against-opponent records.
+ *
+ * @param {Object} row - The team's standings row.
+ * @param {string} opp - The opponent's name.
+ * @param {number} gf - Goals for.
+ * @param {number} ga - Goals against.
+ * @param {number} margin - The capped goal margin of the game.
+ */
+function tally(row, opp, gf, ga, margin) {
+  row.gp++;
+  row.gf += gf;
+  row.ga += ga;
+  addVs(row, opp, gf, ga);
+
+  if (gf > ga) {
+    row.w++;
+    row.cap += margin;
+    row.h2h[opp] = (row.h2h[opp] || 0) + 1;
+  } else if (gf < ga) {
+    row.l++;
+    row.cap -= margin;
+    row.h2h[opp] = (row.h2h[opp] || 0) - 1;
+  } else {
+    row.t++;
+  }
+}
+
+/**
  * Builds the standings table for a set of games.
  *
  * Scrimmages count toward nothing, and at an event bracket games do not
@@ -165,40 +194,28 @@ function standings(games, teams, isEvent, rules) {
     var h = rows[g.home];
     var a = rows[g.away];
 
-    if (!h || !a) {
+    if (!h && !a) {
+      continue;
+    }
+
+    // At an event a pool table counts pool games only. In league play a
+    // division table lists the division's teams but counts every league
+    // game they played, cross-division games included, so a team with one
+    // side in this table still gets its result.
+    if (isEvent && (!h || !a)) {
       continue;
     }
 
     counted.push(g);
-    h.gp++;
-    a.gp++;
-    h.gf += g.hs;
-    h.ga += g.as;
-    a.gf += g.as;
-    a.ga += g.hs;
 
     var margin = Math.min((rules && rules.cap) || 99, Math.abs(g.hs - g.as));
 
-    addVs(h, g.away, g.hs, g.as);
-    addVs(a, g.home, g.as, g.hs);
+    if (h) {
+      tally(h, g.away, g.hs, g.as, margin);
+    }
 
-    if (g.hs > g.as) {
-      h.w++;
-      a.l++;
-      h.cap += margin;
-      a.cap -= margin;
-      h.h2h[g.away] = (h.h2h[g.away] || 0) + 1;
-      a.h2h[g.home] = (a.h2h[g.home] || 0) - 1;
-    } else if (g.hs < g.as) {
-      a.w++;
-      h.l++;
-      a.cap += margin;
-      h.cap -= margin;
-      a.h2h[g.home] = (a.h2h[g.home] || 0) + 1;
-      h.h2h[g.away] = (h.h2h[g.away] || 0) - 1;
-    } else {
-      h.t++;
-      a.t++;
+    if (a) {
+      tally(a, g.home, g.as, g.hs, margin);
     }
   }
 

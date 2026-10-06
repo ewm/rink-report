@@ -137,6 +137,8 @@ function offList() {
  * player: the short name whose page is open on the Stats view (?admin), or null.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * coachCopied: true for a moment after the Coaches Corner text was copied.
+ * built: the scheduling tool's last result (league staff page), or null.
+ * schedCopied: true for a moment after the built schedule was copied.
  * coachSealed: the bytes of data/coaches-corner.enc (staff page), or null
  *   when there is no such file.
  * coachNotes: the report's text once it has unlocked, or null.
@@ -188,6 +190,8 @@ var state = {
     }
   })(),
   coachCopied: false,
+  built: null,
+  schedCopied: false,
   coachSealed: null,
   coachNotes: null,
   unlockError: "",

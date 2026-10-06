@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (545 checks, ~2 minutes)
+//   npm test         (568 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -2287,10 +2287,10 @@ const PASS = 'test-pass-123';
         kicker:document.querySelector('.masthead .eyebrow').textContent.trim()
       };
     });
-    ok(sl.card && sl.count==='88 slots', 'the staff page shows the Ice slots card with every slot counted: '+sl.count);
-    ok(/8 teams at 20 games each is 80 games\. 88 slots covers it with 8 to spare\./.test(sl.need), 'the card does the ice-versus-games arithmetic: '+sl.need);
+    ok(sl.card && sl.count==='90 slots', 'the staff page shows the Ice slots card with every slot counted: '+sl.count);
+    ok(/8 teams at 20 games each is 80 games\. 90 slots covers it with 10 to spare\./.test(sl.need), 'the card does the ice-versus-games arithmetic: '+sl.need);
     ok(sl.teams===8 && sl.none===0, 'every team is listed with its slot count: '+sl.teams+' teams, '+sl.none+' without');
-    ok(sl.list===88 && /Nov 7/.test(sl.first), 'the by-date list has all 88, earliest first: '+sl.first);
+    ok(sl.list===90 && /Aug 9/.test(sl.first), 'the by-date list has all 90, earliest first: '+sl.first);
     ok(!sl.coach, 'no Coaches Corner on a league staff page');
     ok(/Staff$/.test(sl.kicker), 'the staff kicker still says Staff: '+sl.kicker);
     ok(st.asked.indexOf('slots')!==-1, 'the staff page asks for the Ice slots tab');
@@ -2298,13 +2298,13 @@ const PASS = 'test-pass-123';
     const diag = await st.page.$eval('pre.diag', e=>e.textContent);
     ok(/Page type\s+league/.test(diag), '?check says this is a league page');
     ok(/Games each\s+20/.test(diag), '?check shows games per team');
-    ok(/Ice slots\s+88 slots, 2026-11-07 to 2027-02-28/.test(diag), '?check counts the slots and their span');
+    ok(/Ice slots\s+90 slots, 2026-08-09 to 2026-11-29/.test(diag), '?check counts the slots and their span');
     ok(!/Our team/.test(diag), '?check does not ask for Our team on a league page');
     await st.ctx.close();
 
     // A slot row with a misspelled team snaps; one with a team not on the Teams tab is dropped and named.
     const bad = Object.assign({}, LEAGUE, { fix: Object.assign({}, LEAGUE_FIX, {
-      slots: LEAGUE_FIX.slots.replace('Northgate Narwhals,Northgate Pavilion,11/07/2026', 'Northgate Narwhal,Northgate Pavilion,11/07/2026')
+      slots: LEAGUE_FIX.slots.replace('Harbor Hawks,Harbor Ice Center,08/09/2026', 'Harbor Hawk,Harbor Ice Center,08/09/2026')
                              .replace(/\r?\n$/, '') + '\r\n,Buffalo Bisons,Harbor Ice Center,12/05/2026,1:00 PM,\r\n'
     })});
     const b = await openPage(browser, LBASE+'staff/', bad);
@@ -2312,8 +2312,8 @@ const PASS = 'test-pass-123';
       count:document.querySelector('section.slots .card-h .eyebrow').textContent.trim(),
       warn:document.body.textContent
     }));
-    ok(got.count==='88 slots', 'a one-letter slip in a team name still counts: '+got.count);
-    ok(/Ice slots tab: 1 row left out\. row 93: "Buffalo Bisons" is not on the Teams tab/.test(got.warn), 'an unknown team is dropped with its sheet row named');
+    ok(got.count==='90 slots', 'a one-letter slip in a team name still counts: '+got.count);
+    ok(/Ice slots tab: 1 row left out\. row 95: "Buffalo Bisons" is not on the Teams tab/.test(got.warn), 'an unknown team is dropped with its sheet row named');
     await b.ctx.close();
 
     // The Wings page is untouched: still a team page with its chip and switch.
@@ -2321,6 +2321,85 @@ const PASS = 'test-pass-123';
     const wl = await w.page.evaluate(()=>({chip:!!document.querySelector('.masthead .record'), seg:!!document.querySelector('.seg button[data-v="ours"]'), next:!!document.querySelector('section.next')}));
     ok(wl.chip && wl.seg && wl.next, 'a team page still has its record chip, Ours switch and next-game card');
     await w.ctx.close();
+  }
+
+  console.log('\n[42] scheduling tool');
+  {
+    const LBASE = 'http://localhost:8811/testleague/';
+    // The model on its own, in Node.
+    const sb = await import(require('url').pathToFileURL(path.join(SITE_DIR,'js','model','schedule-builder.js')).href);
+    const rr = sb.roundRobin(['A','B','C','D']);
+    ok(rr.length===3 && rr.every(r=>r.length===2), 'a 4-team round robin is 3 rounds of 2 games');
+    const seen = new Set(rr.flat().map(g=>[g.home,g.away].sort().join('-')));
+    ok(seen.size===6, 'every pair meets once: '+[...seen].join(' '));
+    const odd = sb.roundRobin(['A','B','C']);
+    ok(odd.length===3 && odd.flat().length===3, 'an odd list gets byes, not games against nobody');
+    const teams8 = ['L','H','R','M','N','S','E','W'];
+    const pools8 = {L:'Blue',H:'Blue',R:'Blue',M:'Blue',N:'Gold',S:'Gold',E:'Gold',W:'Gold'};
+    const pr = sb.pairings(teams8, pools8, 20);
+    const per = {}; pr.games.forEach(g=>{ per[g.home]=(per[g.home]||0)+1; per[g.away]=(per[g.away]||0)+1; });
+    ok(pr.games.length===80 && Object.values(per).every(n=>n===20) && pr.short.length===0, '8 teams at 20 games pair into 80 games, 20 each: '+JSON.stringify(per));
+    const inDiv = pr.games.filter(g=>g.division).length;
+    ok(inDiv===36 && pr.games.slice(0,12).every(g=>g.division), 'in-division games first (3 round robins = 36 of 80): '+inDiv);
+    const homes = {}; pr.games.forEach(g=>{ homes[g.home]=(homes[g.home]||0)+1; });
+    ok(Object.values(homes).every(n=>n>=8 && n<=12), 'pairings alone keep home games within 8 to 12 (placement evens them further): '+JSON.stringify(homes));
+
+    // Placement with a tiny ice supply: two teams, two games, one day.
+    const tiny = sb.buildSchedule({ teams:['A','B'], pools:{}, gamesPerTeam:2, slots:[
+      {team:'A', rink:'Ra', date:'2026-11-07', time:'10:00 AM', timeKey:600, row:5},
+      {team:'A', rink:'Ra', date:'2026-11-07', time:'1:00 PM', timeKey:780, row:6},
+      {team:'B', rink:'Rb', date:'2026-11-14', time:'10:00 AM', timeKey:600, row:7}
+    ]});
+    ok(tiny.placed.length===2 && tiny.unplaced.length===0, 'two games placed on two different days');
+    ok(tiny.placed[0].date!==tiny.placed[1].date, 'a team never plays twice on one day: '+tiny.placed.map(g=>g.date).join(','));
+    ok(tiny.perTeam.every(t=>t.home===1 && t.away===1), 'home and away balanced one each');
+    const starve = sb.buildSchedule({ teams:['A','B'], pools:{}, gamesPerTeam:2, slots:[
+      {team:'A', rink:'Ra', date:'2026-11-07', time:'10:00 AM', timeKey:600, row:5},
+      {team:'A', rink:'Ra', date:'2026-11-07', time:'1:00 PM', timeKey:780, row:6}
+    ]});
+    ok(starve.placed.length===1 && starve.unplaced.length===1 && /(has no ice left|already plays)/.test(starve.unplaced[0].why), 'a game with no legal slot is reported with a reason: '+(starve.unplaced[0]||{}).why);
+    const rows = sb.scheduleRows(tiny.placed).split('\n');
+    ok(rows.length===2 && rows.every(r=>r.split('\t').length===10) && /\tLeague\t$/.test(rows[0]), 'the copy is one tab-separated Schedule row per game, Game type League: '+rows[0]);
+    const nothing = sb.buildSchedule({ teams:[], pools:{}, gamesPerTeam:0, slots:[] });
+    ok(nothing.placed.length===0 && nothing.notes.length===3, 'missing inputs come back as notes, not a crash: '+nothing.notes.join(' | '));
+
+    // The real test league: 8 teams, 20 games, the 90 slots in the fixture.
+    const st = await openPage(browser, LBASE+'staff/', LEAGUE);
+    await st.ctx.grantPermissions(['clipboard-read','clipboard-write']);
+    ok(!!(await st.page.$('section.builder')), 'the Scheduling tool card is on the league staff page');
+    ok(!(await st.page.$('section.builder .verdict')), 'nothing is built until the button is tapped');
+    await st.page.click('[data-act="build"]'); await st.page.waitForTimeout(1500);
+    const built = await st.page.evaluate(()=>{
+      const c=document.querySelector('section.builder');
+      return { eyebrow:c.querySelector('.card-h .eyebrow').textContent.trim(), verdict:c.querySelector('.verdict').textContent.trim(),
+        rows:c.querySelectorAll('.share tbody tr').length, list:c.querySelectorAll('.built tbody tr').length,
+        copy:!!c.querySelector('[data-act="copysched"]'), col:(c.querySelector('.foot').textContent.match(/column ([A-Z]+)/)||[])[1] };
+    });
+    ok(/^\d+ of 80 games$/.test(built.eyebrow), 'the eyebrow counts games placed out of 80: '+built.eyebrow);
+    const placedN = +built.eyebrow.split(' ')[0];
+    ok(placedN>=76, 'at least 76 of the 80 games find ice with the fixture slots: '+placedN);
+    ok(built.rows===8 && built.list===placedN, 'every team is in the share table and every placed game in the list');
+    ok(built.col==='B', 'the paste instruction names the Date column from the header map: '+built.col);
+    await st.page.click('[data-act="copysched"]'); await st.page.waitForTimeout(400);
+    const clip = await st.page.evaluate(()=>navigator.clipboard.readText());
+    const lines = clip.split('\n');
+    ok(lines.length===placedN && lines.every(l=>l.split('\t').length===10), 'Copy puts one row per placed game on the clipboard, 10 columns each: '+lines.length);
+    const days = {}; let twice=false;
+    lines.forEach(l=>{ const c=l.split('\t'); [c[2],c[3]].forEach(t=>{ const k=t+'|'+c[0]; if(days[k]) twice=true; days[k]=true; }); });
+    ok(!twice, 'no team plays twice on one day anywhere in the copy');
+    ok(/Copied/.test(await st.page.$eval('[data-act="copysched"]', b=>b.textContent)), 'the button says Copied for a moment');
+    const errs = st.errors.filter(e=>!/clipboard/i.test(e));
+    ok(errs.length===0, 'no page errors while building and copying: '+errs.join(' | '));
+    await st.ctx.close();
+
+    // In league play a division table counts cross-division games too.
+    const crossFix = Object.assign({}, LEAGUE_FIX, { schedule: LEAGUE_FIX.scheduled.replace(
+      ',2026-11-07,10:30 AM,Harbor Hawks,Northgate Narwhals,,,Northgate Pavilion,,League,,OK',
+      ',2026-08-24,10:30 AM,Harbor Hawks,Northgate Narwhals,1,4,Northgate Pavilion,,League,,OK') });
+    const cx = await openPage(browser, LBASE, { team:'testleague', gids:LEAGUE_GIDS, fix:crossFix });
+    const hawks = await cx.page.evaluate(()=>[...document.querySelectorAll('.card tbody tr')].map(tr=>tr.textContent.replace(/\s+/g,' ').trim()).filter(t=>/Harbor Hawks|Northgate Narwhals/.test(t)));
+    ok(hawks.length===2 && /Harbor Hawks ?3 ?1 ?2 ?0/.test(hawks[0]) && /Northgate Narwhals ?3 ?3 ?0 ?0/.test(hawks[1]), 'a cross-division loss counts for both sides in their own tables: '+hawks.join(' | '));
+    await cx.ctx.close();
   }
 
   await browser.close(); sNew.close();

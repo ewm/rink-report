@@ -144,6 +144,15 @@ a {
   border-bottom: 5px solid var(--rule);
 }
 
+/* The mark sits above the eyebrow, in ink, so it flips with dark mode. */
+.mast .logo {
+  display: block;
+  width: 66px;
+  height: 42px;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+
 .mast .eyebrow {
   color: var(--ink-2);
 }

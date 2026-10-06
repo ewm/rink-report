@@ -9,6 +9,15 @@ import { STAFF, isLeague, state } from "../state.js";
 import { ago } from "../util/dates.js";
 import { esc } from "../util/text.js";
 
+/**
+ * The Check The Rink mark for the All teams row. Inline so it takes the
+ * row's ink color in light and dark. Same drawing as /logo.svg.
+ */
+var HOME_LOGO =
+  '<svg class="home-logo" viewBox="6 22 88 56" aria-hidden="true" focusable="false">' +
+  '<defs><mask id="ctr-k" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path d="M19 30v40M81 30v40" stroke="#000" stroke-width="3"/><path d="M33 50l11 11 24-24" fill="none" stroke="#000" stroke-width="10" stroke-linecap="square"/></mask></defs><rect x="6" y="22" width="88" height="56" rx="22" fill="currentColor" mask="url(#ctr-k)"/>' +
+  "</svg>";
+
 /* ---- masthead ---- */
 
 /**
@@ -246,7 +255,7 @@ function footHtml() {
   // On Check The Rink every team page sits in a folder under the landing
   // page. theme.js sets CHECK_THE_RINK_HOME once ../teams.js has loaded.
   if (window.CHECK_THE_RINK_HOME) {
-    h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span> All teams</a>';
+    h += '<a class="home" href="../"><span aria-hidden="true">&larr;</span>' + HOME_LOGO + " All teams</a>";
   }
 
   h +=

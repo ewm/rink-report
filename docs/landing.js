@@ -22,6 +22,14 @@
   /** How many picked teams to remember and show. */
   var RECENT_MAX = 3;
 
+  /**
+   * The Check The Rink mark, drawn inline so it takes the ink color and
+   * flips with dark mode. Same drawing as logo.svg / logo-light.svg.
+   */
+  var LOGO = '<svg class="logo" viewBox="6 22 88 56" aria-hidden="true" focusable="false">'
+    + '<defs><mask id="ctr-k" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="#fff"/><path d="M19 30v40M81 30v40" stroke="#000" stroke-width="3"/><path d="M33 50l11 11 24-24" fill="none" stroke="#000" stroke-width="10" stroke-linecap="square"/></mask></defs><rect x="6" y="22" width="88" height="56" rx="22" fill="currentColor" mask="url(#ctr-k)"/>'
+    + "</svg>";
+
   /** Age group names parents use, in age order, for sorting. */
   var AGE_NAMES = {
     "mite": 8,
@@ -379,6 +387,7 @@
     options = options || {};
 
     var html = '<header class="mast">'
+      + LOGO
       + '<p class="eyebrow">Youth hockey standings</p>'
       + "<h1>Check The Rink</h1>"
       + '<p class="sub">Standings, scores and the next game. Pick your team.</p>'

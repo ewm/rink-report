@@ -260,8 +260,9 @@ division column already does that for league play.
 
 A league is themed like a team: `teams.js` has a `leagues` list beside
 `teams`, each entry with a `folder` and an `org` for its two colors, and
-`applyTeamPage()` in `theme.js` looks in both lists. The landing page does
-not show leagues yet.
+`applyTeamPage()` in `theme.js` looks in both lists. The landing page
+draws the leagues as one "Leagues" band above the clubs, each row like a
+team row in the league's own colors, so the finder treats them alike.
 
 Settings rows a league uses: `Games per team` (`config.gamesPerTeam`) and
 `Home and away` (`config.homeAway`, "balanced" or "any") are inputs to the

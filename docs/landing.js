@@ -311,6 +311,32 @@
 
 
   /**
+   * The leagues on the site, as one section above the clubs. A league row
+   * is drawn like a team row (its org gives the colors), so the finder and
+   * the recent list treat it the same way.
+   * @param {object} site
+   * @returns {string} HTML
+   */
+  function leagues(site) {
+    var list = (Array.isArray(site.leagues) ? site.leagues : []).filter(function (l) {
+      return l && l.folder && l.name;
+    });
+
+    if (!list.length) {
+      return "";
+    }
+
+    var mine = recent();
+    var count = list.length === 1 ? "1 league" : list.length + " leagues";
+
+    return '<section class="org leagues" data-org="leagues">'
+      + '<h2 class="org-head"><span>Leagues</span><span class="eyebrow">' + count + "</span></h2>"
+      + "<ul>" + list.map(function (l) { return teamRow(l, site.orgs || {}, mine); }).join("") + "</ul>"
+      + "</section>";
+  }
+
+
+  /**
    * Hides team rows that don't match, and clubs left empty. Updates the
    * count line, which screen readers announce.
    * @param {Element} root
@@ -377,6 +403,8 @@
         + '<p class="count" aria-live="polite"></p>'
         + "</div>";
     }
+
+    html += leagues(site);
 
     html += teams.length
       ? clubs({ orgs: site.orgs, teams: teams })

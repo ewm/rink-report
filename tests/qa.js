@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (568 checks, ~2 minutes)
+//   npm test         (569 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -1470,12 +1470,15 @@ const PASS = 'test-pass-123';
     }));
     ok(errors.length===0, 'no page errors: '+errors.join(' | '));
     ok(land.h1==='Check The Rink', 'masthead reads Check The Rink');
-    ok(land.clubs.join('|')==='West Seneca Youth Hockey', 'one club band: '+land.clubs.join('|'));
-    ok(land.links.join('|')==='wswings12u/', 'the Wings row links to their folder: '+land.links.join('|'));
-    ok(land.band==='rgb(0, 48, 135)', 'the club band is in the club color: '+land.band);
+    ok(land.clubs.join('|')==='Leagues|West Seneca Youth Hockey', 'a Leagues band above the one club band: '+land.clubs.join('|'));
+    ok(land.links.join('|')==='testleague/|wswings12u/', 'the league row and the Wings row link to their folders: '+land.links.join('|'));
+    const bands = await page.evaluate(()=>[...document.querySelectorAll('.org-head')].map(e=>getComputedStyle(e).backgroundColor));
+    ok(bands[1]==='rgb(0, 48, 135)', 'the club band is in the club color: '+bands[1]);
+    const leagueRow = await page.evaluate(()=>{ const r=document.querySelector('.leagues .team'); return {name:r.querySelector('.name').textContent, tag:(r.querySelector('.tag')||{}).textContent||'', find:r.getAttribute('data-find')}; });
+    ok(leagueRow.name==='Test League 12U' && leagueRow.tag==='12U', 'the league row shows its name and age group: '+JSON.stringify(leagueRow));
     ok(!land.back && !land.find, 'first visit: no Your team panel, no search box with one team');
     ok(land.wide<=390, 'no sideways scroll at 390px: '+land.wide);
-    await page.click('.team a');
+    await page.click('.org:not(.leagues) .team a');
     await page.waitForTimeout(800);
     ok(/\/wswings12u\/$/.test(page.url()), 'tapping the team opens its page: '+page.url());
     await page.goto('http://localhost:8811/');

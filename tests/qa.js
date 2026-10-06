@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (569 checks, ~2 minutes)
+//   npm test         (572 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -2363,6 +2363,14 @@ const PASS = 'test-pass-123';
     ok(starve.placed.length===1 && starve.unplaced.length===1 && /(has no ice left|already plays)/.test(starve.unplaced[0].why), 'a game with no legal slot is reported with a reason: '+(starve.unplaced[0]||{}).why);
     const rows = sb.scheduleRows(tiny.placed).split('\n');
     ok(rows.length===2 && rows.every(r=>r.split('\t').length===10) && /\tLeague\t$/.test(rows[0]), 'the copy is one tab-separated Schedule row per game, Game type League: '+rows[0]);
+    // A showcase-only club (no division) stays out of league play.
+    const guest = sb.buildSchedule({ teams:['A','B','G'], pools:{A:'Blue',B:'Blue'}, gamesPerTeam:1, slots:[
+      {team:'A', rink:'Ra', date:'2026-11-07', time:'10:00 AM', timeKey:600, row:5},
+      {team:'G', rink:'Rg', date:'2026-11-14', time:'10:00 AM', timeKey:600, row:6}
+    ]});
+    ok(guest.placed.length===1 && guest.placed[0].away==='B' && guest.perTeam.length===2, 'a team with no division is left out of the pairings when the league has divisions');
+    ok(/Left out, no division on the Teams tab: G\./.test(guest.notes.join(' ')), 'and the note names it: '+guest.notes.join(' | '));
+    ok(sb.leagueTeams(['A','B'], {}).teams.length===2, 'with no divisions at all, every team plays');
     const nothing = sb.buildSchedule({ teams:[], pools:{}, gamesPerTeam:0, slots:[] });
     ok(nothing.placed.length===0 && nothing.notes.length===3, 'missing inputs come back as notes, not a crash: '+nothing.notes.join(' | '));
 

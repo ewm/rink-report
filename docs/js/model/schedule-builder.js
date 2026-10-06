@@ -190,6 +190,39 @@ function flipped(rounds) {
 }
 
 /**
+ * The teams the league schedules. When any team has a division, only teams
+ * with one are in league play; the rest (a showcase-only club on the
+ * Teams tab, say) are left out and named. With no divisions at all, every
+ * team is in.
+ *
+ * @param {string[]} teams - Teams-tab names.
+ * @param {Object} pools - team name -> division.
+ * @returns {{teams: string[], left: string[]}}
+ */
+function leagueTeams(teams, pools) {
+  var any = teams.some(function (t) {
+    return pools && pools[t];
+  });
+
+  if (!any) {
+    return { teams: teams.slice(), left: [] };
+  }
+
+  var left = [];
+  var kept = teams.filter(function (t) {
+    if (pools[t]) {
+      return true;
+    }
+
+    left.push(t);
+
+    return false;
+  });
+
+  return { teams: kept, left: left };
+}
+
+/**
  * Teams grouped by division, in Teams-tab order. Teams with no division
  * form one group named "".
  *
@@ -330,7 +363,8 @@ function pairings(teams, pools, gamesPerTeam) {
  *   figures, unused slots, and notes for the commissioner.
  */
 function buildOnce(input, seed) {
-  var teams = input.teams || [];
+  var split = leagueTeams(input.teams || [], input.pools);
+  var teams = split.teams;
   var rand = mulberry(seed);
   var slots = (input.slots || []).slice().sort(function (a, b) {
     return a.date < b.date ? -1 : a.date > b.date ? 1 : a.timeKey - b.timeKey;
@@ -341,6 +375,14 @@ function buildOnce(input, seed) {
 
   if (!teams.length || !gamesPerTeam || !slots.length) {
     return empty(teams, slots, gamesPerTeam);
+  }
+
+  if (split.left.length) {
+    notes.push(
+      "Left out, no division on the Teams tab: " +
+        split.left.join(", ") +
+        ". A showcase-only club stays out of league play; give a club a division to schedule it."
+    );
   }
 
   var pr = pairings(teams, input.pools, gamesPerTeam);
@@ -892,4 +934,4 @@ function scheduleRows(placed) {
     .join("\n");
 }
 
-export { buildSchedule, buildOnce, pairings, roundRobin, crossRounds, scheduleRows, dayNumber, weekday, LIMITS };
+export { buildSchedule, buildOnce, pairings, roundRobin, crossRounds, leagueTeams, scheduleRows, dayNumber, weekday, LIMITS };

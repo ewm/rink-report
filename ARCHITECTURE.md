@@ -294,6 +294,11 @@ with its date span.
 a season. Pure functions; `ui/schedule-builder.js` is the card and
 `app.js` wires the two buttons (`build`, `copysched`).
 
+Only teams with a division are in league play when the Teams tab has
+divisions at all (`leagueTeams()`); a showcase-only club with a blank
+Pool / division is left out and named in the notes. With no divisions,
+every team plays.
+
 Pairings first. Each division plays a round robin by the circle method,
 then every team plays every team in the other divisions once, and the two
 kinds alternate with home and away swapped on each repeat until every team

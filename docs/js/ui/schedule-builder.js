@@ -135,7 +135,7 @@ function builderHtml() {
   h +=
     '<p class="lead">Every division plays a round robin, then the divisions cross over, repeating until each team has ' +
     games(cfg.gamesPerTeam) +
-    ". Each game goes into the home club's own ice. No team plays twice in a day, more than twice on a weekend, or more than three times in a week.</p>";
+    ". Each game goes into the home club's own ice. No team plays twice in a day, more than twice on a weekend, or more than three times in a week. A team with no division on the Teams tab is left out.</p>";
 
   h +=
     '<p class="acts"><button type="button" class="coachbtn" data-act="build">' +

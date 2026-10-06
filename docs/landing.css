@@ -144,24 +144,42 @@ a {
   border-bottom: 5px solid var(--rule);
 }
 
-/* The mark sits above the eyebrow, in ink, so it flips with dark mode. */
-.mast .logo {
-  display: block;
-  width: 66px;
-  height: 42px;
-  margin-bottom: 12px;
-  color: var(--ink);
-}
-
 .mast .eyebrow {
   color: var(--ink-2);
 }
 
+/*
+  The lockup: mark and name on one line at every width.
+  The name is 5.96em wide in Barlow Condensed, the mark 1.1em plus a
+  .2em gap, so the size is the page width over 7.4, capped at 76px on a wide screen.
+  That keeps it on one line down to a 320px phone.
+*/
 .mast h1 {
-  margin: 4px 0 0;
-  font: 700 56px/.92 var(--f-display);
+  margin: 6px 0 0;
+  font: 700 clamp(30px, calc((100vw - 36px) / 7.4), 76px)/.92 var(--f-display);
   letter-spacing: .01em;
   text-transform: uppercase;
+}
+
+.mast .lockup {
+  display: flex;
+  align-items: baseline;
+  gap: .2em;
+}
+
+/* Barlow loads after first paint. Until it does, the wider stand-in font
+   may wrap the name instead of pushing the page sideways. */
+.mast .lockup span {
+  min-width: 0;
+}
+
+/* As tall as the capitals. Its bottom edge sits on the text baseline,
+   so the tops line up too. */
+.mast .logo {
+  flex: none;
+  width: 1.1em;
+  height: .7em;
+  color: var(--ink);
 }
 
 .mast .sub {
@@ -486,17 +504,7 @@ a {
 /* ------------------------------------------------------------
    Two breakpoints only
    ------------------------------------------------------------ */
-@media (min-width: 700px) {
-  .mast h1 {
-    font-size: 64px;
-  }
-}
-
 @media (max-width: 420px) {
-  .mast h1 {
-    font-size: 46px;
-  }
-
   .back .name {
     font-size: 29px;
   }

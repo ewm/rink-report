@@ -6,7 +6,7 @@
 // the page in headless Chromium and checks the rendered DOM.
 //
 //   npm install      (once; downloads Chromium)
-//   npm test         (572 checks, ~2 minutes)
+//   npm test         (582 checks, ~2 minutes)
 //
 // Fixtures: the season workbook's Settings / Teams / Schedule tabs with the
 // five real showcase scores, schedule_future.csv (two tournaments on the
@@ -2402,6 +2402,39 @@ const PASS = 'test-pass-123';
     const errs = st.errors.filter(e=>!/clipboard/i.test(e));
     ok(errs.length===0, 'no page errors while building and copying: '+errs.join(' | '));
     await st.ctx.close();
+
+    // Mid-season: played games are kept, the rest rebuilt from today on.
+    const mid = sb.buildSchedule({ teams:['A','B'], pools:{}, gamesPerTeam:2, today:'2026-11-10',
+      played:[{date:'2026-11-07', time:'10:00 AM', timeKey:600, home:'A', away:'B', hs:3, as:1, rink:'Ra', division:'', type:'League'}],
+      slots:[
+        {team:'A', rink:'Ra', date:'2026-11-07', time:'10:00 AM', timeKey:600, row:5},
+        {team:'A', rink:'Ra', date:'2026-11-08', time:'10:00 AM', timeKey:600, row:6},
+        {team:'B', rink:'Rb', date:'2026-11-14', time:'10:00 AM', timeKey:600, row:7}
+      ]});
+    ok(mid.kept.length===1 && mid.placed.length===1 && mid.wanted===2, 'one played game kept, one built: '+mid.kept.length+'/'+mid.placed.length);
+    ok(mid.placed[0].date==='2026-11-14' && mid.placed[0].home==='B', 'the new game lands on ice from today on, at the other club (home and away balance): '+mid.placed[0].date+' '+mid.placed[0].home);
+    ok(mid.perTeam.every(t=>t.games===2), 'kept games count toward each team\'s total');
+    const midRows = sb.scheduleRows(mid.placed, mid.kept).split('\n');
+    ok(midRows.length===2 && /^2026-11-07\t10:00 AM\tB\tA\t1\t3\t/.test(midRows[0]) && /^2026-11-14\t.*\t\t\t/.test(midRows[1]), 'the copy carries the kept score and a blank for the new game: '+midRows.join(' || '));
+    ok(sb.strikePlayed([{home:'A',away:'B'},{home:'B',away:'A'}], [{home:'B',away:'A'}]).length===1 && sb.strikePlayed([{home:'A',away:'B'},{home:'B',away:'A'}], [{home:'B',away:'A'}])[0].home==='A', 'a played game strikes the matching pairing, same sides first');
+
+    // The card mid-season: the LEAGUE_PLAYED fixture has 8 played games.
+    const ms = await openPage(browser, LBASE+'staff/', LEAGUE_PLAYED);
+    await ms.ctx.grantPermissions(['clipboard-read','clipboard-write']);
+    await ms.page.click('[data-act="build"]'); await ms.page.waitForTimeout(1500);
+    const msl = await ms.page.evaluate(()=>{ const c=document.querySelector('section.builder'); return { verdict:c.querySelector('.verdict').textContent.trim(), notes:[...c.querySelectorAll('.note')].map(e=>e.textContent), foot:c.querySelector('.foot').textContent }; });
+    ok(/8 games are already played and kept as they are/.test(msl.notes.join(' ')), 'the card says the played games are kept: '+msl.notes[0]);
+    // The clock is frozen at Sept 10, so only ice from Sept 10 on is used
+    // for the 72 games left; some find no ice, and the counts say so.
+    const builtN = +((msl.verdict.match(/^(\d+) of 80 games placed/)||[])[1] || (/All 80/.test(msl.verdict) ? 80 : 0));
+    ok(builtN>=60 && builtN<=80, 'kept plus built counts toward the 80-game season from today\'s ice on: '+msl.verdict);
+    const stillN = builtN - 8;
+    ok(new RegExp('8 games already played, with their scores, plus '+stillN+' games still to play').test(msl.foot) && /select rows 5 to 13 \(the 9 games of league play\), delete them, click cell B5 and paste/.test(msl.foot), 'the paste instruction names the league rows to replace: '+msl.foot.slice(0,220));
+    await ms.page.click('[data-act="copysched"]'); await ms.page.waitForTimeout(400);
+    const msClip = (await ms.page.evaluate(()=>navigator.clipboard.readText())).split('\n');
+    ok(msClip.length===builtN && msClip.filter(l=>l.split('\t')[4]!=='').length===8, 'the copy is kept plus built rows with the 8 scores still in: '+msClip.length+' rows, '+msClip.filter(l=>l.split('\t')[4]!=='').length+' scored');
+    ok(msClip.slice(8).every(l=>l.split('\t')[0]>='2026-09-10'), 'no new game is placed before today');
+    await ms.ctx.close();
 
     // In league play a division table counts cross-division games too.
     const crossFix = Object.assign({}, LEAGUE_FIX, { schedule: LEAGUE_FIX.scheduled.replace(

@@ -8,6 +8,7 @@
  * anywhere: the commissioner pastes, the page re-reads the sheet.
  * See ARCHITECTURE.md, "The scheduling tool".
  */
+import { isExhibition, played } from "../model/game.js";
 import { state } from "../state.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
@@ -40,6 +41,84 @@ function dateColumn() {
   }
 
   return "B";
+}
+
+/**
+ * The league rows already on the Schedule tab (no event), with their sheet
+ * row numbers, so the paste instruction can say which rows to replace.
+ *
+ * @returns {{rows: number[], played: number}}
+ */
+function leagueRowsOnSheet() {
+  var rows = [];
+  var done = 0;
+
+  state.data.games.forEach(function (g) {
+    if (g.event || isExhibition(g)) {
+      return;
+    }
+
+    rows.push(+g.id.slice(1) + 1);
+
+    if (played(g)) {
+      done++;
+    }
+  });
+
+  rows.sort(function (a, b) {
+    return a - b;
+  });
+
+  return { rows: rows, played: done };
+}
+
+/**
+ * Where the copy goes: a fresh sheet takes it at the first empty Date
+ * cell; a sheet with league rows has them replaced, and the sentence names
+ * the rows when they sit together.
+ *
+ * @param {Object} r - The build.
+ * @returns {string}
+ */
+function pasteWhere(r) {
+  var col = dateColumn();
+  var on = leagueRowsOnSheet();
+
+  if (!on.rows.length) {
+    return "Then click the first empty Date cell on the Schedule tab (column " + col + ") and paste.";
+  }
+
+  var first = on.rows[0];
+  var last = on.rows[on.rows.length - 1];
+  var together = last - first + 1 === on.rows.length;
+  var what =
+    "The copy is the whole league: " +
+    (r.kept.length ? games(r.kept.length) + " already played, with their scores, plus " : "") +
+    games(r.placed.length) +
+    (r.kept.length ? " still to play." : ".");
+
+  if (together) {
+    return (
+      what +
+      " On the Schedule tab select rows " +
+      first +
+      " to " +
+      last +
+      " (the " +
+      games(on.rows.length) +
+      " of league play), delete them, click cell " +
+      col +
+      first +
+      " and paste. Event rows are not touched."
+    );
+  }
+
+  return (
+    what +
+    " The league rows on the Schedule tab are mixed in with event rows, so clear the league rows by hand first, then click the first empty Date cell (column " +
+    col +
+    ") and paste."
+  );
 }
 
 /**
@@ -146,13 +225,15 @@ function builderHtml() {
     return h + "</div></section>";
   }
 
-  // The verdict line.
-  if (!r.placed.length) {
+  // The verdict line. Kept games count as placed: they have ice.
+  var done = r.placed.length + r.kept.length;
+
+  if (!r.placed.length && !r.kept.length) {
     h += '<p class="verdict bad">Nothing could be placed.</p>';
   } else if (r.unplaced.length) {
     h +=
       '<p class="verdict warn">' +
-      r.placed.length +
+      done +
       " of " +
       games(r.wanted) +
       " placed. " +
@@ -191,21 +272,14 @@ function builderHtml() {
 
   h += teamTable(r.perTeam);
 
-  if (state.data.games.length) {
-    h +=
-      '<p class="note warn">The Schedule tab already has ' +
-      games(state.data.games.length) +
-      ". The copy adds rows; it does not replace them. Clear the old rows first if this is a rebuild.</p>";
-  }
-
   h += gameList(r.placed);
 
   h +=
     '<p class="foot"><button type="button" class="coachbtn" data-act="copysched">' +
     (state.schedCopied ? "Copied" : "Copy for the Schedule tab") +
-    "</button> Then click the first empty Date cell on the Schedule tab (column " +
-    esc(dateColumn()) +
-    ") and paste. The page picks the games up on its next read.</p>";
+    "</button> " +
+    esc(pasteWhere(r)) +
+    " The page picks the games up on its next read.</p>";
 
   return h + "</div></section>";
 }

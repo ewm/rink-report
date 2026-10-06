@@ -16,7 +16,7 @@ import { shapeStats } from "./shape/stats.js";
 import { shapeRinks } from "./shape/rinks.js";
 import { shapeSponsors } from "./shape/sponsors.js";
 import { shapeSlots } from "./shape/slots.js";
-import { played } from "./model/game.js";
+import { isExhibition, played } from "./model/game.js";
 import { tickFresh } from "./ui/frame.js";
 import { closePost, openPost, saveOpenPost } from "./ui/postcard.js";
 import { coachText } from "./ui/coach.js";
@@ -112,6 +112,33 @@ function snapTeamName(cfg, tm) {
         "The record chip, the Ours switch and the W/L tags need the exact name."
     );
   }
+}
+
+/**
+ * The league games already played (a score, no event, not a scrimmage), in
+ * the shape the scheduling tool keeps them in.
+ *
+ * @returns {Object[]}
+ */
+function playedLeagueGames() {
+  return state.data.games
+    .filter(function (g) {
+      return played(g) && !g.event && !isExhibition(g);
+    })
+    .map(function (g) {
+      return {
+        date: g.date,
+        time: g.time,
+        timeKey: timeKey(g.time),
+        home: g.home,
+        away: g.away,
+        hs: g.hs,
+        as: g.as,
+        rink: g.rink,
+        division: g.pool,
+        type: g.type || "League"
+      };
+    });
 }
 
 /**
@@ -587,14 +614,16 @@ document.addEventListener("click", function (e) {
       pools: state.data.pools,
       slots: state.data.slots || [],
       gamesPerTeam: state.data.config.gamesPerTeam,
-      homeAway: state.data.config.homeAway
+      homeAway: state.data.config.homeAway,
+      played: playedLeagueGames(),
+      today: todayISO()
     });
     state.schedCopied = false;
     render();
   }
 
   if (a === "copysched" && state.built) {
-    copyText(scheduleRows(state.built.placed)).then(function (done) {
+    copyText(scheduleRows(state.built.placed, state.built.kept)).then(function (done) {
       if (!done) {
         return;
       }

@@ -27,6 +27,13 @@
  *    another of its free slots, so the slot it was in can take this game.
  *    What is still unplaced is reported, never dropped quietly.
  *
+ * 4. Mid-season. Games already played (a score on the Schedule tab) are
+ *    kept exactly as they are: they count toward each team's games, their
+ *    days are booked, their pairings are struck from the list, and only
+ *    slots from today on are used for what is left. The copy carries the
+ *    kept games with their scores plus the new ones, so pasting it over
+ *    the league rows loses nothing.
+ *
  * Greedy with one repair pass, not a solver: for 8 to 16 teams it finishes
  * in a blink and a commissioner can follow what it did.
  * See ARCHITECTURE.md, "The scheduling tool".
@@ -358,6 +365,9 @@ function pairings(teams, pools, gamesPerTeam) {
  * @param {{team: string, rink: string, date: string, time: string, timeKey: number}[]} input.slots - From shape/slots.js.
  * @param {number} input.gamesPerTeam
  * @param {string} [input.homeAway] - "balanced" (default) or "any".
+ * @param {Object[]} [input.played] - League games already played, kept as they are:
+ *   {date, time, timeKey, home, away, hs, as, rink, division, type}.
+ * @param {string} [input.today] - ISO day; with played games, slots before it are skipped.
  * @param {number} seed - 0 for the plain pass; any other number shuffles.
  * @returns {Object} The result: placed games, unplaced pairings, per-team
  *   figures, unused slots, and notes for the commissioner.
@@ -366,15 +376,36 @@ function buildOnce(input, seed) {
   var split = leagueTeams(input.teams || [], input.pools);
   var teams = split.teams;
   var rand = mulberry(seed);
-  var slots = (input.slots || []).slice().sort(function (a, b) {
-    return a.date < b.date ? -1 : a.date > b.date ? 1 : a.timeKey - b.timeKey;
+  var today = input.today || "";
+  var kept = (input.played || []).filter(function (g) {
+    return teams.indexOf(g.home) !== -1 && teams.indexOf(g.away) !== -1;
   });
+
+  // Mid-season, ice that has already gone by is no use.
+  var slots = (input.slots || [])
+    .filter(function (s) {
+      return !kept.length || !today || s.date >= today;
+    })
+    .sort(function (a, b) {
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : a.timeKey - b.timeKey;
+    });
   var gamesPerTeam = input.gamesPerTeam || 0;
   var anySide = input.homeAway === "any";
   var notes = [];
 
   if (!teams.length || !gamesPerTeam || !slots.length) {
     return empty(teams, slots, gamesPerTeam);
+  }
+
+  if (kept.length) {
+    notes.push(
+      kept.length +
+        " game" +
+        (kept.length === 1 ? " is" : "s are") +
+        " already played and kept as " +
+        (kept.length === 1 ? "it is" : "they are") +
+        ". The rest is built again from today's ice forward."
+    );
   }
 
   if (split.left.length) {
@@ -386,6 +417,12 @@ function buildOnce(input, seed) {
   }
 
   var pr = pairings(teams, input.pools, gamesPerTeam);
+
+  // Each played game strikes one matching pairing (same sides first, then
+  // either way round) so a rematch is not scheduled twice.
+  if (kept.length) {
+    pr.games = strikePlayed(pr.games, kept);
+  }
 
   pr.short.forEach(function (s) {
     notes.push(s.team + " can only be paired for " + (gamesPerTeam - s.missing) + " of " + gamesPerTeam + " games with these divisions.");
@@ -405,7 +442,7 @@ function buildOnce(input, seed) {
   var book = {};
 
   teams.forEach(function (t) {
-    book[t] = { placed: 0, home: 0, away: 0, days: {}, weekends: {}, weeks: {}, dates: [] };
+    book[t] = { placed: 0, kept: 0, home: 0, away: 0, days: {}, weekends: {}, weeks: {}, dates: [] };
   });
 
   /**
@@ -466,8 +503,10 @@ function buildOnce(input, seed) {
    * @returns {number}
    */
   function targetFor(team) {
-    var k = book[team].placed;
-    var spacing = span / gamesPerTeam;
+    // Mid-season the games still to play are spread over the ice left.
+    var done = book[team].kept;
+    var k = book[team].placed - done;
+    var spacing = span / Math.max(1, gamesPerTeam - done);
 
     // Every try after the first nudges the target by up to half a game's
     // spacing either way, so a different slot wins the scarce days.
@@ -532,6 +571,22 @@ function buildOnce(input, seed) {
 
     return book[newHome].home + 1 - book[newHome].away <= 1 && book[newAway].away + 1 - book[newAway].home <= 1;
   }
+
+  // Played games go into the book first, so what gets built fits around them.
+  kept.forEach(function (g) {
+    var day = dayNumber(g.date);
+
+    take(g.home, day, true);
+    take(g.away, day, false);
+    book[g.home].kept++;
+    book[g.away].kept++;
+
+    slots.forEach(function (s, i) {
+      if (!used[i] && s.team === g.home && s.date === g.date && s.time === g.time) {
+        used[i] = true;
+      }
+    });
+  });
 
   var placed = [];
   var unplaced = [];
@@ -761,13 +816,61 @@ function buildOnce(input, seed) {
 
   return {
     placed: placed,
+    kept: kept,
     unplaced: unplaced,
     perTeam: perTeam,
     unused: unused,
     notes: notes,
     gamesPerTeam: gamesPerTeam,
-    wanted: pr.games.length
+    wanted: pr.games.length + kept.length
   };
+}
+
+/**
+ * Removes one pairing per played game: the same home and away when the
+ * list has it, else the same two teams the other way round. A played game
+ * with no pairing left (a rematch beyond the plan) strikes nothing.
+ *
+ * @param {Object[]} games - From pairings().
+ * @param {Object[]} played - {home, away} games already played.
+ * @returns {Object[]} The pairings still to play.
+ */
+function strikePlayed(games, played) {
+  var left = games.slice();
+
+  played.forEach(function (p) {
+    var i = indexOfPair(left, p.home, p.away);
+
+    if (i === -1) {
+      i = indexOfPair(left, p.away, p.home);
+    }
+
+    if (i !== -1) {
+      left.splice(i, 1);
+    }
+  });
+
+  return left;
+}
+
+/**
+ * The first pairing with these sides, or -1.
+ *
+ * @param {Object[]} games
+ * @param {string} home
+ * @param {string} away
+ * @returns {number}
+ */
+function indexOfPair(games, home, away) {
+  var i;
+
+  for (i = 0; i < games.length; i++) {
+    if (games[i].home === home && games[i].away === away) {
+      return i;
+    }
+  }
+
+  return -1;
 }
 
 /**
@@ -913,25 +1016,53 @@ function empty(teams, slots, gamesPerTeam) {
     notes.push("No ice slots to place games in.");
   }
 
-  return { placed: [], unplaced: [], perTeam: [], unused: slots, notes: notes, gamesPerTeam: gamesPerTeam, wanted: 0 };
+  return { placed: [], kept: [], unplaced: [], perTeam: [], unused: slots, notes: notes, gamesPerTeam: gamesPerTeam, wanted: 0 };
 }
 
 /* ---- output ---- */
 
 /**
- * The placed games as tab-separated Schedule rows, in the sheet's column
- * order: Date, Face-off, Away team, Home team, Away goals, Home goals,
- * Rink, Pool / division, Game type, Event. One paste into the Schedule tab.
+ * The season as tab-separated Schedule rows, in the sheet's column order:
+ * Date, Face-off, Away team, Home team, Away goals, Home goals, Rink,
+ * Pool / division, Game type, Event. Kept (played) games come with their
+ * scores, built games with blank ones, all in date order: one paste over
+ * the league rows of the Schedule tab.
  *
  * @param {Object[]} placed - From buildSchedule().
+ * @param {Object[]} [kept] - The played games it kept.
  * @returns {string}
  */
-function scheduleRows(placed) {
-  return placed
+function scheduleRows(placed, kept) {
+  var all = (kept || [])
     .map(function (g) {
-      return [g.date, g.time, g.away, g.home, "", "", g.rink, g.division, "League", ""].join("\t");
+      return {
+        date: g.date,
+        time: g.time,
+        timeKey: g.timeKey,
+        away: g.away,
+        home: g.home,
+        as: g.as,
+        hs: g.hs,
+        rink: g.rink,
+        division: g.division,
+        type: g.type || "League"
+      };
+    })
+    .concat(
+      placed.map(function (g) {
+        return { date: g.date, time: g.time, timeKey: g.timeKey, away: g.away, home: g.home, as: "", hs: "", rink: g.rink, division: g.division, type: "League" };
+      })
+    );
+
+  all.sort(function (a, b) {
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.timeKey || 0) - (b.timeKey || 0);
+  });
+
+  return all
+    .map(function (g) {
+      return [g.date, g.time, g.away, g.home, g.as, g.hs, g.rink, g.division, g.type, ""].join("\t");
     })
     .join("\n");
 }
 
-export { buildSchedule, buildOnce, pairings, roundRobin, crossRounds, leagueTeams, scheduleRows, dayNumber, weekday, LIMITS };
+export { buildSchedule, buildOnce, pairings, roundRobin, crossRounds, leagueTeams, strikePlayed, scheduleRows, dayNumber, weekday, LIMITS };

@@ -324,11 +324,22 @@ the test league (8 teams, 20 games, 90 slots) that is a third of a second
 and all 80 games. It is deliberately not a solver: a commissioner can read
 the rules above and understand why a game landed where it did.
 
-The copy is one tab-separated Schedule row per game (Date, Face-off, Away,
-Home, blank scores, Rink, Pool / division for an in-division game, Game
-type League, blank Event) for one paste at the first empty Date cell; the
-card names the column from `state.headerMap`. The page never writes to
-the sheet.
+Mid-season, a rebuild keeps what has been played. `app.js` hands the
+build every league game with a score (`playedLeagueGames()`) and today's
+date; the model strikes one pairing per played game (`strikePlayed()`,
+same sides first), books those days and home counts for both teams, and
+uses only slots from today on for the rest. The copy is then the whole
+league in date order: kept games with their scores, built games with
+blanks. The card's paste sentence reads the league rows' sheet numbers
+off `game.id` and, when they sit together, says which rows to delete and
+which cell to paste at; mixed in with event rows, it asks the commissioner
+to clear the league rows by hand first. The page never writes to the
+sheet.
+
+The copy's columns are Date, Face-off, Away, Home, Away goals, Home
+goals, Rink, Pool / division (for an in-division game), Game type and a
+blank Event, matching the Schedule tab's order; the card names the Date
+column from `state.headerMap`.
 
 Division standings count every league game. `standings()` used to drop a
 game unless both teams were in the table, which is right for a tournament

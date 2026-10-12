@@ -135,9 +135,10 @@ jobs:
           if [ "$found" = 0 ]; then
             echo "No team folders found under docs/. Nothing to save."
           fi
-
+      
       - name: Commit when a tab changed
         run: |
+          set -euo pipefail
           git config user.name "rink-report snapshot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           shopt -s nullglob
@@ -148,21 +149,39 @@ jobs:
             exit 0
           fi
 
-          git add "${dirs[@]}"
+          files_to_add=()
+          for d in "${dirs[@]}"; do
+            while IFS= read -r -d '' f; do
+              case "$f" in
+                */data/updated.txt) continue ;;
+                *) files_to_add+=("$f") ;;
+              esac
+            done < <(find "$d" -type f -print0)
+          done
 
           if [ -d "$GITHUB_WORKSPACE/changes" ]; then
-            git add "$GITHUB_WORKSPACE/changes"
+            while IFS= read -r -d '' f; do
+              files_to_add+=("$f")
+            done < <(find "$GITHUB_WORKSPACE/changes" -type f -print0)
           fi
 
-          if git diff --cached --quiet -- . ':(exclude)*/data/updated.txt'; then
+          if [ ${#files_to_add[@]} -eq 0 ]; then
             echo "no sheet changed since the last copy"
             exit 0
           fi
 
+          git add "${files_to_add[@]}"
+
           files=$(git diff --cached --name-only)
           git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             -m "Files saved (the day's change list is under changes/):" -m "$files"
-          git pull --rebase origin main
+
+          if ! git pull --rebase origin main; then
+            echo "Rebase failed (likely due to concurrent timestamp changes). Aborting rebase and retrying with a merge pull."
+            git rebase --abort || true
+            git pull origin main --no-edit
+          fi
+
           git push
 
       - name: Go red if a tab was refused for full names

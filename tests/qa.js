@@ -415,7 +415,7 @@ const PASS = 'test-pass-123';
     const k2 = await page.$eval('.masthead .eyebrow', e=>e.textContent);
     ok(k2==='Pre-Season Summer Showcase 2026', 'event kicker: '+k2);
     const h2e = await page.$$eval('.card:not(.sponsors) h2', e=>e.map(x=>x.textContent));
-    ok(/Round robin|Pool standings/.test(h2e[0]) && h2e[1]==='Schedule & results', 'full event view: '+h2e.join('|'));
+    ok(/Round robin|Standings/.test(h2e[0]) && h2e[1]==='Schedule & results', 'full event view: '+h2e.join('|'));
     const crumb = await page.$eval('.crumb', e=>e.textContent);
     ok(/All events/.test(crumb) && /Aug 28/.test(crumb), 'crumb with dates: '+crumb);
     await page.screenshot({path:path.join(OUT,'shot_event_open.png'), fullPage:false});

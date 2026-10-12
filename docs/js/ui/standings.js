@@ -221,10 +221,6 @@ function standingsHtml(v, flat, rules) {
 
     var note = rules.note || "";
 
-    if (v.hasBracket) {
-      note += (note ? " " : "") + "Bracket games are not counted here.";
-    }
-
     var exh = 0;
 
     v.games.forEach(function (g) {
@@ -254,8 +250,10 @@ function standingsHtml(v, flat, rules) {
       "</p>";
   }
 
-  // A round robin nobody seeds is not a "pool standing".
-  var title = !v.event ? "Standings" : v.hasBracket ? "Pool standings" : "Round robin";
+  // An event with a bracket shows every game, bracket included, so it is the
+  // event's standings, not just the pool's. A round robin nobody seeds keeps
+  // its own name.
+  var title = !v.event || v.hasBracket ? "Standings" : "Round robin";
 
   if (soleGroup) {
     title = soleGroup;

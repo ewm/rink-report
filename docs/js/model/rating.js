@@ -58,7 +58,7 @@ function hasScores(g) {
  * when a score comes in.
  *
  * The caller passes only the games that count (played, not a scrimmage,
- * not a bracket game at an event, both teams in the table).
+ * both teams in the table). Bracket games count.
  *
  * @param {Object[]} games - Counted games: {home, away, hs, as}.
  * @returns {Object} Team name to rating, rounded to one decimal.

@@ -573,13 +573,15 @@ public.
 
 ## Game types
 
-Not every game counts toward anything. `Game type = Bracket` is decided by
-the pool standings rather than feeding them, so it stays on the schedule and
-leaves the table. A scrimmage counts toward nothing at all, and putting one
+Not every game counts toward anything. `Game type = Bracket` counts in an
+event's standings like any pool game: the table is how each team did over
+the whole event, and a bracket tag on the schedule row says which games were
+playoffs. A scrimmage counts toward nothing at all, and putting one
 in a qualifying record would be a real error. Clubs word the second kind
 differently, so `EXHIBITION_WORDS` matches the words managers actually type.
 The schedule row says BRACKET or the manager's own word in a tag, so nobody
-has to work out why a 6-1 win did not move the record.
+has to work out which games were playoffs, or why a scrimmage did not move
+the record.
 
 ## Standings and tiebreaks
 

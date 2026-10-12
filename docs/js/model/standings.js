@@ -6,7 +6,7 @@
  * or more), and teams a ruleset cannot separate keep the same rank.
  * See ARCHITECTURE.md, "Standings and tiebreaks".
  */
-import { isBracket, isExhibition, played } from "./game.js";
+import { isExhibition, played } from "./game.js";
 import { ratings } from "./rating.js";
 import { state } from "../state.js";
 import { bare, norm } from "../util/text.js";
@@ -137,9 +137,9 @@ function tally(row, opp, gf, ga, margin) {
 /**
  * Builds the standings table for a set of games.
  *
- * Scrimmages count toward nothing, and at an event bracket games do not
- * move the pool standings. `cap` accumulates the capped goal margin for
- * rulesets with a cap. Each row also gets `rating` (see model/rating.js),
+ * Scrimmages count toward nothing. Bracket games count like any other game:
+ * the event table is how each team did over the whole event. `cap`
+ * accumulates the capped goal margin for rulesets with a cap. Each row also gets `rating` (see model/rating.js),
  * worked out from the same games the table counts, or null before the
  * team's first game. The rating never changes the order.
  *
@@ -181,10 +181,6 @@ function standings(games, teams, isEvent, rules) {
 
     if (isExhibition(g)) {
       continue; // a scrimmage counts toward nothing
-    }
-
-    if (isEvent && isBracket(g)) {
-      continue; // playoffs don't move pool standings
     }
 
     if (g.home === g.away) {

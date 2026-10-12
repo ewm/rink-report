@@ -30,6 +30,12 @@ on:
     - cron: "0 7 * * *"
   workflow_dispatch:
 
+# One run at a time. A second run waits for the first instead of racing it
+# to push (that race is what rejected the 10/12 9:14 AM run).
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -102,13 +108,11 @@ jobs:
 
             if [ "$got" = 1 ]; then
               date -u +%Y-%m-%dT%H:%M:%SZ > "$team/data/updated.txt"
-            fi
-            
-            if [ "$got" = 0 ]; then
+            else
               echo "$team: no tab was saved; check gids in config.js"
-              echo "$team (no tabs)" >> "$GITHUB_WORKSPACE/refused.txt"
+              echo "$team (no tab saved; check gids in config.js)" >> "$GITHUB_WORKSPACE/refused.txt"
             fi
-            
+
             # Write the change report, when anything changed.
             if [ -s "$report" ]; then
               day=$(TZ=America/New_York date +%Y-%m-%d)
@@ -135,7 +139,7 @@ jobs:
           if [ "$found" = 0 ]; then
             echo "No team folders found under docs/. Nothing to save."
           fi
-      
+
       - name: Commit when a tab changed
         run: |
           set -euo pipefail
@@ -149,28 +153,17 @@ jobs:
             exit 0
           fi
 
-          files_to_add=()
-          for d in "${dirs[@]}"; do
-            while IFS= read -r -d '' f; do
-              case "$f" in
-                */data/updated.txt) continue ;;
-                *) files_to_add+=("$f") ;;
-              esac
-            done < <(find "$d" -type f -print0)
-          done
+          git add "${dirs[@]}"
 
           if [ -d "$GITHUB_WORKSPACE/changes" ]; then
-            while IFS= read -r -d '' f; do
-              files_to_add+=("$f")
-            done < <(find "$GITHUB_WORKSPACE/changes" -type f -print0)
+            git add "$GITHUB_WORKSPACE/changes"
           fi
 
-          if [ ${#files_to_add[@]} -eq 0 ]; then
+          # updated.txt changes every run, so it alone is not a reason to commit.
+          if git diff --cached --quiet -- . ':(exclude)*/data/updated.txt'; then
             echo "no sheet changed since the last copy"
             exit 0
           fi
-
-          git add "${files_to_add[@]}"
 
           files=$(git diff --cached --name-only)
           git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -184,11 +177,12 @@ jobs:
 
           git push
 
-      - name: Go red if a tab was refused for full names
+      - name: Go red if a tab was refused or nothing was saved
         run: |
           if [ -f "$GITHUB_WORKSPACE/refused.txt" ]; then
-            echo "These tabs were not saved because they hold players' full names."
-            echo "Change the names in the sheet to first name + last initial (Luke G.)."
+            echo "These were not saved. A tab listed here holds a player's full name:"
+            echo "change it in the sheet to first name + last initial (Luke G.)."
+            echo "A team marked 'no tab saved' got nothing at all: check its gids in config.js."
             cat "$GITHUB_WORKSPACE/refused.txt"
             exit 1
           fi

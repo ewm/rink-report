@@ -63,7 +63,7 @@ jobs:
             report="$RUNNER_TEMP/$team-changes.md"
             : > "$report"
             previous=$(cat "$team/data/updated.txt" 2>/dev/null || true)
-            GIDS=$(grep -o 'gids: *{[^}]*}' "$page" || true)
+            GIDS=$(grep -o 'gids: *{[^}]*}' "$cfg" || true)
             mkdir -p "$team/data"
             got=0
 
@@ -103,7 +103,12 @@ jobs:
             if [ "$got" = 1 ]; then
               date -u +%Y-%m-%dT%H:%M:%SZ > "$team/data/updated.txt"
             fi
-
+            
+            if [ "$got" = 0 ]; then
+              echo "$team: no tab was saved; check gids in config.js"
+              echo "$team (no tabs)" >> "$GITHUB_WORKSPACE/refused.txt"
+            fi
+            
             # Write the change report, when anything changed.
             if [ -s "$report" ]; then
               day=$(TZ=America/New_York date +%Y-%m-%d)

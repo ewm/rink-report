@@ -160,9 +160,9 @@ jobs:
           fi
 
           files=$(git diff --cached --name-only)
-          git pull --rebase origin main
           git commit -m "Snapshot: copy of the sheets at $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             -m "Files saved (the day's change list is under changes/):" -m "$files"
+          git pull --rebase origin main
           git push
 
       - name: Go red if a tab was refused for full names

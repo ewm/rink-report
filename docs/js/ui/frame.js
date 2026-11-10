@@ -5,7 +5,7 @@
  * tickFresh() patches the "updated N ago" line in place, without a render,
  * because a full repaint every 30 seconds was a visible flash.
  */
-import { STAFF, isLeague, state } from "../state.js";
+import { CFG, STAFF, isLeague, state } from "../state.js";
 import { ago } from "../util/dates.js";
 import { esc } from "../util/text.js";
 
@@ -268,6 +268,10 @@ function footHtml() {
     h += '<br><a href="' + checkHref() + '">Setup check</a>';
   }
 
+  if (STAFF && musicOn()) {
+    h += ' &middot; <a href="' + musicHref() + '">Rink Music</a>';
+  }
+
   return h + "<br>&copy; 2026 Minted Moose LLC. All rights reserved.</p>";
 }
 
@@ -280,6 +284,27 @@ function footHtml() {
  */
 function checkHref() {
   return location.pathname + "?check";
+}
+
+/**
+ * Whether this team uses the Rink Music board. Off unless config.js says
+ * `music: true`, unlike the other switches: a new team shouldn't get a
+ * music link it never asked for.
+ *
+ * @returns {boolean}
+ */
+function musicOn() {
+  return Boolean(CFG.features && CFG.features.music === true);
+}
+
+/**
+ * The address of the music board, the "music" folder inside the staff
+ * page. Spelled out from the path for the same <base> reason as checkHref.
+ *
+ * @returns {string}
+ */
+function musicHref() {
+  return location.pathname.replace(/[^/]*$/, "") + "music/";
 }
 
 export {

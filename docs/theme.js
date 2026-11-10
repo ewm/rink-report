@@ -547,6 +547,12 @@
       return p && !/\.html?$/i.test(p);
     });
 
+    // The music board lives inside the staff page, which lives inside the
+    // team's folder: drop both to get the team.
+    if (parts.length && parts[parts.length - 1] === "music") {
+      parts.pop();
+    }
+
     if (parts.length && parts[parts.length - 1] === "staff") {
       parts.pop();
     }

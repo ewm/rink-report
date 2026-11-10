@@ -45,6 +45,7 @@ window.RINK_CONFIG = {
     mhrLinks:       true,   // team names link to MyHockey Rankings (needs the MyHockey link column on the Teams tab)
     monoNumbers:    true,   // standings figures, scores, times and the record chip set in Chivo Mono. Off = Barlow, the way the page looked before.
     rating:         true,   // the Rtg column in the standings: goals better or worse than an average team, adjusted for opponents
-    coachNotes:     true    // the Coaches report card on the staff page (needs data/coaches-corner.enc, made by tools/seal.mjs)
+    coachNotes:     true,   // the Coaches report card on the staff page (needs data/coaches-corner.enc, made by tools/seal.mjs)
+    music:          true    // the Rink Music link in the staff page footer. Unlike the others, this one is OFF unless it says true.
   }
 };

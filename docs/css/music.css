@@ -1,0 +1,465 @@
+/* Rink Music board. Uses the team colors theme.js puts on :root
+   (--navy, --gold, --on-navy, --on-gold) and the fonts from rink.css.
+   Flat on purpose: no cards, no shadows, no rounded corners. */
+
+:root {
+  --stop: #C8102E;
+  --on-stop: #FFFFFF;
+  --foot: 132px;
+}
+
+body {
+  background: var(--ground);
+}
+
+#app {
+  max-width: 780px;
+  margin: 0 auto;
+  padding-bottom: calc(var(--foot) + env(safe-area-inset-bottom));
+}
+
+button,
+select,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Masthead: team color bar, title left, tabs right. */
+
+.mb-top {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  background: var(--navy);
+  color: var(--on-navy);
+  border-bottom: 4px solid var(--gold);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.mb-title {
+  margin: 0;
+  padding: 12px 16px;
+  white-space: nowrap;
+  font-family: var(--f-display);
+  font-size: 20px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.mb-tabs {
+  display: flex;
+}
+
+.mb-tab {
+  border: 0;
+  background: none;
+  color: var(--on-navy);
+  padding: 0 10px;
+  font-family: var(--f-display);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  opacity: .7;
+}
+
+.mb-tab.is-on {
+  opacity: 1;
+  background: var(--gold);
+  color: var(--on-gold);
+}
+
+/* Messages: specific, tap to dismiss. */
+
+.mb-msg {
+  margin: 0;
+  padding: 12px 16px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--rule);
+}
+
+.mb-msg-error {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.mb-msg-info {
+  background: var(--tint);
+}
+
+.mb-main {
+  padding: 0 0 16px;
+}
+
+/* Game board: GOAL full width, then two columns of moments. */
+
+.mb-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--ground);
+  padding-top: 2px;
+}
+
+.mb-moment {
+  min-width: 0;
+  min-height: 92px;
+  border: 0;
+  background: var(--navy);
+  color: var(--on-navy);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.mb-moment:active {
+  filter: brightness(1.25);
+}
+
+.mb-moment-goal {
+  grid-column: 1 / -1;
+  min-height: 140px;
+  background: var(--gold);
+  color: var(--on-gold);
+}
+
+.mb-moment-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--f-display);
+  font-size: clamp(20px, 6.5vw, 30px);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+.mb-moment-goal .mb-moment-name {
+  font-size: 56px;
+}
+
+.mb-moment-count {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  margin-top: 6px;
+  opacity: .8;
+}
+
+.mb-moment.is-empty {
+  opacity: .4;
+}
+
+.mb-moment.is-playing {
+  box-shadow: inset 0 0 0 5px var(--gold);
+}
+
+.mb-moment-goal.is-playing {
+  box-shadow: inset 0 0 0 5px var(--navy);
+}
+
+/* Footer: what's playing, and STOP. Always on screen. */
+
+.mb-now {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--ground);
+  border-top: 4px solid var(--rule);
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+}
+
+.mb-now-line {
+  max-width: 756px;
+  margin: 0 auto 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mb-now-line b {
+  font-family: var(--f-display);
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+
+.mb-left {
+  font-family: var(--f-mono);
+  margin-left: 8px;
+}
+
+.mb-quiet {
+  color: var(--ink-2);
+}
+
+.mb-stop {
+  display: block;
+  width: 100%;
+  max-width: 756px;
+  margin: 0 auto;
+  min-height: 64px;
+  border: 0;
+  background: var(--stop);
+  color: var(--on-stop);
+  font-family: var(--f-display);
+  font-size: 30px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+/* Who scored? */
+
+.mb-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--navy);
+  color: var(--on-navy);
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.mb-sheet-title {
+  margin: 0 0 6px;
+  font-family: var(--f-display);
+  font-size: 36px;
+  text-transform: uppercase;
+  border-bottom: 4px solid var(--gold);
+}
+
+.mb-nums {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.mb-num {
+  min-height: 72px;
+  border: 2px solid var(--on-navy);
+  background: none;
+  color: var(--on-navy);
+  font-family: var(--f-mono);
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.mb-num:active {
+  background: var(--gold);
+  color: var(--on-gold);
+  border-color: var(--gold);
+}
+
+.mb-sheet .mb-btn {
+  border-color: var(--on-navy);
+}
+
+/* Buttons. */
+
+.mb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 2px solid var(--rule);
+  background: none;
+  font-family: var(--f-display);
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.mb-btn-gold {
+  background: var(--gold);
+  color: var(--on-gold);
+  border-color: var(--gold);
+}
+
+.mb-btn[disabled] {
+  opacity: .45;
+}
+
+.mb-wide {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+}
+
+.mb-small {
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.mb-link {
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  text-decoration: underline;
+  padding: 8px 0;
+  text-align: left;
+}
+
+/* Setup and Players lists. */
+
+.mb-add {
+  padding: 16px;
+}
+
+.mb-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.mb-rule {
+  margin: 8px 0 0;
+  border-top: 4px solid var(--rule);
+  font-family: var(--f-display);
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.mb-rule span {
+  display: inline-block;
+  background: var(--rule);
+  color: var(--ground);
+  padding: 2px 10px 3px 16px;
+}
+
+.mb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mb-list li {
+  border-bottom: 1px solid var(--hair);
+}
+
+.mb-list li.is-open {
+  background: var(--tint);
+}
+
+.mb-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 12px 16px;
+}
+
+.mb-row-name {
+  font-weight: 700;
+}
+
+.mb-row-meta {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.mb-jersey {
+  font-family: var(--f-mono);
+  font-size: 22px;
+}
+
+.mb-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.mb-field {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  gap: 4px;
+}
+
+.mb-field select {
+  min-height: 44px;
+  border: 2px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 0;
+  padding: 0 8px;
+  font-size: 16px;
+}
+
+.mb-hook {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mb-hook-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.mb-hook-time {
+  font-family: var(--f-mono);
+  font-size: 26px;
+  font-weight: 700;
+  margin-right: auto;
+}
+
+.mb-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mb-addplayer {
+  display: flex;
+  gap: 8px;
+}
+
+.mb-addplayer input {
+  flex: 1;
+  min-height: 48px;
+  border: 2px solid var(--rule);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0 10px;
+  font-family: var(--f-mono);
+  font-size: 20px;
+}
+
+.mb-empty {
+  padding: 24px 16px;
+}
+
+/* An iPad gets a wider board. */
+
+@media (min-width: 700px) {
+  .mb-board {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .mb-nums {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

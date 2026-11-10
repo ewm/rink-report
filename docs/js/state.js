@@ -51,10 +51,11 @@ var DIAG = STAFF && /[?&]check\b/.test(location.search);
 
 /**
  * Whether the reader is looking at the manager's view of the numbers: the
- * per-player pages and the hot / warm / cold tags on the Stats tab. On with
+ * hot / warm / cold tags on the Stats tab and on a player's page. On with
  * ?admin on the parents' page, always on the staff page. This is tidiness,
- * not security: those come from the public stats tab either way, and the
- * flag only keeps them out of a parent's way.
+ * not security: the tags come from the public stats tab either way, and the
+ * flag only keeps them out of a parent's way. The per-player pages
+ * themselves are open to everyone.
  */
 var ADMIN = STAFF || /[?&]admin\b/.test(location.search);
 
@@ -134,7 +135,7 @@ function offList() {
  *   opens the page to find out when their own kid plays next, and the
  *   division's other games are one tap away.
  * statsScope: "all" or "league", the switch on the Stats page.
- * player: the short name whose page is open on the Stats view (?admin), or null.
+ * player: the short name whose page is open on the Stats view, or null.
  * sponsorsOpen: whether the sponsors block is expanded (remembered per device).
  * coachCopied: true for a moment after the Coaches Corner text was copied.
  * built: the scheduling tool's last result (league staff page), or null.

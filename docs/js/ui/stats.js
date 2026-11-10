@@ -212,17 +212,13 @@ function goalieBadge(name) {
 }
 
 /**
- * A player's name, as a button that opens their page on ?admin and plain
- * text otherwise.
+ * A player's name, as a button that opens their page. Everyone gets it,
+ * parents included.
  *
  * @param {string} name - The short name.
  * @returns {string} HTML.
  */
 function nameCell(name) {
-  if (!ADMIN) {
-    return esc(name);
-  }
-
   return '<button type="button" class="pname" data-act="player" data-v="' + esc(name) + '">' + esc(name) + "</button>";
 }
 

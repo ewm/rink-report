@@ -252,7 +252,7 @@ a.tm::after{content:"\2197"; font-size:11px; color:var(--ink-3); margin-left:4px
 .tag.w{background:var(--gold); border-color:var(--gold); color:var(--on-gold)}
 .tag.l{color:var(--ink-3)}
 
-/* ---- player pages (?admin only) ----
+/* ---- player pages ----
    Opened by tapping a name on the Stats table. Same program treatment: a
    header strip of numbers divided by hairlines, then the game log. */
 .pname{font:inherit; background:transparent; border:0; padding:0 0 1px; color:inherit; cursor:pointer;

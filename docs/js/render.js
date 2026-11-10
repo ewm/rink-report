@@ -5,7 +5,7 @@
  * string. render() decides which components a view needs, joins them, and
  * skips the DOM write entirely when nothing changed since last time.
  */
-import { ADMIN, DIAG, STAFF, isLeague, on, state } from "./state.js";
+import { DIAG, STAFF, isLeague, on, state } from "./state.js";
 import { buildViews, currentView, leagueView, barKeyFor, teamsInView } from "./model/views.js";
 import { rulesFor, standings } from "./model/standings.js";
 import { nextGameHtml } from "./ui/nextgame.js";
@@ -96,9 +96,9 @@ function render() {
     h += viewBarHtml(views, barKeyFor(views, v));
 
     if (v.stats) {
-      // A player's page, on ?admin. A name the sheet no longer has falls
-      // back to the tables.
-      var pageHtml = ADMIN && state.player ? playerHtml(state.player) : "";
+      // A player's page, open to everyone. A name the sheet no longer has
+      // falls back to the tables.
+      var pageHtml = state.player ? playerHtml(state.player) : "";
 
       h += pageHtml || statsHtml();
     } else if (v.events) {

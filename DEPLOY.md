@@ -552,8 +552,9 @@ Every team has a second page at `<team folder>/staff/` (the Wings:
 view switched on: the Coaches Corner numbers card, the written Coaches
 report, the Gameday post buttons on our upcoming games, and the `?check`
 setup page. None of those are on the parents' page any more, with or without
-`?admin`. (`?admin` on the parents' page still opens the per-player pages and
-the hot / warm / cold tags; those come from the public stats tab either way.)
+`?admin`. (`?admin` on the parents' page still shows the hot / warm / cold
+tags; those come from the public stats tab either way. The per-player pages
+are open to everyone and need no flag.)
 
 Anyone can open the staff page. The one thing on it that matters, the
 report, is sealed: the file in the repo is scrambled, and the page asks for

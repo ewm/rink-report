@@ -1,10 +1,11 @@
 /**
- * Component: one player's page, on ?admin only.
+ * Component: one player's page, open to everyone.
  *
  * playerHtml(name) draws a header with the season numbers, a game-by-game
  * table, and a few season notes worked out from the games. Everything comes
  * from model/player.js; the header numbers are the sheet's own totals so the
- * page agrees with the Stats table it was opened from.
+ * page agrees with the Stats table it was opened from. The hot, warm or cold
+ * tag in the header is the one piece that stays on ?admin.
  * See ARCHITECTURE.md, "Player pages".
  */
 import {
@@ -16,7 +17,7 @@ import {
 } from "../model/player.js";
 import { gaaFromLog, goalieLogFor, recordFromLog } from "../model/gamelog.js";
 import { formBadge, goalieForm, skaterForm } from "../model/form.js";
-import { state } from "../state.js";
+import { ADMIN, state } from "../state.js";
 import { fmtDate } from "../util/dates.js";
 import { esc } from "../util/text.js";
 
@@ -148,7 +149,7 @@ function bestSkaterGame(line) {
 function skaterPage(p) {
   var lines = skaterGames(p.name);
   var sum = skaterSummary(lines);
-  var form = skaterForm()[p.name];
+  var form = ADMIN ? skaterForm()[p.name] : null;
   var ppg = p.gp > 0 ? (p.pts || 0) / p.gp : null;
   var h = "";
 
@@ -233,7 +234,7 @@ function goaliePage(g) {
   var logRows = goalieLogFor(g.name);
   var rec = logRows.length ? recordFromLog(logRows) : null;
   var gaa = gaaFromLog(logRows);
-  var form = goalieForm(g.name);
+  var form = ADMIN ? goalieForm(g.name) : null;
   var h = "";
 
   if (gaa === null && g.min > 0 && g.ga !== null && g.ga !== undefined) {
@@ -314,10 +315,7 @@ function goaliePage(g) {
  * @returns {string} HTML.
  */
 function crumb() {
-  return (
-    '<div class="crumb"><button type="button" data-act="player" data-v="">&larr; Player stats</button>' +
-    '<span class="evdates">Only on ?admin</span></div>'
-  );
+  return '<div class="crumb"><button type="button" data-act="player" data-v="">&larr; Player stats</button></div>';
 }
 
 /**

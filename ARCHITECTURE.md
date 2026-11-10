@@ -946,9 +946,10 @@ thing enters the page: the Coaches Corner numbers card and the report
 diagnostics (`DIAG` in `state.js`), and the Setup check link in the footer.
 The parents' page never draws any of it, with or without `?admin`.
 
-`ADMIN` is `STAFF || ?admin`: the per-player pages and the hot / warm /
-cold tags come from the public stats tab, so they stay reachable on the
-parents' page with `?admin` and are simply always on for staff.
+`ADMIN` is `STAFF || ?admin`: the hot / warm / cold tags come from the
+public stats tab, so they stay reachable on the parents' page with `?admin`
+and are simply always on for staff. The per-player pages need no flag at
+all: every reader gets them.
 
 The staff shell is a copy of `index.html` with three differences. A
 `<base href="../">` so that every relative address (`config.js`, `data/`,
@@ -1120,13 +1121,14 @@ the constants at the top of `model/form.js`.
 
 ### Player pages
 
-On ?admin, every name on the Stats tables is a button. Tapping one puts
+Every name on the Stats tables is a button, for parents and staff alike
+(opened to everyone Nov 10 2026; before that it took ?admin). Tapping one puts
 `state.player` on the store and `render()` draws `ui/player.js` in place of
 the tables: a header strip with the sheet's own season line (so the page
 agrees with the table it came from), a game-by-game table, and a few season
-notes. The crumb, or changing tab, clears `state.player`. Parents never see
-any of it: `nameCell()` in `ui/stats.js` prints plain text without ?admin
-and `render()` never asks for the page.
+notes. The crumb, or changing tab, clears `state.player`. The one piece a
+parent does not get is the hot / warm / cold tag in the page header, which
+`ui/player.js` only draws on ?admin, the same as on the tables.
 
 `model/player.js` builds the game lines. The team's finished games come
 from the Schedule tab, so a skater gets one line per game whether or not

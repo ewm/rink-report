@@ -1956,12 +1956,34 @@ const PASS = 'test-pass-123';
 
   console.log('\n[38] player pages');
   {
-    // Without ?admin the names are plain text and nothing opens.
+    // Parents get the pages too: every name is a button and it opens, with
+    // no hot / warm / cold tag and no mention of ?admin.
     {
       const r = await openPage(browser, BASE, {});
       await r.page.click('.viewbar button[data-v="stats"]'); await r.page.waitForTimeout(150);
-      ok((await r.page.$$eval('.pname', x=>x.length))===0, 'no name buttons for parents');
-      ok((await r.page.$$eval('.phead', x=>x.length))===0, 'no player page for parents');
+      ok((await r.page.$$eval('.pname', x=>x.length))===15, 'every name is a button for parents');
+      ok((await r.page.$$eval('.form', x=>x.length))===0, 'no hot or cold tags on the parents\' tables');
+
+      await r.page.click('.pname[data-v="Luke G."]'); await r.page.waitForTimeout(150);
+      const pv = await r.page.evaluate(()=>({
+        head: document.querySelector('.phead') && document.querySelector('.phead').textContent.replace(/\s+/g,' ').trim(),
+        rows: document.querySelectorAll('.plog tbody tr').length,
+        forms: document.querySelectorAll('.form').length,
+        body: document.getElementById('app').textContent
+      }));
+      ok(pv.head && /^15\s*Luke G\./.test(pv.head), 'a skater page opens for parents: '+pv.head);
+      ok(pv.rows===5, 'parents see the game by game table: '+pv.rows);
+      ok(pv.forms===0, 'no hot or cold tag on a parent\'s player page');
+      ok(!/\?admin/.test(pv.body), 'the page does not mention ?admin');
+
+      await r.page.click('.crumb button'); await r.page.waitForTimeout(100);
+      await r.page.click('.pname[data-v="Andrew M."]'); await r.page.waitForTimeout(150);
+      const gv = await r.page.evaluate(()=>({
+        head: document.querySelector('.phead') && document.querySelector('.phead').textContent.replace(/\s+/g,' ').trim(),
+        rows: document.querySelectorAll('.plog tbody tr').length
+      }));
+      ok(gv.head && /^29\s*Andrew M\./.test(gv.head) && gv.rows===4, 'a goalie page opens for parents: '+gv.head);
+      ok(r.errors.length===0, 'no page errors on a parent\'s player pages: '+r.errors.join(' | '));
       await r.ctx.close();
     }
 

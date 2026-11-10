@@ -1,5 +1,5 @@
 Schedule,,,,,,,,,,
-All 156 rows look good.,,,,,,,,,,
+All 159 rows look good.,,,,,,,,,,
 ,,,,,,,,,,
 Date,Face-off,Away team,Home team,Away goals,Home goals,Rink,Pool / division,Game type,Event,Check
 2026-08-28,6:55 PM,Allegheny Badgers,West Seneca Wings,5,3,Leisure-1,,Pool,Pre-Season Summer Showcase 2026,OK
@@ -64,12 +64,12 @@ Date,Face-off,Away team,Home team,Away goals,Home goals,Rink,Pool / division,Gam
 2026-11-03,7:20 PM,Cheektowaga Warriors,Lockport Lock Monsters,5,2,Cornerstone,,Q-Game,,OK
 2026-12-13,1:20 PM,Buffalo Bisons,Cheektowaga Warriors,,,Cheektowaga,,Q-Game,,OK
 2026-11-04,7:45 PM,Cazenovia Chiefs,Red Raiders,0,15,Holiday Rink 2,,Q-Game,,OK
-2026-11-07,10:30 AM,Clarence Mustangs,Buffalo Bisons,,,North Buffalo - Tacoma,,Q-Game,,OK
+2026-11-07,10:30 AM,Clarence Mustangs,Buffalo Bisons,1,13,North Buffalo - Tacoma,,Q-Game,,OK
 2026-11-07,11:30 AM,Red Raiders,Niagara Jr. Cataracts,,,Hyde Park,,Q-Game,,OK
-2026-11-07,4:30 PM,Lockport Lock Monsters,Buffalo Bisons,,,Nichols,,Q-Game,,OK
-2026-11-08,10:30 AM,Lockport Lock Monsters,ROCO,,,Station 31,,Q-Game,,OK
-2026-11-08,12:10 PM,Cheektowaga Warriors,Clarence Mustangs,,,Northtown Center,,Q-Game,,OK
-2026-11-08,12:30 PM,Buffalo Bisons,Southtown Stars,,,Leisure Rinks,,Q-Game,,OK
+2026-11-07,4:30 PM,Lockport Lock Monsters,Buffalo Bisons,2,7,Nichols,,Q-Game,,OK
+2026-11-08,10:30 AM,Lockport Lock Monsters,ROCO,6,2,Station 31,,Q-Game,,OK
+2026-11-08,12:10 PM,Cheektowaga Warriors,Clarence Mustangs,1,2,Northtown Center,,Q-Game,,OK
+2026-11-08,12:30 PM,Buffalo Bisons,Southtown Stars,8,0,Leisure Rinks,,Q-Game,,OK
 2026-11-10,7:00 PM,Southtown Stars,Wheatfield Blades,,,PNY North Sports Arena,,Q-Game,,OK
 2026-11-12,7:10 PM,Cheektowaga Warriors,Wheatfield Blades,,,PNY North Sports Arena,,Q-Game,,OK
 2026-11-13,6:15 PM,Southtown Stars,Red Raiders,,,Holiday Rink 1,,Q-Game,,OK
@@ -146,15 +146,18 @@ Date,Face-off,Away team,Home team,Away goals,Home goals,Rink,Pool / division,Gam
 2027-02-07,11:30 AM,Buffalo Regals AAA,West Seneca Wings,,,West Seneca,,Scrimmage,,OK
 2027-02-13,11:30 AM,ROCO,Niagara Jr. Cataracts,,,Hyde Park,,Q-Game,,OK
 2027-02-14,11:30 AM,Rochester Jr. Americans,West Seneca Wings,,,West Seneca,,Scrimmage,,OK
-2026-11-06,10:15 AM,Burlington Eagles,Scarborough Ice Raiders,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-06,11:00 AM,Burlington Eagles A,Nickel City Cubs,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-06,11:15 AM,Mississauga North Stars,West Seneca Wings,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-06,4:00 PM,Scarborough Ice Raiders,Burlington Eagles A,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-06,4:00 PM,West Seneca Wings,Burlington Eagles,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-06,5:00 PM,Nickel City Cubs,Mississauga North Stars,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-07,10:15 AM,Mississauga North Stars,Burlington Eagles,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-07,11:00 AM,Nickel City Cubs,Scarborough Ice Raiders,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-07,11:15 AM,West Seneca Wings,Burlington Eagles A,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-07,4:00 PM,Burlington Eagles,Nickel City Cubs,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-07,4:00 PM,Burlington Eagles A,Mississauga North Stars,,,Iceland Arena,,Pool,Mississauga,OK
-2026-11-07,5:00 PM,Scarborough Ice Raiders,West Seneca Wings,,,Iceland Arena,,Pool,Mississauga,OK
+2026-11-06,10:15 AM,Burlington Eagles,Scarborough Ice Raiders,6,1,Iceland Arena,,Pool,Mississauga,OK
+2026-11-06,11:00 AM,Burlington Eagles A,Nickel City Cubs,2,5,Iceland Arena,,Pool,Mississauga,OK
+2026-11-06,11:15 AM,Mississauga North Stars,West Seneca Wings,2,3,Iceland Arena,,Pool,Mississauga,OK
+2026-11-06,4:00 PM,Scarborough Ice Raiders,Burlington Eagles A,1,4,Iceland Arena,,Pool,Mississauga,OK
+2026-11-06,4:00 PM,West Seneca Wings,Burlington Eagles,1,7,Iceland Arena,,Pool,Mississauga,OK
+2026-11-06,5:00 PM,Nickel City Cubs,Mississauga North Stars,2,5,Iceland Arena,,Pool,Mississauga,OK
+2026-11-07,10:15 AM,Mississauga North Stars,Burlington Eagles,1,4,Iceland Arena,,Pool,Mississauga,OK
+2026-11-07,11:00 AM,Nickel City Cubs,Scarborough Ice Raiders,5,1,Iceland Arena,,Pool,Mississauga,OK
+2026-11-07,11:15 AM,West Seneca Wings,Burlington Eagles A,1,0,Iceland Arena,,Pool,Mississauga,OK
+2026-11-07,4:00 PM,Burlington Eagles,Nickel City Cubs,1,0,Iceland Arena,,Pool,Mississauga,OK
+2026-11-07,4:00 PM,Burlington Eagles A,Mississauga North Stars,0,4,Iceland Arena,,Pool,Mississauga,OK
+2026-11-07,5:00 PM,Scarborough Ice Raiders,West Seneca Wings,0,8,Iceland Arena,,Pool,Mississauga,OK
+2026-11-08,9:00 AM,Nickel City Cubs,Burlington Eagles,0,3,Iceland Arena,,Pool,Mississauga,OK
+2026-11-08,9:15 AM,Mississauga North Stars,West Seneca Wings,3,2,Iceland Arena,,Pool,Mississauga,OK
+2026-11-08,1:45 PM,Mississauga North Stars,Burlington Eagles,1,3,Iceland Arena,,Pool,Mississauga,OK

@@ -168,7 +168,7 @@ async function page(base) {
     buffer: tone(60, 200 * i)
   })));
 
-  await p.waitForSelector(".mb-msg-info, .mb-msg-error");
+  await p.waitForSelector(".mb-msg");
 
   const msg = await p.textContent(".mb-msg");
 
@@ -189,7 +189,7 @@ async function page(base) {
   // Song 1 and 2 -> Whistle, song 3 -> Goal.
   const setMoment = async (title, moment) => {
     await p.click(`.mb-row:has-text("${title}")`);
-    await p.selectOption(".is-open select[data-action='set-moment']", moment);
+    await p.click(`.is-open [data-action="set-moment"][data-value="${moment}"]`);
     await p.click(`.mb-row:has-text("${title}")`);
   };
 
@@ -229,7 +229,7 @@ async function page(base) {
   // Settings survive a reload.
   await p.reload();
   await p.click('[data-action="view"][data-id="setup"]');
-  check(await p.locator(".mb-rule:has-text('Whistle') + .mb-list .mb-row").count() === 2, "after reload, Whistle still has its two songs");
+  check(await p.locator(".mb-group-title:has-text('Whistle') + .mb-list .mb-row").count() === 2, "after reload, Whistle still has its two songs");
 
   // Game: Whistle rotates and starts at the hook.
   await p.click('[data-action="view"][data-id="game"]');

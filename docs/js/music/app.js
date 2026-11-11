@@ -27,7 +27,7 @@ const state = {
   view: "game",
   songs: [],
   players: [],
-  open: null,          // id of the song (or "p:<number>" player) being edited in Setup
+  open: null,          // id of the song (or "p:<number>" player) being edited
   goalSheet: false,
   lastPlayed: {},      // moment id -> song id, for rotation
   armedDelete: null,   // id waiting for its second "delete" tap
@@ -36,6 +36,20 @@ const state = {
 };
 
 const player = new FilePlayer(store.getAudio, () => render());
+
+/** Small line icons, drawn in the current text color. */
+const ICON = {
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 4h11l-2 4 2 4H6" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></svg>',
+  close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>'
+};
+
+/** Animated bars shown on whatever is playing. */
+const BARS = '<span class="mb-bars" aria-hidden="true"><i></i><i></i><i></i></span>';
 
 /**
  * Escapes text for HTML.
@@ -64,7 +78,7 @@ function hookClock(seconds) {
 }
 
 /**
- * Words for a song's length setting.
+ * Short words for a length setting, for the chips.
  *
  * @param {number} value
  * @param {string} momentId
@@ -72,7 +86,7 @@ function hookClock(seconds) {
  */
 function lengthWords(value, momentId) {
   if (value === -1) {
-    return "whole song";
+    return "Whole song";
   }
 
   if (value > 0) {
@@ -82,10 +96,10 @@ function lengthWords(value, momentId) {
   const m = momentById(momentId);
 
   if (m && m.length > 0) {
-    return m.length + "s (default)";
+    return "Default " + m.length + "s";
   }
 
-  return "whole song (default)";
+  return "Default (whole)";
 }
 
 /**
@@ -111,29 +125,51 @@ function render() {
 
   app.innerHTML = `
     <header class="mb-top">
-      <h1 class="mb-title">Rink Music</h1>
-      <nav class="mb-tabs">
+      <div class="mb-titles">
+        <span class="mb-eyebrow">Wings staff</span>
+        <h1 class="mb-title">Rink Music</h1>
+      </div>
+      <nav class="mb-seg" role="tablist">
         ${tab("game", "Game")}
         ${tab("setup", "Setup")}
         ${tab("players", "Players")}
       </nav>
     </header>
-    ${state.message ? `<p class="mb-msg mb-msg-${state.message.kind}" data-action="dismiss">${esc(state.message.text)}</p>` : ""}
+    ${state.message ? messageHtml() : ""}
     <main class="mb-main">
       ${state.view === "game" ? gameView(now) : ""}
       ${state.view === "setup" ? setupView(now) : ""}
       ${state.view === "players" ? playersView(now) : ""}
     </main>
     ${state.goalSheet ? goalSheet() : ""}
-    <footer class="mb-now">
-      <p class="mb-now-line" id="now-line">${nowLine(now)}</p>
-      <button class="mb-stop" data-action="stop">Stop</button>
+    <footer class="mb-now${now ? " is-live" : ""}">
+      <div class="mb-progress"><span id="now-bar"></span></div>
+      <div class="mb-now-row">
+        <p class="mb-now-line" id="now-line">${nowLine(now)}</p>
+        <button class="mb-stop" data-action="stop">${ICON.stop}<span>Stop</span></button>
+      </div>
     </footer>
+  `;
+
+  tick();
+}
+
+/**
+ * The message banner. Tap anywhere on it to dismiss.
+ *
+ * @returns {string}
+ */
+function messageHtml() {
+  return `
+    <p class="mb-msg mb-msg-${state.message.kind}" data-action="dismiss">
+      <span>${esc(state.message.text)}</span>
+      <span class="mb-msg-x">${ICON.close}</span>
+    </p>
   `;
 }
 
 /**
- * One tab button.
+ * One segment of the Game / Setup / Players switch.
  *
  * @param {string} id
  * @param {string} label
@@ -142,18 +178,18 @@ function render() {
 function tab(id, label) {
   const on = state.view === id ? " is-on" : "";
 
-  return `<button class="mb-tab${on}" data-action="view" data-id="${id}">${label}</button>`;
+  return `<button class="mb-tab${on}" role="tab" data-action="view" data-id="${id}">${label}</button>`;
 }
 
 /**
- * The footer's "what's playing" line.
+ * The footer's "what's playing" text.
  *
  * @param {object | null} now
  * @returns {string}
  */
 function nowLine(now) {
   if (!now) {
-    return `<span class="mb-quiet">Nothing playing</span>`;
+    return `<span class="mb-now-label">Ready</span><span class="mb-now-song mb-quiet">Nothing playing</span>`;
   }
 
   let left = "";
@@ -161,10 +197,10 @@ function nowLine(now) {
   if (now.length > 0) {
     const gone = (Date.now() - now.startedAt) / 1000;
 
-    left = ` <span class="mb-left">${clock(now.length - gone)}</span>`;
+    left = `<span class="mb-left">${clock(now.length - gone)}</span>`;
   }
 
-  return `<b>${esc(now.label)}</b> ${esc(now.song.name)}${left}`;
+  return `<span class="mb-now-label">${esc(now.label)}${left}</span><span class="mb-now-song">${esc(now.song.name)}</span>`;
 }
 
 /**
@@ -177,33 +213,45 @@ function gameView(now) {
   if (state.songs.length === 0) {
     return `
       <section class="mb-empty">
-        <p>No songs on this phone yet.</p>
-        <button class="mb-btn mb-btn-gold" data-action="view" data-id="setup">Go to Setup to add songs</button>
+        <p class="mb-empty-title">No songs on this phone yet</p>
+        <p class="mb-quiet">Add a few in Setup and give each one a moment.</p>
+        <button class="mb-btn mb-btn-primary" data-action="view" data-id="setup">${ICON.plus}<span>Add songs</span></button>
       </section>
     `;
   }
 
-  const buttons = MOMENTS.map((m) => {
+  const tiles = MOMENTS.map((m) => {
     const count = songsForMoment(state.songs, m.id).length;
-    const playing = now && now.momentId === m.id ? " is-playing" : "";
-    const empty = count === 0 ? " is-empty" : "";
-    const big = m.id === "goal" ? " mb-moment-goal" : "";
+    const playing = now && now.momentId === m.id;
     const scorers = state.players.filter((p) => p.songId).length;
-    const extra = m.id === "goal" && scorers > 0 ? " · " + scorers + (scorers === 1 ? " player song" : " player songs") : "";
+
+    let sub = count + (count === 1 ? " song" : " songs");
+
+    if (m.id === "goal" && scorers > 0) {
+      sub += " · " + scorers + (scorers === 1 ? " player song" : " player songs");
+    }
+
+    const cls = [
+      "mb-tile",
+      m.id === "goal" ? "mb-tile-goal" : "",
+      playing ? "is-playing" : "",
+      count === 0 && !(m.id === "goal" && scorers > 0) ? "is-empty" : ""
+    ].join(" ");
 
     return `
-      <button class="mb-moment${big}${playing}${empty}" data-action="moment" data-id="${m.id}">
-        <span class="mb-moment-name">${m.label}</span>
-        <span class="mb-moment-count">${count} ${count === 1 ? "song" : "songs"}${extra}</span>
+      <button class="${cls}" data-action="moment" data-id="${m.id}">
+        ${playing ? BARS : ""}
+        <span class="mb-tile-name">${m.label}</span>
+        <span class="mb-tile-sub">${sub}</span>
       </button>
     `;
   });
 
-  return `<section class="mb-board">${buttons.join("")}</section>`;
+  return `<section class="mb-board">${tiles.join("")}</section>`;
 }
 
 /**
- * The "who scored?" sheet that opens from GOAL.
+ * The "who scored?" sheet that slides up from GOAL.
  *
  * @returns {string}
  */
@@ -213,11 +261,13 @@ function goalSheet() {
     .map((p) => `<button class="mb-num" data-action="scorer" data-id="${esc(p.number)}">${esc(p.number)}</button>`);
 
   return `
-    <div class="mb-sheet">
+    <div class="mb-scrim" data-action="close-goal"></div>
+    <div class="mb-sheet" role="dialog" aria-label="Who scored?">
+      <span class="mb-grab"></span>
       <h2 class="mb-sheet-title">Who scored?</h2>
       <div class="mb-nums">${numbers.join("")}</div>
-      <button class="mb-btn mb-btn-gold mb-wide" data-action="team-goal">Team goal</button>
-      <button class="mb-btn mb-wide" data-action="close-goal">Cancel</button>
+      <button class="mb-btn mb-btn-primary mb-wide" data-action="team-goal">Team goal</button>
+      <button class="mb-btn mb-btn-ghost mb-wide" data-action="close-goal">Cancel</button>
     </div>
   `;
 }
@@ -229,7 +279,7 @@ function goalSheet() {
  * @returns {string}
  */
 function setupView(now) {
-  const groups = [{ id: "", label: "No moment yet" }].concat(MOMENTS).map((m) => {
+  const groups = [{ id: "", label: "Needs a moment" }].concat(MOMENTS).map((m) => {
     const list = state.songs.filter((s) => (s.moment || "") === m.id);
 
     if (list.length === 0) {
@@ -237,19 +287,53 @@ function setupView(now) {
     }
 
     return `
-      <h2 class="mb-rule"><span>${m.label}</span></h2>
+      <h2 class="mb-group-title">${m.label} <span class="mb-quiet">${list.length}</span></h2>
       <ul class="mb-list">${list.map((s) => songRow(s, now)).join("")}</ul>
     `;
   });
 
   return `
     <section class="mb-add">
-      <label class="mb-btn mb-btn-gold mb-wide" for="mb-file">
-        ${state.adding ? esc(state.adding) : "Add songs"}
+      <label class="mb-btn mb-btn-primary mb-wide" for="mb-file">
+        ${ICON.plus}<span>${state.adding ? esc(state.adding) : "Add songs"}</span>
       </label>
-      <p class="mb-hint">${state.songs.length} songs on this phone. Pick song files from the Files app. Songs downloaded in Apple Music won't open here; MP3s and iTunes purchases will.</p>
+      <p class="mb-hint">${state.songs.length} ${state.songs.length === 1 ? "song" : "songs"} on this phone. MP3s and iTunes purchases work. Songs downloaded in Apple Music won't open here.</p>
     </section>
     ${groups.join("")}
+  `;
+}
+
+/**
+ * The shared hook editor: big time, minus and plus, play buttons, mark.
+ *
+ * @param {object} o
+ * @param {number} o.start
+ * @param {boolean} o.playing whether this song is the one playing now
+ * @param {boolean} o.ready whether there is a song to play
+ * @param {string} o.prefix "" for songs, "player-" for players
+ * @param {string} o.id
+ * @returns {string}
+ */
+function hookEditor(o) {
+  const id = esc(o.id);
+  const off = o.ready ? "" : " disabled";
+
+  return `
+    <div class="mb-hook">
+      <div class="mb-hook-read">
+        <span class="mb-label">Starts at</span>
+        <span class="mb-hook-time">${hookClock(o.start)}</span>
+      </div>
+      <button class="mb-round" data-action="${o.prefix}nudge" data-id="${id}" data-by="-1" aria-label="1 second earlier">${ICON.minus}</button>
+      <button class="mb-round" data-action="${o.prefix}nudge" data-id="${id}" data-by="1" aria-label="1 second later">${ICON.plus}</button>
+    </div>
+    <div class="mb-pair">
+      <button class="mb-btn" data-action="${o.prefix}preview" data-id="${id}"${off}>${ICON.play}<span>From start</span></button>
+      <button class="mb-btn" data-action="${o.prefix}test" data-id="${id}"${off}>${ICON.play}<span>From hook</span></button>
+    </div>
+    <button class="mb-btn mb-btn-primary mb-wide" data-action="${o.prefix}mark" data-id="${id}"${o.playing ? "" : " disabled"}>
+      ${ICON.flag}<span class="mb-mark-text">${o.playing ? "Mark hook at " + hookClock(player.position()) : "Play it, then mark the hook"}</span>
+    </button>
   `;
 }
 
@@ -261,28 +345,42 @@ function setupView(now) {
  * @returns {string}
  */
 function songRow(s, now) {
+  const open = state.open === s.id;
+  const playingThis = now && now.song.id === s.id && !now.playerKey;
+
   const meta = s.moment
-    ? `starts ${hookClock(s.start)} · ${lengthWords(s.length, s.moment)}`
-    : "tap to set it up";
+    ? `${hookClock(s.start)} · ${lengthWords(s.length, s.moment)}`
+    : "Tap to set up";
 
   const head = `
-    <button class="mb-row" data-action="open" data-id="${esc(s.id)}">
-      <span class="mb-row-name">${esc(s.name)}</span>
-      <span class="mb-row-meta">${meta}</span>
+    <button class="mb-row${open ? " is-open" : ""}" data-action="open" data-id="${esc(s.id)}">
+      <span class="mb-row-text">
+        <span class="mb-row-name">${esc(s.name)}</span>
+        <span class="mb-row-meta">${meta}</span>
+      </span>
+      ${playingThis ? BARS : `<span class="mb-chev">${ICON.chevron}</span>`}
     </button>
   `;
 
-  if (state.open !== s.id) {
+  if (!open) {
     return `<li>${head}</li>`;
   }
 
-  const playingThis = now && now.song.id === s.id;
+  const moments = MOMENTS.map((m) => {
+    const on = s.moment === m.id ? " is-on" : "";
 
-  const moments = [`<option value="">Pick a moment</option>`]
-    .concat(MOMENTS.map((m) => `<option value="${m.id}"${s.moment === m.id ? " selected" : ""}>${m.label}</option>`));
+    return `<button class="mb-chip${on}" data-action="set-moment" data-id="${esc(s.id)}" data-value="${m.id}">${m.label}</button>`;
+  });
 
-  const lengths = LENGTH_CHOICES.map((v) => {
-    return `<option value="${v}"${s.length === v ? " selected" : ""}>${lengthWords(v, s.moment)}</option>`;
+  // Skip the plain chip that matches the moment's default ("25s" next to
+  // "Default 25s" is the same thing twice).
+  const moment = momentById(s.moment);
+  const shown = LENGTH_CHOICES.filter((v) => !(moment && v > 0 && v === moment.length));
+
+  const lengths = shown.map((v) => {
+    const on = s.length === v ? " is-on" : "";
+
+    return `<button class="mb-chip${on}" data-action="set-length" data-id="${esc(s.id)}" data-value="${v}">${lengthWords(v, s.moment)}</button>`;
   });
 
   const deleteLabel = state.armedDelete === s.id ? "Tap again to delete" : "Delete song";
@@ -291,25 +389,11 @@ function songRow(s, now) {
     <li class="is-open">
       ${head}
       <div class="mb-edit">
-        <label class="mb-field">Moment
-          <select data-action="set-moment" data-id="${esc(s.id)}">${moments.join("")}</select>
-        </label>
-        <div class="mb-hook">
-          <span class="mb-hook-label">Hook</span>
-          <span class="mb-hook-time">${hookClock(s.start)}</span>
-          <button class="mb-btn mb-small" data-action="nudge" data-id="${esc(s.id)}" data-by="-1">-1s</button>
-          <button class="mb-btn mb-small" data-action="nudge" data-id="${esc(s.id)}" data-by="1">+1s</button>
-        </div>
-        <div class="mb-pair">
-          <button class="mb-btn" data-action="preview" data-id="${esc(s.id)}">Play from start</button>
-          <button class="mb-btn" data-action="test" data-id="${esc(s.id)}">Play from hook</button>
-        </div>
-        <button class="mb-btn mb-btn-gold mb-wide" data-action="mark" data-id="${esc(s.id)}"${playingThis ? "" : " disabled"}>
-          ${playingThis ? "Mark hook here (" + hookClock(player.position()) + ")" : "Play the song, then mark the hook"}
-        </button>
-        <label class="mb-field">Plays for
-          <select data-action="set-length" data-id="${esc(s.id)}">${lengths.join("")}</select>
-        </label>
+        <span class="mb-label">Moment</span>
+        <div class="mb-chips">${moments.join("")}</div>
+        ${hookEditor({ start: s.start, playing: playingThis, ready: true, prefix: "", id: s.id })}
+        <span class="mb-label">Plays for</span>
+        <div class="mb-chips">${lengths.join("")}</div>
         <button class="mb-link" data-action="delete" data-id="${esc(s.id)}">${deleteLabel}</button>
       </div>
     </li>
@@ -324,7 +408,12 @@ function songRow(s, now) {
  */
 function playersView(now) {
   if (state.songs.length === 0) {
-    return `<section class="mb-empty"><p>Add songs in Setup first, then give players their goal songs here.</p></section>`;
+    return `
+      <section class="mb-empty">
+        <p class="mb-empty-title">Add songs first</p>
+        <p class="mb-quiet">Then give each player a goal song here.</p>
+      </section>
+    `;
   }
 
   const rows = state.players.map((p) => {
@@ -336,35 +425,26 @@ function playersView(now) {
     const options = [`<option value="">Pick a song</option>`]
       .concat(state.songs.map((s) => `<option value="${esc(s.id)}"${p.songId === s.id ? " selected" : ""}>${esc(s.name)}</option>`));
 
-    const meta = song ? `${esc(song.name)} · starts ${hookClock(p.start || 0)}` : "no song yet";
+    const meta = song ? `${esc(song.name)} · ${hookClock(p.start || 0)}` : "No song yet";
 
     const edit = !open ? "" : `
       <div class="mb-edit">
-        <label class="mb-field">Goal song
-          <select data-action="player-song" data-id="${esc(p.number)}">${options.join("")}</select>
-        </label>
-        <div class="mb-hook">
-          <span class="mb-hook-label">Hook</span>
-          <span class="mb-hook-time">${hookClock(p.start || 0)}</span>
-          <button class="mb-btn mb-small" data-action="player-nudge" data-id="${esc(p.number)}" data-by="-1">-1s</button>
-          <button class="mb-btn mb-small" data-action="player-nudge" data-id="${esc(p.number)}" data-by="1">+1s</button>
-        </div>
-        <div class="mb-pair">
-          <button class="mb-btn" data-action="player-preview" data-id="${esc(p.number)}"${song ? "" : " disabled"}>Play from start</button>
-          <button class="mb-btn" data-action="player-test" data-id="${esc(p.number)}"${song ? "" : " disabled"}>Play from hook</button>
-        </div>
-        <button class="mb-btn mb-btn-gold mb-wide" data-action="player-mark" data-id="${esc(p.number)}"${playingThis ? "" : " disabled"}>
-          ${playingThis ? "Mark hook here (" + hookClock(player.position()) + ")" : "Play the song, then mark the hook"}
-        </button>
+        <label class="mb-label" for="ps-${esc(p.number)}">Goal song</label>
+        <select class="mb-select" id="ps-${esc(p.number)}" data-action="player-song" data-id="${esc(p.number)}">${options.join("")}</select>
+        ${hookEditor({ start: p.start || 0, playing: playingThis, ready: Boolean(song), prefix: "player-", id: p.number })}
         <button class="mb-link" data-action="player-remove" data-id="${esc(p.number)}">${state.armedDelete === key ? "Tap again to remove" : "Remove player"}</button>
       </div>
     `;
 
     return `
       <li class="${open ? "is-open" : ""}">
-        <button class="mb-row" data-action="open" data-id="${esc(key)}">
-          <span class="mb-row-name"><span class="mb-jersey">#${esc(p.number)}</span></span>
-          <span class="mb-row-meta">${meta}</span>
+        <button class="mb-row${open ? " is-open" : ""}" data-action="open" data-id="${esc(key)}">
+          <span class="mb-jersey">${esc(p.number)}</span>
+          <span class="mb-row-text">
+            <span class="mb-row-name">#${esc(p.number)}</span>
+            <span class="mb-row-meta">${meta}</span>
+          </span>
+          ${playingThis ? BARS : `<span class="mb-chev">${ICON.chevron}</span>`}
         </button>
         ${edit}
       </li>
@@ -374,12 +454,11 @@ function playersView(now) {
   return `
     <section class="mb-add">
       <form class="mb-addplayer" data-action="add-player">
-        <input type="number" inputmode="numeric" min="0" max="99" placeholder="Jersey #" name="number" required>
-        <button class="mb-btn mb-btn-gold" type="submit">Add player</button>
+        <input type="number" inputmode="numeric" min="0" max="99" placeholder="Jersey #" name="number" aria-label="Jersey number" required>
+        <button class="mb-btn mb-btn-primary" type="submit">${ICON.plus}<span>Add</span></button>
       </form>
     </section>
-    <h2 class="mb-rule"><span>Goal songs</span></h2>
-    <ul class="mb-list">${rows.join("")}</ul>
+    ${state.players.length ? `<h2 class="mb-group-title">Goal songs <span class="mb-quiet">${state.players.length}</span></h2><ul class="mb-list">${rows.join("")}</ul>` : ""}
   `;
 }
 
@@ -586,6 +665,10 @@ async function onClick(event) {
     const s = state.songs.find((x) => x.id === id);
 
     await safePlay(s, s.start, playLength(s), "Setup");
+  } else if (action === "set-moment") {
+    await updateSong(id, { moment: el.dataset.value });
+  } else if (action === "set-length") {
+    await updateSong(id, { length: Number(el.dataset.value) });
   } else if (action === "mark") {
     await updateSong(id, { start: Math.round(player.position() * 10) / 10 });
   } else if (action === "nudge") {
@@ -642,13 +725,7 @@ async function onChange(event) {
   const action = el.dataset.action;
   const id = el.dataset.id;
 
-  if (action === "set-moment") {
-    await updateSong(id, { moment: el.value });
-    state.open = id;
-    render();
-  } else if (action === "set-length") {
-    await updateSong(id, { length: Number(el.value) });
-  } else if (action === "player-song") {
+  if (action === "player-song") {
     await updatePlayer(id, { songId: el.value });
   }
 }
@@ -685,24 +762,55 @@ async function onSubmit(event) {
 }
 
 /**
- * Keeps the countdown and the "Mark hook here" time moving while a song plays.
+ * Keeps the countdown, the progress bar and the "Mark hook" time moving
+ * while a song plays.
  */
 function tick() {
-  if (!player.now) {
+  const bar = document.getElementById("now-bar");
+  const now = player.now;
+
+  if (!now) {
+    if (bar) {
+      bar.style.width = "0%";
+    }
+
     return;
   }
 
   const line = document.getElementById("now-line");
 
   if (line) {
-    line.innerHTML = nowLine(player.now);
+    line.innerHTML = nowLine(now);
   }
 
-  const mark = app.querySelector('[data-action="mark"]:not([disabled]), [data-action="player-mark"]:not([disabled])');
+  if (bar) {
+    bar.style.width = (progress(now) * 100).toFixed(1) + "%";
+  }
+
+  const mark = app.querySelector('[data-action$="mark"]:not([disabled]) .mb-mark-text');
 
   if (mark) {
-    mark.textContent = "Mark hook here (" + hookClock(player.position()) + ")";
+    mark.textContent = "Mark hook at " + hookClock(player.position());
   }
+}
+
+/**
+ * How far through its play time the current song is, 0 to 1. Uses the
+ * song's length when it has one, else the rest of the song.
+ *
+ * @param {object} now
+ * @returns {number}
+ */
+function progress(now) {
+  const gone = (Date.now() - now.startedAt) / 1000;
+
+  if (now.length > 0) {
+    return Math.min(1, gone / now.length);
+  }
+
+  const total = player.duration() - now.start;
+
+  return total > 0 ? Math.min(1, gone / total) : 0;
 }
 
 /**

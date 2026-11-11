@@ -179,6 +179,15 @@ export class FilePlayer {
   }
 
   /**
+   * Length of the loaded song in seconds, or 0 before it has loaded.
+   *
+   * @returns {number}
+   */
+  duration() {
+    return Number.isFinite(this.el.duration) ? this.el.duration : 0;
+  }
+
+  /**
    * Clears the playing state once a song has stopped.
    *
    * @param {number} token

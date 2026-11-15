@@ -10,5 +10,5 @@
 ,Points for a loss,,blank = 0,,No team listed twice,OK
 ,,,,,At least one game on the Schedule,OK
 ,,,,,Every game has a date,OK
-,,,,,Every Schedule row reads OK in column K,OK
+,,,,,Every Schedule row reads OK in column K,1 row(s) need attention in column K
 ,,,,,No game left out of its event,OK
